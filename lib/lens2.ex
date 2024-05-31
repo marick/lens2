@@ -1,14 +1,14 @@
-defmodule Lens do
-  use Lens.Macros
+defmodule Lens2 do
+  use Lens2.Macros
 
   @opaque t :: (:get, any, function -> list(any)) | (:get_and_update, any, function -> {list(any), any})
 
   @doc ~S"""
   Returns a lens that does not focus on any part of the data.
 
-      iex> Lens.empty |> Lens.to_list(:anything)
+      iex> Lens2.empty |> Lens2.to_list(:anything)
       []
-      iex> Lens.empty |> Lens.map(1, &(&1 + 1))
+      iex> Lens2.empty |> Lens2.map(1, &(&1 + 1))
       1
   """
   @spec empty :: t
@@ -17,13 +17,13 @@ defmodule Lens do
   @doc ~S"""
   Returns a lens that ignores the data and always focuses on the given value.
 
-      iex> Lens.const(3) |> Lens.one!(:anything)
+      iex> Lens2.const(3) |> Lens2.one!(:anything)
       3
-      iex> Lens.const(3) |> Lens.map(1, &(&1 + 1))
+      iex> Lens2.const(3) |> Lens2.map(1, &(&1 + 1))
       4
       iex> import Integer
-      iex> lens = Lens.keys([:a, :b]) |> Lens.match(fn v -> if is_odd(v), do: Lens.root, else: Lens.const(0) end)
-      iex> Lens.map(lens, %{a: 11, b: 12}, &(&1 + 1))
+      iex> lens = Lens2.keys([:a, :b]) |> Lens2.match(fn v -> if is_odd(v), do: Lens2.root, else: Lens2.const(0) end)
+      iex> Lens2.map(lens, %{a: 11, b: 12}, &(&1 + 1))
       %{a: 12, b: 1}
   """
   @spec const(any) :: t
@@ -37,11 +37,11 @@ defmodule Lens do
   @doc ~S"""
   Returns a lens that yields the entirety of the data currently under focus.
 
-      iex> Lens.to_list(Lens.root, :data)
+      iex> Lens2.to_list(Lens2.root, :data)
       [:data]
-      iex> Lens.map(Lens.root, :data, fn :data -> :other_data end)
+      iex> Lens2.map(Lens2.root, :data, fn :data -> :other_data end)
       :other_data
-      iex> Lens.key(:a) |> Lens.both(Lens.root, Lens.key(:b)) |> Lens.to_list(%{a: %{b: 1}})
+      iex> Lens2.key(:a) |> Lens2.both(Lens2.root, Lens2.key(:b)) |> Lens2.to_list(%{a: %{b: 1}})
       [%{b: 1}, 1]
   """
   @spec root :: t
@@ -56,10 +56,10 @@ defmodule Lens do
   Select the lens to use based on a matcher function
 
       iex> selector = fn
-      ...>   {:a, _} -> Lens.at(1)
-      ...>   {:b, _, _} -> Lens.at(2)
+      ...>   {:a, _} -> Lens2.at(1)
+      ...>   {:b, _, _} -> Lens2.at(2)
       ...> end
-      iex> Lens.match(selector) |> Lens.one!({:b, 2, 3})
+      iex> Lens2.match(selector) |> Lens2.one!({:b, 2, 3})
       3
   """
   @spec match((any -> t)) :: t
@@ -72,9 +72,9 @@ defmodule Lens do
   @doc ~S"""
   Returns a lens that focuses on the n-th element of a list or tuple.
 
-      iex> Lens.at(2) |> Lens.one!({:a, :b, :c})
+      iex> Lens2.at(2) |> Lens2.one!({:a, :b, :c})
       :c
-      iex> Lens.at(1) |> Lens.map([:a, :b, :c], fn :b -> :d end)
+      iex> Lens2.at(1) |> Lens2.map([:a, :b, :c], fn :b -> :d end)
       [:a, :d, :c]
   """
   @spec at(non_neg_integer) :: t
@@ -94,9 +94,9 @@ defmodule Lens do
   @doc ~S"""
   Returns a lens that focuses on all of the supplied indices.
 
-      iex> Lens.indices([0, 2]) |> Lens.to_list([:a, :b, :c])
+      iex> Lens2.indices([0, 2]) |> Lens2.to_list([:a, :b, :c])
       [:a, :c]
-      iex> Lens.indices([0, 2]) |> Lens.map([1, 2, 3], &(&1 + 1))
+      iex> Lens2.indices([0, 2]) |> Lens2.map([1, 2, 3], &(&1 + 1))
       [2, 2, 4]
   """
   @spec indices([non_neg_integer]) :: t
@@ -106,9 +106,9 @@ defmodule Lens do
   Returns a lens that focuses between a given index and the previous one in a list. It will always return a nil when
   accessing, but can be used to insert elements.
 
-      iex> Lens.before(2) |> Lens.one!([:a, :b, :c])
+      iex> Lens2.before(2) |> Lens2.one!([:a, :b, :c])
       nil
-      iex> Lens.before(2) |> Lens.map([:a, :b, :c], fn nil -> :d end)
+      iex> Lens2.before(2) |> Lens2.map([:a, :b, :c], fn nil -> :d end)
       [:a, :b, :d, :c]
   """
   @spec before(non_neg_integer) :: t
@@ -124,9 +124,9 @@ defmodule Lens do
   Returns a lens that focuses between a given index and the next one in a list. It will always return a nil when
   accessing, but can be used to insert elements.
 
-      iex> Lens.behind(1) |> Lens.one!([:a, :b, :c])
+      iex> Lens2.behind(1) |> Lens2.one!([:a, :b, :c])
       nil
-      iex> Lens.behind(1) |> Lens.map([:a, :b, :c], fn nil -> :d end)
+      iex> Lens2.behind(1) |> Lens2.map([:a, :b, :c], fn nil -> :d end)
       [:a, :b, :d, :c]
   """
   @spec behind(non_neg_integer) :: t
@@ -142,9 +142,9 @@ defmodule Lens do
   Returns a lens that focuses before the first element of a list. It will always return a nil when accessing, but can
   be used to prepend elements.
 
-      iex> Lens.front |> Lens.one!([:a, :b, :c])
+      iex> Lens2.front |> Lens2.one!([:a, :b, :c])
       nil
-      iex> Lens.front |> Lens.map([:a, :b, :c], fn nil -> :d end)
+      iex> Lens2.front |> Lens2.map([:a, :b, :c], fn nil -> :d end)
       [:d, :a, :b, :c]
   """
   @spec front :: t
@@ -154,9 +154,9 @@ defmodule Lens do
   Returns a lens that focuses after the last element of a list. It will always return a nil when accessing, but can
   be used to append elements.
 
-      iex> Lens.back |> Lens.one!([:a, :b, :c])
+      iex> Lens2.back |> Lens2.one!([:a, :b, :c])
       nil
-      iex> Lens.back |> Lens.map([:a, :b, :c], fn nil -> :d end)
+      iex> Lens2.back |> Lens2.map([:a, :b, :c], fn nil -> :d end)
       [:a, :b, :c, :d]
   """
   @spec back :: t
@@ -169,16 +169,16 @@ defmodule Lens do
   @doc ~S"""
   Returns a lens that focuses on the value under `key`.
 
-      iex> Lens.to_list(Lens.key(:foo), %{foo: 1, bar: 2})
+      iex> Lens2.to_list(Lens2.key(:foo), %{foo: 1, bar: 2})
       [1]
-      iex> Lens.map(Lens.key(:foo), %{foo: 1, bar: 2}, fn x -> x + 10 end)
+      iex> Lens2.map(Lens2.key(:foo), %{foo: 1, bar: 2}, fn x -> x + 10 end)
       %{foo: 11, bar: 2}
 
   If the key doesn't exist in the map a nil will be returned or passed to the update function.
 
-      iex> Lens.to_list(Lens.key(:foo), %{})
+      iex> Lens2.to_list(Lens2.key(:foo), %{})
       [nil]
-      iex> Lens.map(Lens.key(:foo), %{}, fn nil -> 3 end)
+      iex> Lens2.map(Lens2.key(:foo), %{}, fn nil -> 3 end)
       %{foo: 3}
   """
   @spec key(any) :: t
@@ -192,11 +192,11 @@ defmodule Lens do
   @doc ~S"""
   Returns a lens that focuses on the value under the given key. If the key does not exist an error will be raised.
 
-      iex> Lens.key!(:a) |> Lens.one!(%{a: 1, b: 2})
+      iex> Lens2.key!(:a) |> Lens2.one!(%{a: 1, b: 2})
       1
-      iex> Lens.key!(:a) |> Lens.one!([a: 1, b: 2])
+      iex> Lens2.key!(:a) |> Lens2.one!([a: 1, b: 2])
       1
-      iex> Lens.key!(:c) |> Lens.one!(%{a: 1, b: 2})
+      iex> Lens2.key!(:c) |> Lens2.one!(%{a: 1, b: 2})
       ** (KeyError) key :c not found in: %{a: 1, b: 2}
   """
   @spec key!(any) :: t
@@ -210,11 +210,11 @@ defmodule Lens do
   @doc ~S"""
   Returns a lens that focuses on the value under the given key. If they key does not exist it focuses on nothing.
 
-      iex> Lens.key?(:a) |> Lens.to_list(%{a: 1, b: 2})
+      iex> Lens2.key?(:a) |> Lens2.to_list(%{a: 1, b: 2})
       [1]
-      iex> Lens.key?(:a) |> Lens.to_list([a: 1, b: 2])
+      iex> Lens2.key?(:a) |> Lens2.to_list([a: 1, b: 2])
       [1]
-      iex> Lens.key?(:c) |> Lens.to_list(%{a: 1, b: 2})
+      iex> Lens2.key?(:c) |> Lens2.to_list(%{a: 1, b: 2})
       []
   """
   @spec key?(any) :: t
@@ -234,54 +234,54 @@ defmodule Lens do
   @doc ~S"""
   Returns a lens that focuses on the values of all the keys.
 
-      iex> Lens.keys([:a, :c]) |> Lens.to_list(%{a: 1, b: 2, c: 3})
+      iex> Lens2.keys([:a, :c]) |> Lens2.to_list(%{a: 1, b: 2, c: 3})
       [1, 3]
-      iex> Lens.keys([:a, :c]) |> Lens.map([a: 1, b: 2, c: 3], &(&1 + 1))
+      iex> Lens2.keys([:a, :c]) |> Lens2.map([a: 1, b: 2, c: 3], &(&1 + 1))
       [a: 2, b: 2, c: 4]
 
   If any of the keys doesn't exist the update function will receive a nil.
 
-      iex> Lens.keys([:a, :c]) |> Lens.map(%{a: 1, b: 2}, fn nil -> 3; x -> x end)
+      iex> Lens2.keys([:a, :c]) |> Lens2.map(%{a: 1, b: 2}, fn nil -> 3; x -> x end)
       %{a: 1, b: 2, c: 3}
   """
   @spec keys(nonempty_list(any)) :: t
-  deflens keys(keys), do: keys |> Enum.map(&Lens.key/1) |> multiple
+  deflens keys(keys), do: keys |> Enum.map(&Lens2.key/1) |> multiple
 
   @doc ~S"""
   Returns a lens that focuses on the values of all the keys. If any of the keys does not exist, an error is raised.
 
-      iex> Lens.keys!([:a, :c]) |> Lens.to_list(%{a: 1, b: 2, c: 3})
+      iex> Lens2.keys!([:a, :c]) |> Lens2.to_list(%{a: 1, b: 2, c: 3})
       [1, 3]
-      iex> Lens.keys!([:a, :c]) |> Lens.map([a: 1, b: 2, c: 3], &(&1 + 1))
+      iex> Lens2.keys!([:a, :c]) |> Lens2.map([a: 1, b: 2, c: 3], &(&1 + 1))
       [a: 2, b: 2, c: 4]
-      iex> Lens.keys!([:a, :c]) |> Lens.to_list(%{a: 1, b: 2})
+      iex> Lens2.keys!([:a, :c]) |> Lens2.to_list(%{a: 1, b: 2})
       ** (KeyError) key :c not found in: %{a: 1, b: 2}
   """
   @spec keys!(nonempty_list(any)) :: t
-  deflens keys!(keys), do: keys |> Enum.map(&Lens.key!/1) |> multiple
+  deflens keys!(keys), do: keys |> Enum.map(&Lens2.key!/1) |> multiple
 
   @doc ~S"""
   Returns a lens that focuses on the values of all the keys. If any of the keys does not exist, it is ignored.
 
-      iex> Lens.keys?([:a, :c]) |> Lens.to_list(%{a: 1, b: 2, c: 3})
+      iex> Lens2.keys?([:a, :c]) |> Lens2.to_list(%{a: 1, b: 2, c: 3})
       [1, 3]
-      iex> Lens.keys?([:a, :c]) |> Lens.map([a: 1, b: 2, c: 3], &(&1 + 1))
+      iex> Lens2.keys?([:a, :c]) |> Lens2.map([a: 1, b: 2, c: 3], &(&1 + 1))
       [a: 2, b: 2, c: 4]
-      iex> Lens.keys?([:a, :c]) |> Lens.to_list(%{a: 1, b: 2})
+      iex> Lens2.keys?([:a, :c]) |> Lens2.to_list(%{a: 1, b: 2})
       [1]
   """
   @spec keys?(nonempty_list(any)) :: t
-  deflens keys?(keys), do: keys |> Enum.map(&Lens.key?/1) |> multiple
+  deflens keys?(keys), do: keys |> Enum.map(&Lens2.key?/1) |> multiple
 
   @doc ~S"""
   Returns a lens that focuses on all the values in an enumerable.
 
-      iex> Lens.all |> Lens.to_list([1, 2, 3])
+      iex> Lens2.all |> Lens2.to_list([1, 2, 3])
       [1, 2, 3]
 
   Does work with updates but produces a list from any enumerable by default:
 
-      iex> Lens.all |> Lens.map(MapSet.new([1, 2, 3]), &(&1 + 1))
+      iex> Lens2.all |> Lens2.map(MapSet.new([1, 2, 3]), &(&1 + 1))
       [2, 3, 4]
 
   See [into](#into/2) on how to rectify this.
@@ -302,12 +302,12 @@ defmodule Lens do
   @doc ~S"""
   Compose a pair of lens by applying the second to the result of the first
 
-      iex> Lens.seq(Lens.key(:a), Lens.key(:b)) |> Lens.one!(%{a: %{b: 3}})
+      iex> Lens2.seq(Lens2.key(:a), Lens2.key(:b)) |> Lens2.one!(%{a: %{b: 3}})
       3
 
   Piping lenses has the exact same effect:
 
-      iex> Lens.key(:a) |> Lens.key(:b) |> Lens.one!(%{a: %{b: 3}})
+      iex> Lens2.key(:a) |> Lens2.key(:b) |> Lens2.one!(%{a: %{b: 3}})
       3
   """
   @spec seq(t, t) :: t
@@ -325,7 +325,7 @@ defmodule Lens do
   @doc ~S"""
   Combine the composition of both lens with the first one.
 
-      iex> Lens.seq_both(Lens.key(:a), Lens.key(:b)) |> Lens.to_list(%{a: %{b: :c}})
+      iex> Lens2.seq_both(Lens2.key(:a), Lens2.key(:b)) |> Lens2.to_list(%{a: %{b: :c}})
       [:c, %{b: :c}]
   """
   @spec seq_both(t, t) :: t
@@ -342,11 +342,11 @@ defmodule Lens do
       ...>        %{id: 3, items: []}
       ...>      ]}
       ...> ]}
-      iex> lens = Lens.recur(Lens.key(:items) |> Lens.all) |> Lens.key(:id)
-      iex> Lens.to_list(lens, data)
+      iex> lens = Lens2.recur(Lens2.key(:items) |> Lens2.all) |> Lens2.key(:id)
+      iex> Lens2.to_list(lens, data)
       [1, 3, 2]
 
-  Note that it does not focus on the root item. You can remedy that with `Lens.root`:
+  Note that it does not focus on the root item. You can remedy that with `Lens2.root`:
 
 
       iex> data = %{
@@ -358,8 +358,8 @@ defmodule Lens do
       ...>      ]}
       ...>    ]
       ...> }
-      iex> lens = Lens.both(Lens.recur(Lens.key(:items) |> Lens.all), Lens.root) |> Lens.key(:id)
-      iex> Lens.to_list(lens, data)
+      iex> lens = Lens2.both(Lens2.recur(Lens2.key(:items) |> Lens2.all), Lens2.root) |> Lens2.key(:id)
+      iex> Lens2.to_list(lens, data)
       [1, 3, 2, 4]
   """
   @spec recur(t) :: t
@@ -369,15 +369,15 @@ defmodule Lens do
   Just like `recur` but also focuses on the root of the data.
 
       iex> data = {:x, [{:y, []}, {:z, [{:w, []}]}]}
-      iex> Lens.recur_root(Lens.at(1) |> Lens.all()) |> Lens.at(0) |> Lens.to_list(data)
+      iex> Lens2.recur_root(Lens2.at(1) |> Lens2.all()) |> Lens2.at(0) |> Lens2.to_list(data)
       [:y, :w, :z, :x]
   """
-  deflens recur_root(lens), do: Lens.both(Lens.recur(lens), Lens.root())
+  deflens recur_root(lens), do: Lens2.both(Lens2.recur(lens), Lens2.root())
 
   @doc ~s"""
   Returns a lens that focuses on what both the lenses focus on.
 
-      iex> Lens.both(Lens.key(:a), Lens.key(:b) |> Lens.at(1)) |> Lens.to_list(%{a: 1, b: [2, 3]})
+      iex> Lens2.both(Lens2.key(:a), Lens2.key(:b) |> Lens2.at(1)) |> Lens2.to_list(%{a: 1, b: [2, 3]})
       [1, 3]
 
   Bear in mind that what the first lens focuses on will be processed first. Other functions in the library are designed
@@ -385,9 +385,9 @@ defmodule Lens do
   Not adhering to this principle might lead to the second lens not being able to perform its traversal on a changed
   version of the structure.
 
-      iex> Lens.both(Lens.root, Lens.key(:a)) |> Lens.get_and_map(%{a: 1}, fn x -> {x, :foo} end)
+      iex> Lens2.both(Lens2.root, Lens2.key(:a)) |> Lens2.get_and_map(%{a: 1}, fn x -> {x, :foo} end)
       ** (FunctionClauseError) no function clause matching in Access.fetch/2
-      iex> Lens.both(Lens.key(:a), Lens.root) |> Lens.get_and_map(%{a: 1}, fn x -> {x, :foo} end)
+      iex> Lens2.both(Lens2.key(:a), Lens2.root) |> Lens2.get_and_map(%{a: 1}, fn x -> {x, :foo} end)
       {[1, %{a: :foo}], :foo}
   """
   @spec both(t, t) :: t
@@ -404,10 +404,10 @@ defmodule Lens do
   would focus on, it focuses on pairs of the form `{context, part}`, where context is the focus of the first lens in
   which the focus of the second lens was found.
 
-      iex> lens = Lens.context(Lens.keys([:a, :c]), Lens.key(:b) |> Lens.all())
-      iex> Lens.to_list(lens, %{a: %{b: [1, 2]}, c: %{b: [3]}})
+      iex> lens = Lens2.context(Lens2.keys([:a, :c]), Lens2.key(:b) |> Lens2.all())
+      iex> Lens2.to_list(lens, %{a: %{b: [1, 2]}, c: %{b: [3]}})
       [{%{b: [1, 2]}, 1}, {%{b: [1, 2]}, 2}, {%{b: [3]}, 3}]
-      iex> Lens.map(lens, %{a: %{b: [1, 2]}, c: %{b: [3]}}, fn({%{b: bs}, value}) ->
+      iex> Lens2.map(lens, %{a: %{b: [1, 2]}, c: %{b: [3]}}, fn({%{b: bs}, value}) ->
       ...>   length(bs) + value
       ...> end)
       %{a: %{b: [3, 4]}, c: %{b: [4]}}
@@ -424,12 +424,6 @@ defmodule Lens do
     end
   end
 
-  @doc ~S"""
-  Returns a lens that focuses on what all of the supplied lenses focus on.
-
-      iex> Lens.multiple([Lens.key(:a), Lens.key(:b), Lens.root]) |> Lens.to_list(%{a: 1, b: 2})
-      [1, 2, %{a: 1, b: 2}]
-  """
   @spec multiple([t]) :: t
   deflens multiple(lenses), do: lenses |> Enum.reverse() |> Enum.reduce(empty(), &both/2)
 
@@ -437,21 +431,21 @@ defmodule Lens do
   Returns a lens that focuses on what the first lens focuses on, unless it's nothing. In that case the
   lens will focus on what the second lens focuses on.
 
-      iex(1)> get_in(%{a: 1}, [Lens.either(Lens.key?(:a), Lens.key?(:b))])
+      iex(1)> get_in(%{a: 1}, [Lens2.either(Lens2.key?(:a), Lens2.key?(:b))])
       [1]
-      iex(2)> get_in(%{b: 2}, [Lens.either(Lens.key?(:a), Lens.key?(:b))])
+      iex(2)> get_in(%{b: 2}, [Lens2.either(Lens2.key?(:a), Lens2.key?(:b))])
       [2]
 
   It can be used to return a default value:
 
-      iex> get_in([%{id: 8}], [Lens.all |> Lens.filter(&(&1.id == 8)) |> Lens.either(Lens.const(:default))])
+      iex> get_in([%{id: 8}], [Lens2.all |> Lens2.filter(&(&1.id == 8)) |> Lens2.either(Lens2.const(:default))])
       [%{id: 8}]
-      iex> get_in([%{id: 8}], [Lens.all |> Lens.filter(&(&1.id == 1)) |> Lens.either(Lens.const(:default))])
+      iex> get_in([%{id: 8}], [Lens2.all |> Lens2.filter(&(&1.id == 1)) |> Lens2.either(Lens2.const(:default))])
       [:default]
 
   Or to upsert:
 
-      iex> upsert = Lens.all() |> Lens.filter(&(&1[:id] == 1)) |> Lens.either(Lens.front())
+      iex> upsert = Lens2.all() |> Lens2.filter(&(&1[:id] == 1)) |> Lens2.either(Lens2.front())
       iex> update_in([%{id: 0}, %{id: 1}], [upsert], fn _ -> %{id: 1, x: :y} end)
       [%{id: 0}, %{id: 1, x: :y}]
       iex> update_in([%{id: 0}, %{id: 2}], [upsert], fn _ -> %{id: 1, x: :y} end)
@@ -471,19 +465,19 @@ defmodule Lens do
   Returns a lens that does not change the focus of of the given lens, but puts the results into the given collectable
   when updating.
 
-      iex> Lens.into(Lens.all(), MapSet.new) |> Lens.map(MapSet.new([-2, -1, 1, 2]), &(&1 * &1))
+      iex> Lens2.into(Lens2.all(), MapSet.new) |> Lens2.map(MapSet.new([-2, -1, 1, 2]), &(&1 * &1))
       MapSet.new([1, 4])
 
   Notice that collectable composes in a somewhat surprising way, for example:
 
-      iex> Lens.map_values() |> Lens.all() |> Lens.into(%{}) |>
-      ...>   Lens.map(%{key1: %{key2: :value}}, fn {k, v} -> {v, k} end)
+      iex> Lens2.map_values() |> Lens2.all() |> Lens2.into(%{}) |>
+      ...>   Lens2.map(%{key1: %{key2: :value}}, fn {k, v} -> {v, k} end)
       %{key1: [{:value, :key2}]}
 
   To prevent this, avoid using `|>` with `into`:
 
-      iex> Lens.map_values() |> Lens.into(Lens.all(), %{}) |>
-      ...>   Lens.map(%{key1: %{key2: :value}}, fn {k, v} -> {v, k} end)
+      iex> Lens2.map_values() |> Lens2.into(Lens2.all(), %{}) |>
+      ...>   Lens2.map(%{key1: %{key2: :value}}, fn {k, v} -> {v, k} end)
       %{key1: %{value: :key2}}
   """
   @spec into(t, Collectable.t()) :: t
@@ -497,11 +491,11 @@ defmodule Lens do
   @doc ~S"""
   Returns a lens that focuses on a subset of elements focused on by the given lens that satisfy the given condition.
 
-      iex> Lens.map_values() |> Lens.filter(&Integer.is_odd/1) |> Lens.to_list(%{a: 1, b: 2, c: 3, d: 4})
+      iex> Lens2.map_values() |> Lens2.filter(&Integer.is_odd/1) |> Lens2.to_list(%{a: 1, b: 2, c: 3, d: 4})
       [1, 3]
   """
   @spec filter(t, (any -> boolean)) :: t
-  def filter(predicate), do: Lens.root() |> filter(predicate)
+  def filter(predicate), do: Lens2.root() |> filter(predicate)
 
   deflens_raw filter(lens, predicate) do
     fn data, fun ->
@@ -528,7 +522,7 @@ defmodule Lens do
   Returns a lens that focuses on a subset of elements focused on by the given lens that don't satisfy the given
   condition.
 
-      iex> Lens.map_values() |> Lens.reject(&Integer.is_odd/1) |> Lens.to_list(%{a: 1, b: 2, c: 3, d: 4})
+      iex> Lens2.map_values() |> Lens2.reject(&Integer.is_odd/1) |> Lens2.to_list(%{a: 1, b: 2, c: 3, d: 4})
       [2, 4]
   """
   @spec reject(t, (any -> boolean)) :: t
@@ -537,9 +531,9 @@ defmodule Lens do
   @doc ~S"""
   Returns a lens that focuses on all values of a map.
 
-      iex> Lens.map_values() |> Lens.to_list(%{a: 1, b: 2})
+      iex> Lens2.map_values() |> Lens2.to_list(%{a: 1, b: 2})
       [1, 2]
-      iex> Lens.map_values() |> Lens.map(%{a: 1, b: 2}, &(&1 + 1))
+      iex> Lens2.map_values() |> Lens2.map(%{a: 1, b: 2}, &(&1 + 1))
       %{a: 2, b: 3}
   """
   @spec map_values :: t
@@ -548,9 +542,9 @@ defmodule Lens do
   @doc ~S"""
   Returns a lens that focuses on all keys of a map.
 
-      iex> Lens.map_keys() |> Lens.to_list(%{a: 1, b: 2})
+      iex> Lens2.map_keys() |> Lens2.to_list(%{a: 1, b: 2})
       [:a, :b]
-      iex> Lens.map_keys() |> Lens.map(%{1 => :a, 2 => :b}, &(&1 + 1))
+      iex> Lens2.map_keys() |> Lens2.map(%{1 => :a, 2 => :b}, &(&1 + 1))
       %{2 => :a, 3 => :b}
   """
   @spec map_keys :: t
@@ -559,7 +553,7 @@ defmodule Lens do
   @doc ~S"""
   Returns a list of values that the lens focuses on in the given data.
 
-      iex> Lens.keys([:a, :c]) |> Lens.to_list(%{a: 1, b: 2, c: 3})
+      iex> Lens2.keys([:a, :c]) |> Lens2.to_list(%{a: 1, b: 2, c: 3})
       [1, 3]
   """
   @spec to_list(t, any) :: list(any)
@@ -569,7 +563,7 @@ defmodule Lens do
   Performs a side effect for each values this lens focuses on in the given data.
 
       iex> data = %{a: 1, b: 2, c: 3}
-      iex> fun = fn -> Lens.keys([:a, :c]) |> Lens.each(data, &IO.inspect/1) end
+      iex> fun = fn -> Lens2.keys([:a, :c]) |> Lens2.each(data, &IO.inspect/1) end
       iex> import ExUnit.CaptureIO
       iex> capture_io(fun)
       "1\n3\n"
@@ -582,7 +576,7 @@ defmodule Lens do
   a data structure of the same shape with the updated values in place of the original ones.
 
       iex> data = [1, 2, 3, 4]
-      iex> Lens.all() |> Lens.filter(&Integer.is_odd/1) |> Lens.map(data, fn v -> v + 10 end)
+      iex> Lens2.all() |> Lens2.filter(&Integer.is_odd/1) |> Lens2.map(data, fn v -> v + 10 end)
       [11, 2, 13, 4]
   """
   @spec map(t, any, (any -> any)) :: any
@@ -592,7 +586,7 @@ defmodule Lens do
   Returns an updated version of the data by replacing each spot the lens focuses on with the given value.
 
       iex> data = [1, 2, 3, 4]
-      iex> Lens.all() |> Lens.filter(&Integer.is_odd/1) |> Lens.put(data, 0)
+      iex> Lens2.all() |> Lens2.filter(&Integer.is_odd/1) |> Lens2.put(data, 0)
       [0, 2, 0, 4]
   """
   @spec put(t, any, any) :: any
@@ -603,9 +597,9 @@ defmodule Lens do
   transformation function must return a tuple `{value_to_return, value_to_update}`.
 
       iex> data = %{a: 1, b: 2, c: 3}
-      iex> Lens.keys([:a, :b, :c])
-      ...> |> Lens.filter(&Integer.is_odd/1)
-      ...> |> Lens.get_and_map(data, fn v -> {v + 1, v + 10} end)
+      iex> Lens2.keys([:a, :b, :c])
+      ...> |> Lens2.filter(&Integer.is_odd/1)
+      ...> |> Lens2.get_and_map(data, fn v -> {v + 1, v + 10} end)
       {[2, 4], %{a: 11, b: 2, c: 13}}
   """
   @spec get_and_map(t, any, (any -> {any, any})) :: {list(any), any}

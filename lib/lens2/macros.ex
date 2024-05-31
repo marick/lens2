@@ -1,8 +1,8 @@
-defmodule Lens.Macros do
+defmodule Lens2.Macros do
   defmacro __using__(_) do
     quote do
-      require Lens.Macros
-      import Lens.Macros
+      require Lens2.Macros
+      import Lens2.Macros
     end
   end
 
@@ -14,7 +14,7 @@ defmodule Lens.Macros do
   Is equivalent to:
 
       def some_lens(foo, bar), do: some_lens_combination(foo, bar)
-      def some_lens(previous, foo, bar), do: Lens.seq(previous, some_lens_combination(foo, bar))
+      def some_lens(previous, foo, bar), do: Lens2.seq(previous, some_lens_combination(foo, bar))
   """
   defmacro deflens(header = {name, _, args}, do: body) do
     args =
@@ -28,7 +28,7 @@ defmodule Lens.Macros do
 
       @doc false
       def unquote(name)(previous, unquote_splicing(args)) do
-        Lens.seq(previous, unquote(name)(unquote_splicing(args)))
+        Lens2.seq(previous, unquote(name)(unquote_splicing(args)))
       end
     end
   end
@@ -48,7 +48,7 @@ defmodule Lens.Macros do
 
       @doc false
       defp unquote(name)(previous, unquote_splicing(args)) do
-        Lens.seq(previous, unquote(name)(unquote_splicing(args)))
+        Lens2.seq(previous, unquote(name)(unquote_splicing(args)))
       end
     end
   end
@@ -77,7 +77,7 @@ defmodule Lens.Macros do
 
       @doc false
       def unquote(name)(previous, unquote_splicing(args)) do
-        Lens.seq(previous, unquote(name)(unquote_splicing(args)))
+        Lens2.seq(previous, unquote(name)(unquote_splicing(args)))
       end
     end
   end
