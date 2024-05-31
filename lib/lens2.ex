@@ -1,95 +1,32 @@
 defmodule Lens2 do
   use Lens2.Macros
-  alias Lens2.{Basic, Listlike}
+  alias Lens2.{Basic, Listlike, Combine}
   alias Lens2.Helpers.DefOps
   import Lens2.Helpers.Delegate
-
-
 
 
   @opaque t :: (:get, any, function -> list(any)) | (:get_kand_update, any, function -> {list(any), any})
 
   delegate_to(Basic, [
-    root(),
+    root(),              root(lens),
+    empty(),             empty(lens),
+    const(value),        const(lens, value)
   ])
 
   delegate_to(Listlike, [
-    front(),
-    back(),
-    before(index),
-    behind(index),
+    front(),              front(lens),
+    back(),               back(lens),
+    before(index),        before(lens, index),
+    behind(index),        behind(lens, index),
+    at(index),            at(lens, index),
+    index(index),         index(lens, index),
+  ])
+
+  delegate_to(Combine, [
+    match(matcher_fun),   match(lens, matcher_fun)
   ])
 
 
-  @doc ~S"""
-  Returns a lens that does not focus on any part of the data.
-
-      iex> Lens2.empty |> Lens2.to_list(:anything)
-      []
-      iex> Lens2.empty |> Lens2.map(1, &(&1 + 1))
-      1
-  """
-  @spec empty :: t
-  deflens_raw empty, do: fn data, _fun -> {[], data} end
-
-  @doc ~S"""
-  Returns a lens that ignores the data and always focuses on the given value.
-
-      iex> Lens2.const(3) |> Lens2.one!(:anything)
-      3
-      iex> Lens2.const(3) |> Lens2.map(1, &(&1 + 1))
-      4
-      iex> import Integer
-      iex> lens = Lens2.keys([:a, :b]) |> Lens2.match(fn v -> if is_odd(v), do: Lens2.root, else: Lens2.const(0) end)
-      iex> Lens2.map(lens, %{a: 11, b: 12}, &(&1 + 1))
-      %{a: 12, b: 1}
-  """
-  @spec const(any) :: t
-  deflens_raw const(value) do
-    fn _data, fun ->
-      {res, updated} = fun.(value)
-      {[res], updated}
-    end
-  end
-
-  @doc ~S"""
-  Select the lens to use based on a matcher function
-
-      iex> selector = fn
-      ...>   {:a, _} -> Lens2.at(1)
-      ...>   {:b, _, _} -> Lens2.at(2)
-      ...> end
-      iex> Lens2.match(selector) |> Lens2.one!({:b, 2, 3})
-      3
-  """
-  @spec match((any -> t)) :: t
-  deflens_raw match(matcher_fun) do
-    fn data, fun ->
-      get_and_map(matcher_fun.(data), data, fun)
-    end
-  end
-
-  @doc ~S"""
-  Returns a lens that focuses on the n-th element of a list or tuple.
-
-      iex> Lens2.at(2) |> Lens2.one!({:a, :b, :c})
-      :c
-      iex> Lens2.at(1) |> Lens2.map([:a, :b, :c], fn :b -> :d end)
-      [:a, :d, :c]
-  """
-  @spec at(non_neg_integer) :: t
-  deflens_raw at(index) do
-    fn data, fun ->
-      {res, updated} = fun.(DefOps.at(data, index))
-      {[res], DefOps.put_at(data, index, updated)}
-    end
-  end
-
-  @doc ~S"""
-  An alias for `at`.
-  """
-  @spec index(non_neg_integer) :: t
-  deflens index(index), do: at(index)
 
   @doc ~S"""
   Returns a lens that focuses on all of the supplied indices.
