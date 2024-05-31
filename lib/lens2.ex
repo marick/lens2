@@ -1,5 +1,7 @@
 defmodule Lens2 do
   use Lens2.Macros
+  alias Lens2.{Defops}
+
 
   @opaque t :: (:get, any, function -> list(any)) | (:get_and_update, any, function -> {list(any), any})
 
@@ -80,8 +82,8 @@ defmodule Lens2 do
   @spec at(non_neg_integer) :: t
   deflens_raw at(index) do
     fn data, fun ->
-      {res, updated} = fun.(get_at_index(data, index))
-      {[res], set_at_index(data, index, updated)}
+      {res, updated} = fun.(Defops.at(data, index))
+      {[res], Defops.put_at(data, index, updated)}
     end
   end
 
@@ -184,8 +186,8 @@ defmodule Lens2 do
   @spec key(any) :: t
   deflens_raw key(key) do
     fn data, fun ->
-      {res, updated} = fun.(get_at_key(data, key))
-      {[res], set_at_key(data, key, updated)}
+      {res, updated} = fun.(Defops.get(data, key))
+      {[res], Defops.put(data, key, updated)}
     end
   end
 
@@ -202,8 +204,8 @@ defmodule Lens2 do
   @spec key!(any) :: t
   deflens_raw key!(key) do
     fn data, fun ->
-      {res, updated} = fun.(fetch_at_key!(data, key))
-      {[res], set_at_key(data, key, updated)}
+      {res, updated} = fun.(Defops.fetch!(data, key))
+      {[res], Defops.put(data, key, updated)}
     end
   end
 
@@ -220,13 +222,13 @@ defmodule Lens2 do
   @spec key?(any) :: t
   deflens_raw key?(key) do
     fn data, fun ->
-      case fetch_at_key(data, key) do
+      case Defops.fetch(data, key) do
         :error ->
           {[], data}
 
         {:ok, value} ->
           {res, updated} = fun.(value)
-          {[res], set_at_key(data, key, updated)}
+          {[res], Defops.put(data, key, updated)}
       end
     end
   end
@@ -626,36 +628,4 @@ defmodule Lens2 do
     {Enum.concat(res), changed}
   end
 
-  defp get_at_key(data, key) do
-    case fetch_at_key(data, key) do
-      :error -> nil
-      {:ok, value} -> value
-    end
-  end
-
-  defp set_at_key(data, key, value) when is_map(data), do: Map.put(data, key, value)
-
-  defp set_at_key(data, key, value) do
-    {_, updated} = Access.get_and_update(data, key, fn _ -> {nil, value} end)
-    updated
-  end
-
-  defp fetch_at_key!(data, key) do
-    case fetch_at_key(data, key) do
-      :error -> raise(KeyError, key: key, term: data)
-      {:ok, value} -> value
-    end
-  end
-
-  defp fetch_at_key(data, key) when is_map(data), do: Map.fetch(data, key)
-  defp fetch_at_key(data, key), do: Access.fetch(data, key)
-
-  defp get_at_index(data, index) when is_tuple(data), do: elem(data, index)
-  defp get_at_index(data, index), do: Enum.at(data, index)
-
-  defp set_at_index(data, index, value) when is_tuple(data), do: put_elem(data, index, value)
-
-  defp set_at_index(data, index, value) when is_list(data) do
-    List.update_at(data, index, fn _ -> value end)
-  end
 end
