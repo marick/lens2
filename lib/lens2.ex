@@ -1,9 +1,18 @@
 defmodule Lens2 do
   use Lens2.Macros
-  alias Lens2.{Defops}
+  alias Lens2.{DefOps, Basic, Listlike}
 
 
-  @opaque t :: (:get, any, function -> list(any)) | (:get_and_update, any, function -> {list(any), any})
+  # I'm deliberately making this non-opaque because it's important people understand
+  # that lenses are functions and that it's *lists* that are retrieved.
+  @type t :: (:get, any, function -> list(any)) | (:get_kand_update, any, function -> {list(any), any})
+
+  defdelegate root(), to: Basic
+
+  defdelegate front(), to: Listlike
+  defdelegate back(), to: Listlike
+  defdelegate before(index), to: Listlike
+
 
   @doc ~S"""
   Returns a lens that does not focus on any part of the data.
@@ -37,24 +46,6 @@ defmodule Lens2 do
   end
 
   @doc ~S"""
-  Returns a lens that yields the entirety of the data currently under focus.
-
-      iex> Lens2.to_list(Lens2.root, :data)
-      [:data]
-      iex> Lens2.map(Lens2.root, :data, fn :data -> :other_data end)
-      :other_data
-      iex> Lens2.key(:a) |> Lens2.both(Lens2.root, Lens2.key(:b)) |> Lens2.to_list(%{a: %{b: 1}})
-      [%{b: 1}, 1]
-  """
-  @spec root :: t
-  deflens_raw root do
-    fn data, fun ->
-      {res, updated} = fun.(data)
-      {[res], updated}
-    end
-  end
-
-  @doc ~S"""
   Select the lens to use based on a matcher function
 
       iex> selector = fn
@@ -82,8 +73,8 @@ defmodule Lens2 do
   @spec at(non_neg_integer) :: t
   deflens_raw at(index) do
     fn data, fun ->
-      {res, updated} = fun.(Defops.at(data, index))
-      {[res], Defops.put_at(data, index, updated)}
+      {res, updated} = fun.(DefOps.at(data, index))
+      {[res], DefOps.put_at(data, index, updated)}
     end
   end
 
@@ -104,69 +95,7 @@ defmodule Lens2 do
   @spec indices([non_neg_integer]) :: t
   deflens indices(indices), do: indices |> Enum.map(&index/1) |> multiple
 
-  @doc ~S"""
-  Returns a lens that focuses between a given index and the previous one in a list. It will always return a nil when
-  accessing, but can be used to insert elements.
 
-      iex> Lens2.before(2) |> Lens2.one!([:a, :b, :c])
-      nil
-      iex> Lens2.before(2) |> Lens2.map([:a, :b, :c], fn nil -> :d end)
-      [:a, :b, :d, :c]
-  """
-  @spec before(non_neg_integer) :: t
-  deflens_raw before(index) do
-    fn data, fun ->
-      {res, item} = fun.(nil)
-      {init, tail} = Enum.split(data, index)
-      {[res], init ++ [item] ++ tail}
-    end
-  end
-
-  @doc ~S"""
-  Returns a lens that focuses between a given index and the next one in a list. It will always return a nil when
-  accessing, but can be used to insert elements.
-
-      iex> Lens2.behind(1) |> Lens2.one!([:a, :b, :c])
-      nil
-      iex> Lens2.behind(1) |> Lens2.map([:a, :b, :c], fn nil -> :d end)
-      [:a, :b, :d, :c]
-  """
-  @spec behind(non_neg_integer) :: t
-  deflens_raw behind(index) do
-    fn data, fun ->
-      {res, item} = fun.(nil)
-      {init, tail} = Enum.split(data, index + 1)
-      {[res], init ++ [item] ++ tail}
-    end
-  end
-
-  @doc ~S"""
-  Returns a lens that focuses before the first element of a list. It will always return a nil when accessing, but can
-  be used to prepend elements.
-
-      iex> Lens2.front |> Lens2.one!([:a, :b, :c])
-      nil
-      iex> Lens2.front |> Lens2.map([:a, :b, :c], fn nil -> :d end)
-      [:d, :a, :b, :c]
-  """
-  @spec front :: t
-  deflens front, do: before(0)
-
-  @doc ~S"""
-  Returns a lens that focuses after the last element of a list. It will always return a nil when accessing, but can
-  be used to append elements.
-
-      iex> Lens2.back |> Lens2.one!([:a, :b, :c])
-      nil
-      iex> Lens2.back |> Lens2.map([:a, :b, :c], fn nil -> :d end)
-      [:a, :b, :c, :d]
-  """
-  @spec back :: t
-  deflens_raw back do
-    fn data, fun ->
-      data |> Enum.count() |> behind |> get_and_map(data, fun)
-    end
-  end
 
   @doc ~S"""
   Returns a lens that focuses on the value under `key`.
@@ -186,8 +115,8 @@ defmodule Lens2 do
   @spec key(any) :: t
   deflens_raw key(key) do
     fn data, fun ->
-      {res, updated} = fun.(Defops.get(data, key))
-      {[res], Defops.put(data, key, updated)}
+      {res, updated} = fun.(DefOps.get(data, key))
+      {[res], DefOps.put(data, key, updated)}
     end
   end
 
@@ -204,8 +133,8 @@ defmodule Lens2 do
   @spec key!(any) :: t
   deflens_raw key!(key) do
     fn data, fun ->
-      {res, updated} = fun.(Defops.fetch!(data, key))
-      {[res], Defops.put(data, key, updated)}
+      {res, updated} = fun.(DefOps.fetch!(data, key))
+      {[res], DefOps.put(data, key, updated)}
     end
   end
 
@@ -222,13 +151,13 @@ defmodule Lens2 do
   @spec key?(any) :: t
   deflens_raw key?(key) do
     fn data, fun ->
-      case Defops.fetch(data, key) do
+      case DefOps.fetch(data, key) do
         :error ->
           {[], data}
 
         {:ok, value} ->
           {res, updated} = fun.(value)
-          {[res], Defops.put(data, key, updated)}
+          {[res], DefOps.put(data, key, updated)}
       end
     end
   end
@@ -595,19 +524,6 @@ defmodule Lens2 do
   def put(lens, data, value), do: put_in(data, [lens], value)
 
   @doc ~S"""
-  Returns an updated version of the data and a transformed value from each location the lens focuses on. The
-  transformation function must return a tuple `{value_to_return, value_to_update}`.
-
-      iex> data = %{a: 1, b: 2, c: 3}
-      iex> Lens2.keys([:a, :b, :c])
-      ...> |> Lens2.filter(&Integer.is_odd/1)
-      ...> |> Lens2.get_and_map(data, fn v -> {v + 1, v + 10} end)
-      {[2, 4], %{a: 11, b: 2, c: 13}}
-  """
-  @spec get_and_map(t, any, (any -> {any, any})) :: {list(any), any}
-  def get_and_map(lens, data, fun), do: get_and_update_in(data, [lens], fun)
-
-  @doc ~S"""
   Executes `to_list` and returns the single item that the given lens focuses on for the given data. Crashes if there
   is more than one item.
   """
@@ -627,5 +543,9 @@ defmodule Lens2 do
 
     {Enum.concat(res), changed}
   end
+
+  ### T#EMPe
+  def get_and_map(lens, data, fun), do: get_and_update_in(data, [lens], fun)
+
 
 end

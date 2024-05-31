@@ -1,4 +1,4 @@
-defmodule Lens2.Defops do
+defmodule Lens2.DefOps do
   @moduledoc false
 
 
