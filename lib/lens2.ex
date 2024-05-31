@@ -1,17 +1,24 @@
 defmodule Lens2 do
   use Lens2.Macros
-  alias Lens2.{DefOps, Basic, Listlike}
+  alias Lens2.{Basic, Listlike}
+  alias Lens2.Helpers.DefOps
+  import Lens2.Helpers.Delegate
 
 
-  # I'm deliberately making this non-opaque because it's important people understand
-  # that lenses are functions and that it's *lists* that are retrieved.
-  @type t :: (:get, any, function -> list(any)) | (:get_kand_update, any, function -> {list(any), any})
 
-  defdelegate root(), to: Basic
 
-  defdelegate front(), to: Listlike
-  defdelegate back(), to: Listlike
-  defdelegate before(index), to: Listlike
+  @opaque t :: (:get, any, function -> list(any)) | (:get_kand_update, any, function -> {list(any), any})
+
+  delegate_to(Basic, [
+    root(),
+  ])
+
+  delegate_to(Listlike, [
+    front(),
+    back(),
+    before(index),
+    behind(index),
+  ])
 
 
   @doc ~S"""
