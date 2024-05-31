@@ -1,21 +1,4 @@
 # Lens2
 
-**TODO: Add description**
-
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `lens2` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:lens2, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/lens2>.
-
+Descended from the Lens library, it hopes there can be lens interface that is so similar to the (say) `Map` interface that client code doesn't have to *care* where, within a nested structure, the data that has to change lives,  has a
+ridiculous amount of documention, and wants to collect a good number of common idioms.
