@@ -8,22 +8,22 @@ defmodule Lens2 do
   @opaque t :: (:get, any, function -> list(any)) | (:get_kand_update, any, function -> {list(any), any})
 
   delegate_to(Basic, [
-    root(),              root(lens),
-    empty(),             empty(lens),
-    const(value),        const(lens, value)
+    const(value),
+    empty(),
+    root(),
   ])
 
   delegate_to(Listlike, [
-    front(),              front(lens),
-    back(),               back(lens),
-    before(index),        before(lens, index),
-    behind(index),        behind(lens, index),
-    at(index),            at(lens, index),
-    index(index),         index(lens, index),
+    at(index),
+    back(),
+    before(index),
+    behind(index),
+    front(),
+    index(index),
   ])
 
   delegate_to(Combine, [
-    match(matcher_fun),   match(lens, matcher_fun)
+    match(matcher_fun),
   ])
 
 
