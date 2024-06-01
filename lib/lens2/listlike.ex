@@ -1,6 +1,7 @@
 defmodule Lens2.Listlike do
   use Lens2.Macros
   alias Lens2.Helpers.DefOps
+  alias Lens2.{Combine}
 
   @opaque lens :: function
 
@@ -95,8 +96,22 @@ defmodule Lens2.Listlike do
   @spec index(non_neg_integer) :: lens
   deflens index(index), do: at(index)
 
+
+
   ### T#EMPe
   defp get_and_map(lens, data, fun), do: get_and_update_in(data, [lens], fun)
+
+  @doc ~S"""
+  Returns a lens that focuses on all of the supplied indices.
+
+      iex> Lens2.indices([0, 2]) |> Lens2.to_list([:a, :b, :c])
+      [:a, :c]
+      iex> Lens2.indices([0, 2]) |> Lens2.map([1, 2, 3], &(&1 + 1))
+      [2, 2, 4]
+  """
+  @spec indices([non_neg_integer]) :: lens
+  deflens indices(indices), do: indices |> Enum.map(&index/1) |> Combine.multiple
+
 
 
 
