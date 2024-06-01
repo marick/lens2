@@ -2,6 +2,7 @@ defmodule Lens2.Listlike do
   use Lens2.Macros
   alias Lens2.Helpers.DefOps
   alias Lens2.{Combine}
+  alias Lens2.Operations, as: A
 
   @opaque lens :: function
 
@@ -32,7 +33,7 @@ defmodule Lens2.Listlike do
   @spec back :: lens
   deflens_raw back do
     fn data, fun ->
-      data |> Enum.count() |> behind |> get_and_map(data, fun)
+      data |> Enum.count() |> behind |> A.get_and_map(data, fun)
     end
   end
 
@@ -98,8 +99,6 @@ defmodule Lens2.Listlike do
 
 
 
-  ### T#EMPe
-  defp get_and_map(lens, data, fun), do: get_and_update_in(data, [lens], fun)
 
   @doc ~S"""
   Returns a lens that focuses on all of the supplied indices.

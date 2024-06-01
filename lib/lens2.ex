@@ -4,7 +4,7 @@ defmodule Lens2 do
   import Lens2.Helpers.Delegate
 
 
-  @opaque t :: (:get, any, function -> list(any)) | (:get_kand_update, any, function -> {list(any), any})
+  @opaque t :: (:get, any, function -> list(any)) | (:get_and_update, any, function -> {list(any), any})
 
 
   delegate_to(Basic, [

@@ -1,5 +1,6 @@
 defmodule Lens2.Basic do
   import Lens2.Macros
+  alias Lens2.Operations, as: A
 
   @opaque lens :: function
 
@@ -102,7 +103,7 @@ defmodule Lens2.Basic do
   @spec into(lens, Collectable.t()) :: lens
   deflens_raw into(lens, collectable) do
     fn data, fun ->
-      {res, updated} = get_and_map(lens, data, fun)
+      {res, updated} = A.get_and_map(lens, data, fun)
       {res, Enum.into(updated, collectable)}
     end
   end
@@ -119,7 +120,7 @@ defmodule Lens2.Basic do
   deflens_raw filter(lens, predicate) do
     fn data, fun ->
       {res, changed} =
-        get_and_map(lens, data, fn item ->
+        A.get_and_map(lens, data, fn item ->
           if predicate.(item) do
             {res, changed} = fun.(item)
             {[res], changed}
@@ -144,9 +145,6 @@ defmodule Lens2.Basic do
   @spec reject(lens, (any -> boolean)) :: lens
   def reject(lens, predicate), do: filter(lens, &(not predicate.(&1)))
 
-
-  ### T#EMPe
-  defp get_and_map(lens, data, fun), do: get_and_update_in(data, [lens], fun)
 
 
 

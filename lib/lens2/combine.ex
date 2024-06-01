@@ -1,6 +1,7 @@
 defmodule Lens2.Combine do
   import Lens2.Macros
   alias Lens2.Basic
+  alias Lens2.Operations, as: A
 
   @opaque lens :: function
 
@@ -17,7 +18,7 @@ defmodule Lens2.Combine do
   @spec match((any -> lens)) :: lens
   deflens_raw match(matcher_fun) do
     fn data, fun ->
-      get_and_map(matcher_fun.(data), data, fun)
+      A.get_and_map(matcher_fun.(data), data, fun)
     end
   end
 
@@ -44,8 +45,8 @@ defmodule Lens2.Combine do
   @spec both(lens, lens) :: lens
   deflens_raw both(lens1, lens2) do
     fn data, fun ->
-      {res1, changed1} = get_and_map(lens1, data, fun)
-      {res2, changed2} = get_and_map(lens2, changed1, fun)
+      {res1, changed1} = A.get_and_map(lens1, data, fun)
+      {res2, changed2} = A.get_and_map(lens2, changed1, fun)
       {res1 ++ res2, changed2}
     end
   end
@@ -66,7 +67,7 @@ defmodule Lens2.Combine do
   deflens_raw seq(lens1, lens2) do
     fn data, fun ->
       {res, changed} =
-        get_and_map(lens1, data, fn item ->
+        A.get_and_map(lens1, data, fn item ->
           get_and_map(lens2, item, fun)
         end)
 
@@ -133,7 +134,7 @@ defmodule Lens2.Combine do
 
   defp do_recur(lens, data, fun) do
     {res, changed} =
-      get_and_map(lens, data, fn item ->
+      A.get_and_map(lens, data, fn item ->
         {results, changed1} = do_recur(lens, item, fun)
         {res_parent, changed2} = fun.(changed1)
         {results ++ [res_parent], changed2}
@@ -159,8 +160,8 @@ defmodule Lens2.Combine do
   deflens_raw context(context_lens, item_lens) do
     fn data, fun ->
       {results, changed} =
-        get_and_map(context_lens, data, fn context ->
-          get_and_map(item_lens, context, fn item -> fun.({context, item}) end)
+        A.get_and_map(context_lens, data, fn context ->
+          A.get_and_map(item_lens, context, fn item -> fun.({context, item}) end)
         end)
 
       {Enum.concat(results), changed}
@@ -195,7 +196,7 @@ defmodule Lens2.Combine do
   deflens_raw either(lens, other_lens) do
     fn data, fun ->
       case get_and_map(lens, data, fun) do
-        {[], _updated} -> get_and_map(other_lens, data, fun)
+        {[], _updated} -> A.get_and_map(other_lens, data, fun)
         {res, updated} -> {res, updated}
       end
     end
