@@ -44,3 +44,5 @@ I thought `Access.all` would work on a `Map`, producing a list of `{key, value}`
 ```
      ** (RuntimeError) Access.all/0 expected a list, got: %{gate: %Cluster{downstream: MapSet.new([:big_edit, :has_fragments]), name: :gate}, watcher: %Cluster{downstream: MapSet.new([]), name: :watcher}}
 ```
+
+See [the tests](https://github.com/marick/lens2/blob/main/test/mostly_words/tutorial/why_lenses_test.exs)
