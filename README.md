@@ -19,8 +19,8 @@ point?
    This package is a place to put lots of explanatory and tutorial
    documentation.
    
-2. The API for *making* lenses is the same as the one for *using* lenses.
-   I like the one for making lenses, but I think the one for using lenses
+2. In [`Lens`](https://hexdocs.pm/lens/readme.html), the API for *making* lenses is the same as the one for *using* lenses. (The same is true for `Access`.)
+   I like the functions for making lenses, but I think the ones for using lenses
    should look like the familiar `get`/`put`/`update` (or `get_in`, etc.)
    So, you can create a lens that points into a data structure and names
    a few keys in there:
