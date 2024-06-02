@@ -1,7 +1,7 @@
 defmodule Lens2 do
   defmacro __using__(_opts \\ []) do
     quote do
-      import Lens2.Lenses.{Basic, Listlike, Combine, Maplike, Operations}
+      alias Lens2.Lenses.All, as: Lens
       import Lens2.Compatible.Macros
       alias Lens2.Deeply
     end
