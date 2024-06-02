@@ -1,4 +1,4 @@
-defmodule Lens2.Compatibility.MaplikeTest do
+defmodule Lens2.Compatibility.KeyedTest do
   use ExUnit.Case
   require Integer
   use Lens2.Compatible

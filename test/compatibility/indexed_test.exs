@@ -1,4 +1,4 @@
-defmodule Lens2.Compatibility.ListlikeTest do
+defmodule Lens2.Compatibility.IndexedTest do
   use ExUnit.Case
   require Integer
   use Lens2.Compatible

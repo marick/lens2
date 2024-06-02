@@ -3,7 +3,7 @@ defmodule Lens2.Compatible.OriginalLenses do
   defmacro __using__(_) do
     quote do
 
-  alias Lens2.Lenses.{Basic, Listlike, Combine, Maplike}
+  alias Lens2.Lenses.{Basic, Indexed, Combine, Keyed}
   import Lens2.Helpers.Delegate
 
 
@@ -20,7 +20,7 @@ defmodule Lens2.Compatible.OriginalLenses do
   defdelegate filter(predicate), to: Basic
   defdelegate reject(lens, predicate), to: Basic
 
-  delegate_to(Listlike, [
+  delegate_to(Indexed, [
     at(index),
     back(),
     before(index),
@@ -42,7 +42,7 @@ defmodule Lens2.Compatible.OriginalLenses do
     either(lens1, fallback),
   ])
 
-  delegate_to(Maplike, [
+  delegate_to(Keyed, [
     key(key),
     key!(key),
     key?(key),

@@ -1,4 +1,4 @@
-defmodule Lens2.Lenses.Maplike do
+defmodule Lens2.Lenses.Keyed do
   @moduledoc """
   Lenses helpful for working with `Map`s and `Keyword` lists.
 
@@ -6,7 +6,7 @@ defmodule Lens2.Lenses.Maplike do
   """
   use Lens2.Deflens
   alias Lens2.Helpers.DefOps
-  alias Lens2.Lenses.{Basic,Combine,Listlike}
+  alias Lens2.Lenses.{Basic,Combine,Indexed}
 
   @type lens :: Access.access_fun
 
@@ -85,12 +85,12 @@ defmodule Lens2.Lenses.Maplike do
 
   """
   @spec map_values :: lens
-  deflens map_values, do: Basic.all() |> Basic.into(%{}) |> Listlike.at(1)
+  deflens map_values, do: Basic.all() |> Basic.into(%{}) |> Indexed.at(1)
 
   @doc ~S"""
   Returns a lens that focuses on all keys of a map.
 
   """
   @spec map_keys :: lens
-  deflens map_keys, do: Basic.all() |> Basic.into(%{}) |> Listlike.at(0)
+  deflens map_keys, do: Basic.all() |> Basic.into(%{}) |> Indexed.at(0)
 end

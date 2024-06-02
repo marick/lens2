@@ -1,9 +1,10 @@
-defmodule Lens2.Lenses.Listlike do
+defmodule Lens2.Lenses.Indexed do
   @moduledoc """
-  Lenses that work on `Enumerable`s and `Tuple`s.
+  Lenses meaningful for containers whose elements are ordered, like `List` and `Tuple`.
 
-  Note that, while `Map`s and `Keyword` lists are enumerables, you probably want the
-  lenses in `MapLike`.
+  These will work on any `Enumerable`, like a `Map` or a `Keyword` list, but you probably want the
+  lenses in `Keyed` for those.
+
   """
   use Lens2.Deflens
   alias Lens2.Helpers.DefOps
