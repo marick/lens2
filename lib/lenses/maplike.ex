@@ -1,4 +1,9 @@
 defmodule Lens2.Lenses.Maplike do
+  @moduledoc """
+  Lenses helpful for working with `Map`s and `Keyword` lists.
+
+
+  """
   use Lens2.Deflens
   alias Lens2.Helpers.DefOps
   alias Lens2.Lenses.{Basic,Combine,Listlike}

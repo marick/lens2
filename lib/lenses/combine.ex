@@ -1,4 +1,9 @@
 defmodule Lens2.Lenses.Combine do
+  @moduledoc """
+  Lenses that combine lenses to get new lenses.
+
+
+  """
   use Lens2.Deflens
   alias Lens2.Lenses.Basic
   alias Lens2.Compatible.Operations

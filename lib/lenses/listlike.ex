@@ -1,4 +1,10 @@
 defmodule Lens2.Lenses.Listlike do
+  @moduledoc """
+  Lenses that work on `Enumerable`s and `Tuple`s.
+
+  Note that, while `Map`s and `Keyword` lists are enumerables, you probably want the
+  lenses in `MapLike`.
+  """
   use Lens2.Deflens
   alias Lens2.Helpers.DefOps
   alias Lens2.Lenses.Combine

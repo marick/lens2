@@ -1,4 +1,9 @@
 defmodule Lens2.Compatible do
+  @moduledoc """
+  `Use` this module to get the API of the original `Lens` package.
+
+
+  """
 
   defmacro __using__(_opts \\ []) do
     quote do

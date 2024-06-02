@@ -1,4 +1,9 @@
 defmodule Lens2.Lenses.Basic do
+  @moduledoc """
+  Lenses that work on miscellaneous data structures. Ones that don't fit elsewhere.
+
+
+  """
   use Lens2.Deflens
   alias Lens2.Compatible.Operations
 
