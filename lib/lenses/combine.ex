@@ -42,7 +42,7 @@ defmodule Lens2.Lenses.Combine do
     fn data, fun ->
       {res, changed} =
         Operations.get_and_map(lens1, data, fn item ->
-          get_and_map(lens2, item, fun)
+          Operations.get_and_map(lens2, item, fun)
         end)
 
       {Enum.concat(res), changed}
@@ -98,17 +98,10 @@ defmodule Lens2.Lenses.Combine do
   @spec either(lens, lens) :: lens
   deflens_raw either(lens, other_lens) do
     fn data, fun ->
-      case get_and_map(lens, data, fun) do
+      case Operations.get_and_map(lens, data, fun) do
         {[], _updated} -> Operations.get_and_map(other_lens, data, fun)
         {res, updated} -> {res, updated}
       end
     end
   end
-
-
-  ### T#EMPe
-  defp get_and_map(lens, data, fun), do: get_and_update_in(data, [lens], fun)
-
-
-
 end

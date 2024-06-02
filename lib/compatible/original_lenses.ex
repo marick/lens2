@@ -18,7 +18,7 @@ defmodule Lens2.Compatible.OriginalLenses do
 
   # This arity is specially defined - not via deflens - so can't be part of `delegate_to`.
   defdelegate filter(predicate), to: Basic
-
+  defdelegate reject(lens, predicate), to: Basic
 
   delegate_to(Listlike, [
     at(index),
