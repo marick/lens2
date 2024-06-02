@@ -1,10 +1,12 @@
-defmodule Lens2.Macros do
+defmodule Lens2.Compatible.Macros do
   defmacro __using__(_) do
     quote do
-      require Lens2.Macros
-      import Lens2.Macros
+      require Lens2.Compatible.Macros
+      import Lens2.Compatible.Macros
     end
   end
+
+  alias Lens2.{Combine}
 
   @doc ~S"""
   A convenience to define a lens that can be piped into with `|>`.
@@ -28,7 +30,7 @@ defmodule Lens2.Macros do
 
       @doc false
       def unquote(name)(previous, unquote_splicing(args)) do
-        Lens2.seq(previous, unquote(name)(unquote_splicing(args)))
+        Combine.seq(previous, unquote(name)(unquote_splicing(args)))
       end
     end
   end
@@ -48,7 +50,7 @@ defmodule Lens2.Macros do
 
       @doc false
       defp unquote(name)(previous, unquote_splicing(args)) do
-        Lens2.seq(previous, unquote(name)(unquote_splicing(args)))
+        Combine.seq(previous, unquote(name)(unquote_splicing(args)))
       end
     end
   end
@@ -77,7 +79,7 @@ defmodule Lens2.Macros do
 
       @doc false
       def unquote(name)(previous, unquote_splicing(args)) do
-        Lens2.seq(previous, unquote(name)(unquote_splicing(args)))
+        Combine.seq(previous, unquote(name)(unquote_splicing(args)))
       end
     end
   end

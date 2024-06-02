@@ -1,6 +1,6 @@
 defmodule Lens2.Basic do
-  import Lens2.Macros
-  alias Lens2.Operations, as: A
+  use Lens2.Deflens
+  alias Lens2.Compatible.Operations
 
   @type lens :: Access.access_fun
 
@@ -104,7 +104,7 @@ defmodule Lens2.Basic do
   @spec into(lens, Collectable.t()) :: lens
   deflens_raw into(lens, collectable) do
     fn data, fun ->
-      {res, updated} = A.get_and_map(lens, data, fun)
+      {res, updated} = Operations.get_and_map(lens, data, fun)
       {res, Enum.into(updated, collectable)}
     end
   end
@@ -116,12 +116,12 @@ defmodule Lens2.Basic do
       [1, 3]
   """
   @spec filter(lens, (any -> boolean)) :: lens
-  def filter(predicate), do: Lens2.root() |> filter(predicate)
+  def filter(predicate), do: root() |> filter(predicate)
 
   deflens_raw filter(lens, predicate) do
     fn data, fun ->
       {res, changed} =
-        A.get_and_map(lens, data, fn item ->
+        Operations.get_and_map(lens, data, fn item ->
           if predicate.(item) do
             {res, changed} = fun.(item)
             {[res], changed}

@@ -1,5 +1,5 @@
 defmodule Lens2.Maplike do
-  import Lens2.Macros
+  use Lens2.Deflens
   alias Lens2.Helpers.DefOps
   alias Lens2.{Basic,Combine,Listlike}
 

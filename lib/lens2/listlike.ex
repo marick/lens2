@@ -1,8 +1,8 @@
 defmodule Lens2.Listlike do
-  use Lens2.Macros
+  use Lens2.Deflens
   alias Lens2.Helpers.DefOps
   alias Lens2.{Combine}
-  alias Lens2.Operations, as: A
+  alias Lens2.Compatible.Operations
 
   @type lens :: Access.access_fun
 
@@ -33,7 +33,7 @@ defmodule Lens2.Listlike do
   @spec back :: lens
   deflens_raw back do
     fn data, fun ->
-      data |> Enum.count() |> behind |> A.get_and_map(data, fun)
+      data |> Enum.count() |> behind |> Operations.get_and_map(data, fun)
     end
   end
 

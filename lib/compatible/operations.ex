@@ -1,4 +1,4 @@
-defmodule Lens2.Operations do
+defmodule Lens2.Compatible.Operations do
 
   @type lens :: Access.access_fun
 
