@@ -1,6 +1,6 @@
 defmodule Lens2.Operations do
 
-  @opaque lens :: function
+  @type lens :: Access.access_fun
 
   @doc ~S"""
   Returns an updated version of the data and a transformed value from each location the lens focuses on. The

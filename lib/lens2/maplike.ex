@@ -19,7 +19,7 @@ defmodule Lens2.Maplike do
       %{foo: 3}
   """
 
-  @opaque lens :: function
+  @type lens :: Access.access_fun
 
   @spec key(any) :: lens
   deflens_raw key(key) do

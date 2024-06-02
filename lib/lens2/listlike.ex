@@ -4,7 +4,7 @@ defmodule Lens2.Listlike do
   alias Lens2.{Combine}
   alias Lens2.Operations, as: A
 
-  @opaque lens :: function
+  @type lens :: Access.access_fun
 
   @doc ~S"""
   Returns a lens that focuses before the first element of a list. It will always return a nil when accessing, but can

@@ -1,8 +1,8 @@
 defmodule LensTest do
   use ExUnit.Case
-  import Lens.Macros
+#  import Lens.Macros
   require Integer
-  alias Lens2.Operations, as: A
+#  alias Lens2.Operations, as: A
 #  doctest A
 
 

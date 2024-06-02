@@ -3,7 +3,7 @@ defmodule Lens2.Combine do
   alias Lens2.Basic
   alias Lens2.Operations, as: A
 
-  @opaque lens :: function
+  @type lens :: Access.access_fun
 
   @doc ~S"""
   Select the lens to use based on a matcher function
