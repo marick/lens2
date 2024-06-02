@@ -1,7 +1,7 @@
-defmodule Lens2.Listlike do
+defmodule Lens2.Lenses.Listlike do
   use Lens2.Deflens
   alias Lens2.Helpers.DefOps
-  alias Lens2.{Combine}
+  alias Lens2.Lenses.Combine
   alias Lens2.Compatible.Operations
 
   @type lens :: Access.access_fun

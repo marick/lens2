@@ -1,4 +1,4 @@
-defmodule Lens2.Basic do
+defmodule Lens2.Lenses.Basic do
   use Lens2.Deflens
   alias Lens2.Compatible.Operations
 

@@ -1,2 +1,2 @@
-defmodule Lens2.MapSet do
+defmodule Lens2.Lenses.MapSet do
 end

@@ -1,6 +1,6 @@
-defmodule Lens2.Combine do
+defmodule Lens2.Lenses.Combine do
   use Lens2.Deflens
-  alias Lens2.Basic
+  alias Lens2.Lenses.Basic
   alias Lens2.Compatible.Operations
 
   @type lens :: Access.access_fun

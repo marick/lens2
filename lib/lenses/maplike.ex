@@ -1,7 +1,7 @@
-defmodule Lens2.Maplike do
+defmodule Lens2.Lenses.Maplike do
   use Lens2.Deflens
   alias Lens2.Helpers.DefOps
-  alias Lens2.{Basic,Combine,Listlike}
+  alias Lens2.Lenses.{Basic,Combine,Listlike}
 
   @doc ~S"""
   Returns a lens that focuses on the value under `key`.

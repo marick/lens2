@@ -1,2 +1,2 @@
-defmodule Lens2.BiMap do
+defmodule Lens2.Lenses.BiMap do
 end

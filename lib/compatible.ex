@@ -7,7 +7,7 @@ defmodule Lens2.Compatible do
     end
   end
 
-  alias Lens2.{Basic, Listlike, Combine, Maplike}
+  alias Lens2.Lenses.{Basic, Listlike, Combine, Maplike}
   alias Lens2.Compatible.Operations
   import Lens2.Helpers.Delegate
 

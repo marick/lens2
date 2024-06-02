@@ -8,7 +8,7 @@ defmodule Lens2.Compatible.Macros do
     end
   end
 
-  alias Lens2.{Combine}
+  alias Lens2.Lenses.Combine
 
   @doc ~S"""
   A convenience to define a lens that can be piped into with `|>`.
