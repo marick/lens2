@@ -1,4 +1,6 @@
 defmodule Lens2.Compatible.Macros do
+  @moduledoc false
+
   defmacro __using__(_) do
     quote do
       require Lens2.Compatible.Macros

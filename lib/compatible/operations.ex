@@ -1,4 +1,5 @@
 defmodule Lens2.Compatible.Operations do
+  @moduledoc false
 
   @type lens :: Access.access_fun
 
