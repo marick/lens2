@@ -48,9 +48,9 @@ defmodule Lens2.MixProject do
 
   defp docs do
     [
-      # main: "readme",
-      # extras: ["README.md"],
-      # source_url_pattern: "https://github.com/obrok/lens/blob/master/%{path}#L%{line}"
+      main: "readme",
+      extras: ["README.md"],
+      source_url_pattern: "https://github.com/marick/lens2/blob/master/%{path}#L%{line}"
     ]
   end
 
