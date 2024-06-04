@@ -210,28 +210,31 @@ are better in some absolute sense? Well...
 I got my first job as a programmer in 1975 (at the age of 16). I've
 seen a *lot* of programmers making judgments about technology new to
 them. When they reach for generalizations about "all programmers" or
-"all programs", they tend do poorly. For example, from about 1983 (as
+"all programs", they tend do poorly. For example, from about 1983 (when I was
 a Common Lisp implementor) to the early '90s, I heard an endless
 number of people say that garbage collection was impractical for
 "serious work". Machines (except for expensive custom hardware) just
-weren't fast enough. Then Java came out, and the conventional wisdom
-completely dropped the issue. (Garbage collection was now assumed: the
-question was how to use it best, except for the vast majority of
-programmers who never thought about it at all.)
+weren't fast enough, and would never be fast enough. Then Java came out, and the conventional wisdom
+completely dropped the issue, even for the slow machines of the day. Garbage collection was now *assumed*: the
+question was how to use it best, except that most
+programmers never thought about it at all. They might as well have been programming in C.)
 
 And don't get me started about the debate (around 1981) of whether C could ever replace assembly language for serious coding.
 
 In any case: I've noticed how often programmer decisions about
 technology are based on personal preference, typically informed by
-what that programmer is used to, *which is presented as something
-objective*. So I've decided not to pretend that my audience is
-objective in any strict sense. So:
+what that programmer is used to, but --- and let me emphasize this --- **is presented as something
+objective**. In the words of the last lines of Ernest Hemingway's *The Sun Also Rises*: "wouldn't it be pretty to think so?"
 
-1. If you are the exception, someone who weighs things objectively:
-   welcome! The series will, I hope, give you enough information to
-   rationally judge. But I'm not going to structure my argument around
-   your criteria.
+I don't think so, so I won't pitch lenses to you as if you were a
+dispassionate programmer-effort-maximizer:
+
+1. If you are the exception, someone who weighs things objectively ---
+   and I believe you might exist, you're just exceptional: welcome!
+   The series will, I hope, give you enough information to rationally
+   judge. But I'm not going to structure my argument around your
+   criteria.
 
 2. If you accept that you are prone to subjective judgments: welcome!
-   I hope to show you why my subjective judgment about lenses just might be
+   I hope to show you why my subjective judgment about lenses just might mesh with 
    yours, and that you might find lenses pleasant.
