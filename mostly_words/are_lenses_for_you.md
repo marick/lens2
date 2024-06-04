@@ -1,16 +1,16 @@
-# Tutorial, part 1: are lens worth it to you?
+# Are lenses worth it to you?
 
 Here I'll try to convince you that lenses have some advantages over
 both recursive functions and Elixir's built-in `Access` behaviour and its
 associated `Kernel` functions: `put_in/2`, `update_in/2`, `put_in/2`
 and so on.
 
----
+## Lenses and the `Access` module
 
 Languages like Elixir don't let you change data structures; instead,
 you create a new data structure that's different from the
 original. That can be somewhat annoying when you want to change a
-single _place_ within a deeply nested structure. From now on, I'm
+single place within a deeply nested structure. From now on, I'm
 going to call such structures *containers*. We're interested in nested
 containers.
 
@@ -200,7 +200,7 @@ intrigued enough that you'll hold your reasonable skepticism in check
 while you read on, or you aren't. If the former, continue! (You can
 always give up later!)
 
-#### A biographical note
+## A note on choosing
 
 It may seem weird and offputting to say you should decide on
 lenses based on your personal and team annoyance with traversing nested

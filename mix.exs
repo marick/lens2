@@ -10,6 +10,8 @@ defmodule Lens2.MixProject do
       deps: deps(),
       description: description(),
       package: package(),
+      name: "Lens 2",
+      source_url: "https://github.com/marick/lens2",
       docs: docs()
     ]
   end
@@ -48,11 +50,14 @@ defmodule Lens2.MixProject do
 
   defp docs do
     [
-      main: "readme",
-      extras: ["README.md", "mostly_words/tutorial.md"],
-      source_url_pattern: "https://github.com/marick/lens2/blob/master/%{path}#L%{line}"
+      main: "rationale",
+      extras: [
+               "mostly_words/rationale.md",
+               "mostly_words/are_lenses_for_you.md"
+      ],
+      groups_for_extras: [
+        "Tutorial": Path.wildcard("mostly_words/tutorial/*.md"),
+      ]
     ]
   end
-
-
 end
