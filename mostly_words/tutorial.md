@@ -210,7 +210,7 @@ are better in some absolute sense? Well...
 I got my first job as a programmer in 1975 (at the age of 16). I've
 seen a *lot* of programmers making judgments about technology new to
 them. When they reach for generalizations about "all programmers" or
-"all programs", they tend do poorly. For example, from about 1983 (when I was
+"all programs", they tend to do poorly. For example, from about 1983 (when I was
 a Common Lisp implementor) to the early '90s, I heard an endless
 number of people say that garbage collection was impractical for
 "serious work". Machines (except for expensive custom hardware) just
@@ -223,11 +223,14 @@ And don't get me started about the debate (around 1981) of whether C could ever 
 
 In any case: I've noticed how often programmer decisions about
 technology are based on personal preference, typically informed by
-what that programmer is used to, but --- and let me emphasize this --- **is presented as something
-objective**. In the words of the last lines of Ernest Hemingway's *The Sun Also Rises*: "wouldn't it be pretty to think so?"
+what that programmer is used to, but -- and let me emphasize this --
+**is presented as something objective**. In the words of the last
+lines of Ernest Hemingway's
+[*The Sun Also Rises*](https://en.wikipedia.org/wiki/The_Sun_Also_Rises):
+"wouldn't it be pretty to think so?"
 
-I don't think so, so I won't pitch lenses to you as if you were a
-dispassionate programmer-effort-maximizer:
+I *don't* think so, so I won't pitch lenses to you as if you were a
+dispassionate person optimizing some objective criterion. So:
 
 1. If you are the exception, someone who weighs things objectively ---
    and I believe you might exist, you're just exceptional: welcome!
@@ -236,5 +239,5 @@ dispassionate programmer-effort-maximizer:
    criteria.
 
 2. If you accept that you are prone to subjective judgments: welcome!
-   I hope to show you why my subjective judgment about lenses just might mesh with 
-   yours, and that you might find lenses pleasant.
+   I hope to show you why my subjective judgment about lenses just
+   might mesh with yours, and that you might find lenses pleasant.
