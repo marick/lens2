@@ -29,7 +29,7 @@ point?
    lens = Lens.key(:clusters) |> Lens.MapSet.values |> Lens.keys([:a, :z]) |> Lens.key(:age)
    ```
    
-   ... and uses it as:
+   ... and use it as:
    
    ```elixir
    Deeply.put(structure, lens, 5)
