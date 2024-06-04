@@ -210,8 +210,8 @@ are better in some absolute sense? Well...
 I got my first job as a programmer in 1975 (at the age of 16). I've
 seen a *lot* of programmers making judgments about technology new to
 them. When they reach for generalizations about "all programmers" or
-"all programs", they tend to do poorly. For example, from about 1983
-(when I was a Common Lisp implementor) to the early '90s, I heard an
+"all programs", they tend to predict poorly. For example, from about 1983
+(when I was a [Common Lisp](https://en.wikipedia.org/wiki/Common_Lisp) implementor) to the early '90s, I heard an
 endless number of people say that garbage collection was impractical
 for "serious work". Machines (except for
 [expensive custom hardware](https://en.wikipedia.org/wiki/Lisp_machine))
@@ -220,23 +220,23 @@ enough. Then Java came out, and the conventional wisdom completely
 dropped the issue, even for the slow machines of the day. Garbage
 collection was now *assumed*: the question was how to use it most
 efficiently, except that most programmers never thought about that at
-all. They adopted the new "paradigm" and moved on.)
+all. They adopted the new ["paradigm"](https://en.wikipedia.org/wiki/Paradigm#Scientific_paradigm) and moved on.)
 
 And don't get me started about the debate (around 1981) of whether C
 could ever replace assembly language for serious coding.
 
 In any case: I've seen too often programmer decisions about technology
 that are based on personal preference, typically informed by what that
-programmer is used to, but -- and let me emphasize this -- **presented
+programmer is used to, but – and let me emphasize this – **presented
 as something objective**. To that, I repeat the last line of Ernest
 Hemingway's
 [*The Sun Also Rises*](https://en.wikipedia.org/wiki/The_Sun_Also_Rises):
 "wouldn't it be pretty to think so?"
 
 I *don't* think so, so I won't pitch lenses to you as if you were a
-dispassionate person optimizing some objective criterion. So:
+dispassionate person optimizing some objective criterion. That is:
 
-1. If you are the exception, someone who really does weigh things objectively ---
+1. If you are the exception, someone who really does weigh things objectively –
    and I believe you might exist, you're just exceptional: welcome!
    The series will, I hope, give you enough information to rationally
    judge. But I'm not going to structure my argument around your
