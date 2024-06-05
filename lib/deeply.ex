@@ -130,6 +130,8 @@ defmodule Lens2.Deeply do
       ...>  end)
       iex>  assert_receive("sending 1")
       iex>  assert_receive("sending 3")
+
+  Any return value from the `fun` is ignored.
   """
   @spec each(Lens2.container, Lens2.lens, (Lens2.value -> no_return)) :: :ok
   def each(container, lens, fun),
