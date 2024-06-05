@@ -57,7 +57,8 @@ defmodule Lens2.MixProject do
       ],
       groups_for_extras: [
         "Tutorial": Path.wildcard("mostly_words/tutorial/*.md"),
-      ]
+      ],
+      assets: %{"mostly_words/pics" => "pics"},
     ]
   end
 end

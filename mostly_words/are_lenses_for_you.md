@@ -19,7 +19,7 @@ fields, one of which is named `:name_to_cluster`. A `Cluster`
 structure has various fields, one of which, `:downstream`, holds a
 `MapSet` of atoms (cluster names). Like this:
 
-<<<<PICK>>>>>
+![here is some text](pics/tutorial.png)
 
 We want to add the value `:c` to
 a single mapset. This code works:

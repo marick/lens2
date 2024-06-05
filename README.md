@@ -9,7 +9,7 @@ For reasons why you might prefer it to Elixir's built-in
 This library is descended from
 [`Lens`](https://hexdocs.pm/lens/readme.html). To see why it's a
 different project, see the
-["Rationale"](./mostly_words/rationale.md). The short version is:
+[rationale](./mostly_words/rationale.md). The short version is:
 
 1. Lots of beginner and intermediate documentation.
 2. An alternate API for operating on data with lenses (but the same API for creating lenses).
