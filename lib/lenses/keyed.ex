@@ -1,7 +1,20 @@
 defmodule Lens2.Lenses.Keyed do
   @moduledoc """
-  Lenses helpful for working with `Map`s and `Keyword` lists.
+  Lenses helpful for working with structs, `Map`s, and `Keyword` lists.
 
+  Although these lenses can be used with `Keyword` list, beware that -- for compatibility
+  with `Access` -- many of them point only to the *first* matching key:
+
+      iex(1)> use Lens2
+      iex(2)> keylist = [a: 1, other: 2, a: 3]
+      iex(3)> Deeply.to_list(keylist, Lens.key(:a))
+      [1]         # not [1, 3]
+      iex(4)> Deeply.to_list(keylist, Lens.keys([:a, :other]))
+      [1, 2]      # not [1, 2, 3]
+
+  See the `Lens2.Lenses.Keyword` module for an alternative.
+
+  These lenses are available under the `Lens` alias when you `use Lens2`.
 
   """
   use Lens2.Deflens
