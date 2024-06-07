@@ -2,8 +2,8 @@ defmodule Lens2.Lenses.Keyed do
   @moduledoc """
   Lenses helpful for working with structs, `Map`s, and `Keyword` lists.
 
-  Although these lenses can be used with `Keyword` list, beware that -- for compatibility
-  with `Access` -- many of them point only to the *first* matching key:
+  Although these lenses can be used with `Keyword` list, beware that – for compatibility
+  with `Access` – many of them point only to the *first* matching key:
 
       iex(1)> use Lens2
       iex(2)> keylist = [a: 1, other: 2, a: 3]

@@ -53,12 +53,17 @@ defmodule Lens2.MixProject do
       main: "rationale",
       extras: [
                "mostly_words/rationale.md",
-               "mostly_words/are_lenses_for_you.md"
+               "mostly_words/are_lenses_for_you.md",
+               "mostly_words/tutorial01.md",
+               "mostly_words/tutorial02.md",
       ],
       groups_for_extras: [
-        "Tutorial": Path.wildcard("mostly_words/tutorial/*.md"),
+        "Tutorial": Path.wildcard("mostly_words/tutorial??.md"),
       ],
-      assets: %{"mostly_words/pics" => "pics"},
+      assets: %{
+        "mostly_words/pics" => "pics",
+      },
+      markdown_processor: {ExDoc.Markdown.Earmark, footnotes: true},
     ]
   end
 end

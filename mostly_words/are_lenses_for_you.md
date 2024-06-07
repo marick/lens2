@@ -19,7 +19,7 @@ fields, one of which is named `:name_to_cluster`. A `Cluster`
 structure has various fields, one of which, `:downstream`, holds a
 `MapSet` of atoms (cluster names). Like this:
 
-![here is some text](pics/tutorial.png)
+![here is some text](pics/tidy.png)
 
 We want to add the value `:c` to
 a single mapset. This code works:
@@ -159,8 +159,8 @@ custom path elements for `update_in` and friends (the way `Lens.keys`
 was used above). You can do that directly by writing functions that
 match the required `Access` behaviour, but since lenses *are*
 functions that match that behaviour, and (I believe) are not (or not
-much) harder to write than `Access` functions --- both are a *little*
-brain-twisting --- maybe learning lenses is still worthwhile.
+much) harder to write than `Access` functions – both are a *little*
+brain-twisting – maybe learning lenses is still worthwhile.
 
 ## Tradeoffs
 
@@ -194,8 +194,8 @@ series goes along.)
 
 At this point, I've only shown you one example of how lenses are more
 pleasant. I could list some other reasons why I've found lenses
-worthwhile --- as you might guess, the `Cluster` example is derived
-from my own code --- but, at this point, I think you're either
+worthwhile – as you might guess, the `Cluster` example is derived
+from my own code – but, at this point, I think you're either
 intrigued enough that you'll hold your reasonable skepticism in check
 while you read on, or you aren't. If the former, continue! (You can
 always give up later!)
