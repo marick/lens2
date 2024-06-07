@@ -4,7 +4,7 @@ The word "lens" is a metaphor. We're supposed to gain some
 understanding of what this particular software construct does, based on our
 experience with physical lenses in the real world.
 
-I never found the metaphor helpful when learning lenses. Since lenses
+I never found the metaphor helpful when learning lenses. And since lenses
 have the reputation of being hard to learn, I'm happy to abandon
 it (while keeping the name everyone uses). To me, a more helpful metaphor is the *pointer*. In the picture below,
 you see someone using a slim wooden stick to point to something on a
@@ -27,7 +27,7 @@ it's bound to via pattern matching:
 
 Perhaps the pointer
 indicates our container is part of a larger container, and the pointer represents
-that you can go from the larger to the smaller, perhaps via constructs like:
+that you can go from the larger to the smaller, perhaps via constructs like these:
 
 ```elixir
 larger.smaller
@@ -64,7 +64,7 @@ the `:a` in `Map.key(container, :a)`
 
 Functions like `Map.get/3`, `Enum.at/2`, and so on are about a *single
 value* within a container. Their conceptual extension to functions
-like `Kernel.get_in/3` share that base assumption. There are
+like `Kernel.get_in/2` share that assumption. There are
 exceptions like `Access.all/0` or `Access.slice/1`, but I think it
 fair to say those are special cases: both conceptually and in common
 usage.
@@ -92,14 +92,15 @@ iex(1)> for elt <- %{a: 1, b: 2}, do: IO.inspect(elt)
 {:b, 2}
 ```
 
-So as far as any outside code can tell, all these types are
-`Enumeration`s of key-value tuples. 
-
 To get a lens that converts a pointer-to-Map into pointers to all the values, you do this:
 
 ```elixir
 iex> lens = Lens.map_values
 ```
+
+(All my examples implicitly `use Lens2`, which provides the `Lens`
+alias so that I don't have to write the function's real name,
+`Lens2.Keyed.map_values/0`.)
 
 When it's used, the lens will produce these pointers for the container I showed above: 
 
@@ -127,8 +128,7 @@ iex> update_in(map, [lens], & &1 * 1111)
 ```
 
 (I'll note here that `Access.all/0` can only be used on lists, so you
-can't use out-of-the-box Elixir to do what we just did – except by
-writing by hand what is, in effect, a lens function to give to `get_in`.)
+can't use out-of-the-box Elixir to do what we just did – except by coding manually the function that `Lens2.Keyed.map_values/0` gives you for free. 
 
 Having to wrap the lens in a list is a little annoying, so you can use
 functions from `Lens2.Deeply` instead. (There are other reasons to use
@@ -175,10 +175,9 @@ iex> get_in(map, [:c])
 3
 ```
 
-Understanding the reason for the distance will be easier when we get to 
-nested containers. Though, as a teaser, it's like the difference
-between using `Enum.map/2` and `Enum.flat_map/2` or between these two
-lists:
+... so why do we get it for the lens version? Right now, I want to
+defer the answer to later, when it will be easier to explain. As a teaser, though, it's like the difference between using `Enum.map/2` and
+`Enum.flat_map/2`, or between these two lists:
 
 ```
 [[0, 1, 2], [3, 4, 5]]
