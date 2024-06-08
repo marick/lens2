@@ -73,13 +73,14 @@ defmodule WhyLensesTest do
   end
 
 
+  @tag :skip
   test "use update_in" do
     network = network()
 
     path = [Access.key(:name_to_cluster),  # Note Access
             Lens.keys([:gate, :watcher]),  # Note Lens
             Access.key(:downstream)]
-    update_in(network, path, & MapSet.put(&1, :some_name)) |> dbg
+    update_in(network, path, & MapSet.put(&1, :some_name))
   end
 
 

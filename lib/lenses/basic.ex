@@ -45,6 +45,8 @@ defmodule Lens2.Lenses.Basic do
   @doc ~S"""
   Returns a lens that focuses on all the values in an enumerable.
 
+  Note the resulting lens works on lists but not tuples, and on maps but not structs.
+
   Does work with updates but produces a list from any enumerable by default:
 
   See [into](#into/2) on how to rectify this.
