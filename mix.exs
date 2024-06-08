@@ -64,6 +64,35 @@ defmodule Lens2.MixProject do
         "mostly_words/pics" => "pics",
       },
       markdown_processor: {ExDoc.Markdown.Earmark, footnotes: true},
+      before_closing_head_tag: &before_closing_head_tag/1,
     ]
   end
+
+  # Footnotes in Earmark markdown are badly/not styled without this kludge.
+
+  defp before_closing_head_tag(:html) do
+  """
+  <style>
+    a.reversefootnote {
+      display: inline-block;
+      text-indent: -9999px;
+      line-height: 0;
+    }
+
+    a.reversefootnote:after {
+      content: ' ↩'; /* or any other text you want */
+      text-indent: 0;
+      display: block;
+      line-height: initial;
+    }
+
+    a.footnote {
+      font-size: 0.7em;
+      vertical-align: super;
+    }
+  </style>
+  """
+  end
+
+  defp before_closing_head_tag(_), do: ""
 end

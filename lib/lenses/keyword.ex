@@ -19,6 +19,16 @@ defmodule Lenses.Keyword do
   they're implemented using it.) Given that the Joe Q. Average lens
   points at multiple places, that's counterintuitive. The lenses in this
   module will get, put, and update all matching keys.
+
+
+
+  Problems: duplicate keys.
+
+  Some set-type operations don't produce a keyword list.
+
+
+  Deeply.put([a: 1], Lens.map_values, :NEW)
+  %{NEW: 1}
   """
 
 

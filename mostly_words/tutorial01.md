@@ -9,9 +9,9 @@ have the reputation of being hard to learn, I'm happy to abandon
 it (while keeping the name everyone uses). To me, a more helpful metaphor is the *pointer*. In the picture below,
 you see someone using a slim wooden stick to point to something on a
 blackboard. You also see an arrow – a pointer – pointing at a blob
-with smaller blobs within it[^1]. These are – metaphorically – the same action.
+with smaller blobs within it. These are – metaphorically – the same action.
 
-![Alt-text is coming](pics/tutorial01-pointer-comparison.png)
+![Alt-text is coming](pics/tutorial01-pointer-comparison.png)[^1]
 
 The right-hand image is of a data structure (a blob) with smaller data
 structures within it. I'm going to call the bigger structure a
@@ -228,4 +228,4 @@ iex> Map.take(map, [:a, :e])
 %{a: 1, e: 5}
 ```
 
-[^1]: The photo is via [Fagnar Brack](https://fagnerbrack.medium.com/personal-experience-doesnt-matter-cb060b42f99a). Found via a DuckDuckGo ["free to share and use" search](https://duckduckgo.com/?t=ffab&q=teacher+pointing+at+a+blackboard&atb=v196-1&iax=images&iai=https%3A%2F%2Fcdn-images-1.medium.com%2Fmax%2F2000%2F1*20JDS-KefsZFZoQlSqehaw.jpeg&ia=images&iaf=license%3AShare).
+[^1]: The photo is via [Fagnar Brack](https://fagnerbrack.medium.com/personal-experience-doesnt-matter-cb060b42f99a). Found via a DuckDuckGo ["free to share and use" search](https://duckduckgo.com/?t=ffab&q=teacher+pointing+at+a+blackboard&atb=v196-1&iax=images&iai=https%3A%2F%2Fcdn-images-1.medium.com%2Fmax%2F2000%2F1*20JDS-KefsZFZoQlSqehaw.jpeg&ia=images&iaf=license%3AShare), although I couldn't find the specific license. 
