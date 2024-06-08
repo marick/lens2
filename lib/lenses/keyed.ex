@@ -21,16 +21,13 @@ defmodule Lens2.Lenses.Keyed do
           iex>  Deeply.to_list(keylist, Lens.keys([:a, :other]))
           [1, 2]      # not [1, 2, 3]
 
-  2. Update operations use `Lens2.Lenses.Basic.into/1` to cast results
-     into a map. They do not return a keyword list.
+  2. Update operations will produce maps rather than keyword lists.
 
   See the `Lens2.Lenses.Keyword` module for an alternative.
   """
   use Lens2.Deflens
   alias Lens2.Helpers.DefOps
   alias Lens2.Lenses.{Basic,Combine,Indexed}
-
-  @type lens :: Access.access_fun
 
   # `deflens` doesn't cooperate with guards, so need an explicit precondition.
   defmacrop assert_list(first_arg) do
@@ -216,18 +213,58 @@ defmodule Lens2.Lenses.Keyed do
   @doc ~S"""
   Returns a lens that points to all values of a map or struct.
 
-      iex> lens = Lens.map_values
-      iex> %{a: 1, b: 2} |> Deeply.to_list(lens) |> Enum.sort
+      iex>  lens = Lens.map_values
+      iex>  map = %{a: 1, b: 2}
+      iex>  Deeply.to_list(map, lens) |> Enum.sort
       [1, 2]
-      # iex> %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens) |> Enum.sort
-      # [1, 2]
+      iex>  Deeply.put(map, lens, :NEW)
+      %{a: :NEW, b: :NEW}
+
+      iex>  lens = Lens.map_values
+      iex>  struct = %SomeStruct{a: 1, b: 2}
+      iex>  Deeply.to_list(struct, lens) |> Enum.sort
+      [1, 2]
+      iex>  Deeply.put(struct, lens, :NEW)
+      %SomeStruct{a: :NEW, b: :NEW}
+
+  Note: This function is changed from its
+  [`Lens`](https://hexdocs.pm/lens/readme.html) equivalent. That one
+  does not work with structs.
   """
   @spec map_values :: Lens2.lens
-  deflens map_values, do: Basic.all() |> Basic.into(%{}) |> Indexed.at(1)
+  deflens_raw map_values do
+    fn container, get_and_update ->
+      {built_list, built_container} =
+        extract_keys(container)
+        |> Enum.reduce({[], container}, fn key, {building_list, building_container} ->
+          current_value = Map.get(container, key)
+          {gotten, updated} = get_and_update.(current_value)
+          {[gotten | building_list], Map.put(building_container, key, updated)}
+        end)
+
+      # reversing puts the output list in the same order as a `Map.to_list` would.
+      {Enum.reverse(built_list), built_container}
+    end
+  end
+
 
   @doc ~S"""
   Returns a lens that points to all keys of a map or struct.
   """
   @spec map_keys :: Lens2.lens
   deflens map_keys, do: Basic.all() |> Basic.into(%{}) |> Indexed.at(0)
+
+
+  defp extract_keys(container) do
+    cond do
+      is_struct(container) ->
+        container |> Map.from_struct |> Map.keys
+      is_list(container) ->
+        raise "`map_values` is incompatible with a keyword list: #{inspect container}"
+      true ->
+        container |> Map.keys
+    end
+  end
+
+
 end

@@ -32,8 +32,8 @@ defmodule Lens2.Deeply do
   Returns a list of the values that the lens points at.
 
       iex>  lens = Lens.map_values
-      iex>  [a: 1, b: 2, c: 3] |> Deeply.to_list(lens)
-      [         1,    2,    3]
+      iex>  %{a: 1, b: 2, c: 3} |> Deeply.to_list(lens) |> Enum.sort
+      [          1,    2,    3]
 
   `to_list` produces its result with `Kernel.get_in/2`.
   """

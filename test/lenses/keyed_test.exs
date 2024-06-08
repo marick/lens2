@@ -110,6 +110,28 @@ defmodule Lens2.Lenses.KeyedTest do
       actual = %SomeStruct{a: 1, b: 2} |> Deeply.update(lens, & &1*1000)
       assert %SomeStruct{a: 1, b: 2} == actual
     end
+
+    test "map_values" do
+      lens = Lens.map_values
+      actual = %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens) |> Enum.sort
+      assert [1, 2] == actual
+
+
+      actual = %SomeStruct{a: 1, b: 2} |> Deeply.update(lens, & &1*1000)
+      assert %SomeStruct{a: 1000, b: 2000} == actual
+    end
+
+    test "an excess of caution about nesting of map_values" do
+      container = %{outer: %SomeStruct{a: ["zero", "one"], b: ["a", "b", "c"]}}
+
+      lens = Lens.key(:outer) |> Lens.map_values |> Lens.at(1)
+
+      actual = Deeply.to_list(container, lens) |> Enum.sort
+      assert actual == ["b", "one"]
+
+      actual = Deeply.update(container, lens, & &1 <> &1)
+      assert actual == %{outer: %SomeStruct{a: ["zero", "oneone"], b: ["a", "bb", "c"]}}
+    end
   end
 
 
