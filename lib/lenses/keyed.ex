@@ -58,7 +58,8 @@ defmodule Lens2.Lenses.Keyed do
       %{missing: :NEW}
 
   `Lens2.Deeply.to_list/2` and `Lens2.Deeply.one!/2` treats maps and
-  structs the same when it comes to missing keys:
+  structs the same when it comes to missing keys. That is, a `KeyError` is *not*
+  raised as it would be for `struct[:some_misslelled_key]`:
 
       iex>  lens = Lens.key(:missing)
       iex>  %{a: 1, b: 2} |> Deeply.to_list(lens)
