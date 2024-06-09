@@ -247,14 +247,6 @@ defmodule Lens2.Lenses.Keyed do
     end
   end
 
-
-  @doc ~S"""
-  Returns a lens that points to all keys of a map or struct.
-  """
-  @spec map_keys :: Lens2.lens
-  deflens map_keys, do: Basic.all() |> Basic.into(%{}) |> Indexed.at(0)
-
-
   defp extract_keys(container) do
     cond do
       is_struct(container) ->
@@ -266,5 +258,28 @@ defmodule Lens2.Lenses.Keyed do
     end
   end
 
+
+
+
+
+  @doc ~S"""
+  Returns a lens that points to all keys of a map.
+
+      iex>  lens = Lens.map_keys
+      iex>  map = %{[1] => 1, [2] => 2}
+      iex>  Deeply.to_list(map, lens) |> Enum.sort
+      [[1], [2]]
+      iex>  Deeply.update(map, lens, fn [integer] ->
+      ...>    [integer * 1111]
+      ...>  end)
+      %{[1111] => 1, [2222] => 2}
+
+  A lens produced by this function won't work on a struct. Updating
+  struct keys themselves (as opposed to their values) makes no
+  sense. And I'm hoping you won't need to use `to_list` to get all the
+  keys of a struct, since all the keys are known at compile time.
+  """
+  @spec map_keys :: Lens2.lens
+  deflens map_keys, do: Basic.all() |> Basic.into(%{}) |> Indexed.at(0)
 
 end
