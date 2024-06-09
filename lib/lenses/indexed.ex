@@ -1,9 +1,18 @@
 defmodule Lens2.Lenses.Indexed do
   @moduledoc """
-  Lenses meaningful for containers whose elements are ordered, like `List` and `Tuple`.
+  Lenses meaningful for `List` and `Tuple` containers.
 
-  These will work on any `Enumerable`, like a `Map` or a `Keyword` list, but you probably want the
-  lenses in `Keyed` for those.
+
+  The update operations (`Lens2.Deeply.put/3`,
+  `Lens2.Deeply.update/3`) can take any sort of `Enumerable`, but they
+  will always produce a list. That makes sense. Consider `at/1`, which
+  points to an element at an index. What should be the result of
+  putting 5 as the second item of the range `0..5`? You can't create a
+  non-sequential range, so a `List` seems like the reasonable choice:
+
+      iex> Deeply.put(0..5, Lens.at(2), 838383)
+      [0, 1, 838383, 3, 4, 5]
+
 
   """
   use Lens2.Deflens
@@ -11,14 +20,12 @@ defmodule Lens2.Lenses.Indexed do
   alias Lens2.Lenses.Combine
   alias Lens2.Compatible.Operations
 
-  @type lens :: Access.access_fun
-
   @doc ~S"""
   Returns a lens that focuses before the first element of a list. It will always return a nil when accessing, but can
   be used to prepend elements.
 
   """
-  @spec front :: lens
+  @spec front :: Lens2.lens
   deflens front, do: before(0)
 
   @doc ~S"""
@@ -26,7 +33,7 @@ defmodule Lens2.Lenses.Indexed do
   be used to append elements.
 
   """
-  @spec back :: lens
+  @spec back :: Lens2.lens
   deflens_raw back do
     fn data, fun ->
       data |> Enum.count() |> behind |> Operations.get_and_map(data, fun)
@@ -38,7 +45,7 @@ defmodule Lens2.Lenses.Indexed do
   accessing, but can be used to insert elements.
 
   """
-  @spec before(non_neg_integer) :: lens
+  @spec before(non_neg_integer) :: Lens2.lens
   deflens_raw before(index) do
     fn data, fun ->
       {res, item} = fun.(nil)
@@ -52,7 +59,7 @@ defmodule Lens2.Lenses.Indexed do
   accessing, but can be used to insert elements.
 
   """
-  @spec behind(non_neg_integer) :: lens
+  @spec behind(non_neg_integer) :: Lens2.lens
   deflens_raw behind(index) do
     fn data, fun ->
       {res, item} = fun.(nil)
@@ -65,7 +72,7 @@ defmodule Lens2.Lenses.Indexed do
   Returns a lens that focuses on the n-th element of a list or tuple.
 
   """
-  @spec at(non_neg_integer) :: lens
+  @spec at(non_neg_integer) :: Lens2.lens
   deflens_raw at(index) do
     fn data, fun ->
       {res, updated} = fun.(DefOps.at(data, index))
@@ -76,7 +83,7 @@ defmodule Lens2.Lenses.Indexed do
   @doc ~S"""
   An alias for `at`.
   """
-  @spec index(non_neg_integer) :: lens
+  @spec index(non_neg_integer) :: Lens2.lens
   deflens index(index), do: at(index)
 
 
@@ -86,6 +93,6 @@ defmodule Lens2.Lenses.Indexed do
   Returns a lens that focuses on all of the supplied indices.
 
   """
-  @spec indices([non_neg_integer]) :: lens
+  @spec indices([non_neg_integer]) :: Lens2.lens
   deflens indices(indices), do: indices |> Enum.map(&index/1) |> Combine.multiple
 end
