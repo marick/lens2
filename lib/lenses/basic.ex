@@ -113,8 +113,4 @@ defmodule Lens2.Lenses.Basic do
   """
   @spec reject(lens, (any -> boolean)) :: lens
   def reject(lens, predicate), do: filter(lens, &(not predicate.(&1)))
-
-
-
-
 end
