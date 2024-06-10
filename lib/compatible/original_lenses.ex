@@ -20,11 +20,11 @@ defmodule Lens2.Compatible.OriginalLenses do
       defdelegate filter(predicate), to: Basic
       defdelegate reject(lens, predicate), to: Basic
 
-      x = quote do
-            defdelegate reject(lens, predicate), to: Basic
-      end
+      # x = quote do
+      #       defdelegate reject(lens, predicate), to: Basic
+      # end
 
-      Macro.expand_once(x, __ENV__) |> Macro.to_string |> IO.puts
+      # Macro.expand_once(x, __ENV__) |> Macro.to_string |> IO.puts
 
 
 

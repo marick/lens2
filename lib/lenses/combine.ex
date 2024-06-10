@@ -55,6 +55,49 @@ defmodule Lens2.Lenses.Combine do
   deflens seq_both(lens1, lens2), do: both(seq(lens1, lens2), lens1)
 
 
+  @doc ~S"""
+  Convert a pointer into pointers for each level below it.
+
+  The `descender` lens is used recursively. Consider this structure:
+
+      %{below:
+           %{..., below: ...}}
+
+  `Lens.key?(:below)` will give you a pointer to the first substructure:
+
+           %{..., below: ...}}
+
+  That lens can be combined to give you pointers to all the places under a `:below` key:
+
+      iex> tree = %{below:
+      ...>           %{value: 1, below:
+      ...>                         %{value: 2}}}
+      iex> lens = Lens.levels_below(Lens.key?(:below))
+      iex> Deeply.to_list(tree, lens)
+      [%{value: 2},
+       %{value: 1, below: %{value: 2}}
+      ]
+
+  To see how to combine this lens with later lenses to, for example,
+  pick out all the `:values` at every level of the tree, see ... add
+  the real name and link...
+
+  If you use `Lens2.Deeply.to_list/2`, the values appear in a
+  predictable order, but I think you're better off considering them
+  unpredictable, as with `Enum.to_list/1` applied to maps.
+
+  This name is a synonym for `recur/1`, the name in the original `Lens` package.
+  """
+  @spec levels_below(Lens2.lens) :: Lens2.lens
+  deflens levels_below(descender), do: recur(descender)
+
+  @doc ~S"""
+  Add levels below a given place to that place.
+  """
+  @spec add_levels_below(Lens2.lens) :: Lens2.lens
+  deflens add_levels_below(descender), do: recur_root(descender)
+
+
 
 
 

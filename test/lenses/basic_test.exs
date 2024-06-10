@@ -2,6 +2,7 @@ defmodule Lens2.Lenses.BasicTest do
   use ExUnit.Case
   use Lens2
   use FlowAssertions
+  doctest Lens2.Lenses.Basic
 
   defmodule SomeStruct do
     defstruct [:a, :b]
