@@ -8,8 +8,22 @@ defmodule Lens2.Lenses.Combine do
   alias Lens2.Deeply
 
   @doc ~S"""
-  Returns a lens that yields the entirety of the data currently under focus.
+  Create an initial pointer from the whole of a container.
 
+  **Rarely used**
+
+  Most lenses consume pointers to create new pointers. However,
+  sometimes you want to *add* those new pointers to the original
+  pointer. Use `root/0` to represent the original.
+
+  That's the difference between `levels_below/1` and
+  `add_levels_below/1`: the latter uses `both/2` and `root/0` to add the
+  root pointer to what `levels_below/1` produces.
+
+      deflens add_levels_below(descender) do
+        pointers_below = levels_below(descender)
+        both(root(), pointers_below)
+      end
   """
   @spec root :: Lens2.lens
   deflens_raw root do
@@ -21,7 +35,21 @@ defmodule Lens2.Lenses.Combine do
 
 
   @doc ~S"""
-  Returns a lens that does not focus on any part of the data.
+  Returns a lens ignores all input pointers and produces no pointers.
+
+  **Rarely used**
+
+  Suppose you have an `Enumeration` of lenses and you want to combine
+  them into a single lens with `Enum.reduce/3`:
+
+      Enum.reduce(lenses, ???, combining_function)
+
+  If each step of the reduction is going to add a new source of
+  pointers, the starting point should be a source of *no* pointers,
+  which is `empty/0`. For example, the implementation of `multiple/1`
+  combines lenses one by one using `both/2`. It starts with `empty/0`:
+
+      Enum.reduce(lenses, empty(), &both/2)
 
   """
   @spec empty :: Lens2.lens
@@ -134,30 +162,33 @@ defmodule Lens2.Lenses.Combine do
   This name is a synonym for `recur/1`, the name in the original `Lens` package.
   """
   @spec levels_below(Lens2.lens) :: Lens2.lens
-  deflens levels_below(descender), do: recur(descender)
+  deflens_raw levels_below(descender), do: &do_recur(descender, &1, &2)
 
   @doc ~S"""
-  a pointer into pointers for each level below it.
 
+  "Explode" one pointer into many pointers into recursive levels within the original
+  container, plus the original pointer.
 
-  Given one or more pointers, add in pointers to all levels below them.
+  You have a pointer into a nested container. You want pointers into
+  each nested level of the container, with the levels defined by a
+  lens.
   """
   @spec add_levels_below(Lens2.lens) :: Lens2.lens
-  deflens add_levels_below(descender), do: recur_root(descender)
-
-
-
+  deflens add_levels_below(descender) do
+    pointers_below = levels_below(descender)
+    both(root(), pointers_below)
+  end
 
 
   @doc ~S"""
   """
   @spec recur(Lens2.lens) :: Lens2.lens
-  deflens_raw recur(lens), do: &do_recur(lens, &1, &2)
+  deflens recur(descender), do: levels_below(descender)
 
   @doc ~S"""
   """
   @spec recur_root(Lens2.lens) :: Lens2.lens
-  deflens recur_root(lens), do: both(recur(lens), root())
+  deflens recur_root(descender), do: add_levels_below(descender)
 
   defp do_recur(lens, data, fun) do
     {res, changed} =
