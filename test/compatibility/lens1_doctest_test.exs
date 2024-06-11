@@ -1,4 +1,4 @@
-defmodule Lens2.Compatibility.BasicTest do
+defmodule Lens2.Compatibility.Doctest do
   use Compatibility.Case
 
   # These are doctests scavenged from the original Lens

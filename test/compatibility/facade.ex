@@ -1,13 +1,16 @@
-defmodule Lens2.Compatible do
+defmodule Lens2.Lens1.Facade do
   @moduledoc """
   `Use` this module to get the API of the original `Lens` package.
 
+  Used to run the old tests.
 
+  Note this runs the old tests against `Deeply.*` and `Lens.Lenses.*`, not against
+  the actual Lens1 code.
   """
 
   defmacro __using__(_opts \\ []) do
     quote do
-      alias Lens2.Compatible, as: Lens
+      alias Lens2.Lens1.Facade, as: Lens1
       import Lens2.Deflens
     end
   end

@@ -1,7 +1,5 @@
-defmodule Lens2.Compatibility.LensTest do
-  use ExUnit.Case
-  require Integer
-  use Lens2.Compatible
+defmodule Lens2.Compatibility.ExUnitTest do
+  use Compatibility.Case
 
   # These are the original Lens1 tests.
 
