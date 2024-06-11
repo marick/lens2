@@ -81,36 +81,4 @@ defmodule Lens2.Lenses.Basic do
     end
   end
 
-  @doc ~S"""
-  Returns a lens that focuses on a subset of elements focused on by the given lens that satisfy the given condition.
-
-  """
-  @spec filter(lens, (any -> boolean)) :: lens
-  def filter(predicate), do: root() |> filter(predicate)
-
-  deflens_raw filter(lens, predicate) do
-    fn data, fun ->
-      {res, changed} =
-        Deeply.get_and_update(data, lens, fn item ->
-          if predicate.(item) do
-            {res, changed} = fun.(item)
-            {[res], changed}
-          else
-            {[], item}
-          end
-        end)
-
-      {Enum.concat(res), changed}
-    end
-  end
-
-  # TODO: why is reject's definition not parallel to filter, with the one-arity case?
-
-  @doc ~S"""
-  Returns a lens that focuses on a subset of elements focused on by the given lens that don't satisfy the given
-  condition.
-
-  """
-  @spec reject(lens, (any -> boolean)) :: lens
-  def reject(lens, predicate), do: filter(lens, &(not predicate.(&1)))
 end

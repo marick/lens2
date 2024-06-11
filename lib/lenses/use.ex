@@ -3,9 +3,8 @@ defmodule Lens2.Lenses.Use do
   defmacro __using__(_) do
     quote do
 
-      alias Lens2.Lenses.{Basic, Indexed, Combine, Keyed}
+      alias Lens2.Lenses.{Basic, Indexed, Combine, Keyed, Filter}
       import Lens2.Helpers.Delegate
-
 
       delegate_to(Basic, [
         const(value),
@@ -13,12 +12,15 @@ defmodule Lens2.Lenses.Use do
         empty(),
         root(),
         into(lens, collectable),
-        filter(lens, predicate),
       ])
 
+
+      delegate_to(Filter, [
+        filter(lens, predicate),
+      ])
       # This arity is specially defined - not via deflens - so can't be part of `delegate_to`.
-      defdelegate filter(predicate), to: Basic
-      defdelegate reject(lens, predicate), to: Basic
+      defdelegate filter(predicate), to: Filter
+      defdelegate reject(lens, predicate), to: Filter
 
       # x = quote do
       #       defdelegate reject(lens, predicate), to: Basic
