@@ -1,4 +1,4 @@
-defmodule Lens2.CombiningRecurTest do
+defmodule Lens2.CombiningLevelsTest do
   use ExUnit.Case
   use FlowAssertions
   use Lens2

@@ -5,7 +5,7 @@ structures like collecting all the numbers (or operators) in an
 arithmetic expression. I'll start with a simpler example, then do the
 arithmetic example, then explain how `recur` works.
 
-## Consistent levels
+## Regular patterns
 
 ```elixir
     tree = %{value: 1,
