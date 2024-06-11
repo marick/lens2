@@ -5,7 +5,7 @@ defmodule Lens2.Lenses.Basic do
 
   """
   use Lens2.Deflens
-  alias Lens2.Compatible.Operations
+  alias Lens2.Deeply
 
   @type lens :: Access.access_fun
 
@@ -76,7 +76,7 @@ defmodule Lens2.Lenses.Basic do
   @spec into(lens, Collectable.t()) :: lens
   deflens_raw into(lens, collectable) do
     fn data, fun ->
-      {res, updated} = Operations.get_and_map(lens, data, fun)
+      {res, updated} = Deeply.get_and_update(data, lens, fun)
       {res, Enum.into(updated, collectable)}
     end
   end
@@ -91,7 +91,7 @@ defmodule Lens2.Lenses.Basic do
   deflens_raw filter(lens, predicate) do
     fn data, fun ->
       {res, changed} =
-        Operations.get_and_map(lens, data, fn item ->
+        Deeply.get_and_update(data, lens, fn item ->
           if predicate.(item) do
             {res, changed} = fun.(item)
             {[res], changed}

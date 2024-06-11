@@ -11,7 +11,7 @@ defmodule Lens2.Lenses.Indexed do
   use Lens2.Deflens
   alias Lens2.Helpers.DefOps
   alias Lens2.Lenses.Combine
-  alias Lens2.Compatible.Operations
+  alias Lens2.Deeply
 
   @doc ~S"""
   Returns a lens that points to the n-th element of a list or tuple.
@@ -97,7 +97,8 @@ defmodule Lens2.Lenses.Indexed do
   @spec back :: Lens2.lens
   deflens_raw back do
     fn data, fun ->
-      data |> Enum.count() |> behind |> Operations.get_and_map(data, fun)
+      lens = behind(Enum.count(data))
+      Deeply.get_and_update(data, lens, fun)
     end
   end
 

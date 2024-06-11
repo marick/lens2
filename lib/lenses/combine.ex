@@ -6,7 +6,7 @@ defmodule Lens2.Lenses.Combine do
   """
   use Lens2.Deflens
   alias Lens2.Lenses.Basic
-  alias Lens2.Compatible.Operations
+  alias Lens2.Deeply
 
   @type lens :: Access.access_fun
 
@@ -15,7 +15,7 @@ defmodule Lens2.Lenses.Combine do
   @spec match((any -> lens)) :: lens
   deflens_raw match(matcher_fun) do
     fn data, fun ->
-      Operations.get_and_map(matcher_fun.(data), data, fun)
+      Deeply.get_and_update(data, matcher_fun.(data), fun)
     end
   end
 
@@ -28,8 +28,8 @@ defmodule Lens2.Lenses.Combine do
   @spec both(lens, lens) :: lens
   deflens_raw both(lens1, lens2) do
     fn data, fun ->
-      {res1, changed1} = Operations.get_and_map(lens1, data, fun)
-      {res2, changed2} = Operations.get_and_map(lens2, changed1, fun)
+      {res1, changed1} = Deeply.get_and_update(data, lens1, fun)
+      {res2, changed2} = Deeply.get_and_update(changed1, lens2, fun)
       {res1 ++ res2, changed2}
     end
   end
@@ -41,8 +41,8 @@ defmodule Lens2.Lenses.Combine do
   deflens_raw seq(lens1, lens2) do
     fn data, fun ->
       {res, changed} =
-        Operations.get_and_map(lens1, data, fn item ->
-          Operations.get_and_map(lens2, item, fun)
+        Deeply.get_and_update(data, lens1, fn item ->
+          Deeply.get_and_update(item, lens2, fun)
         end)
 
       {Enum.concat(res), changed}
@@ -129,7 +129,7 @@ defmodule Lens2.Lenses.Combine do
 
   defp do_recur(lens, data, fun) do
     {res, changed} =
-      Operations.get_and_map(lens, data, fn item ->
+      Deeply.get_and_update(data, lens, fn item ->
         {results, changed1} = do_recur(lens, item, fun)
         {res_parent, changed2} = fun.(changed1)
         {results ++ [res_parent], changed2}
@@ -144,8 +144,8 @@ defmodule Lens2.Lenses.Combine do
   deflens_raw context(context_lens, item_lens) do
     fn data, fun ->
       {results, changed} =
-        Operations.get_and_map(context_lens, data, fn context ->
-          Operations.get_and_map(item_lens, context, fn item -> fun.({context, item}) end)
+        Deeply.get_and_update(data, context_lens, fn context ->
+          Deeply.get_and_update(context, item_lens, fn item -> fun.({context, item}) end)
         end)
 
       {Enum.concat(results), changed}
@@ -157,8 +157,8 @@ defmodule Lens2.Lenses.Combine do
   @spec either(lens, lens) :: lens
   deflens_raw either(lens, other_lens) do
     fn data, fun ->
-      case Operations.get_and_map(lens, data, fun) do
-        {[], _updated} -> Operations.get_and_map(other_lens, data, fun)
+      case Deeply.get_and_update(data, lens, fun) do
+        {[], _updated} -> Deeply.get_and_update(data, other_lens, fun)
         {res, updated} -> {res, updated}
       end
     end
