@@ -1,7 +1,5 @@
 defmodule Lens2.Lenses.FilterTest do
-  use ExUnit.Case
-  use Lens2
-  use FlowAssertions
+  use Lens2.Case, async: true
 
   doctest Lens2.Lenses.Filter
 end

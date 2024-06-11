@@ -1,7 +1,6 @@
 defmodule Lens2.Lenses.BasicTest do
-  use ExUnit.Case
-  use Lens2
-  use FlowAssertions
+  use Lens2.Case, async: true
+
   doctest Lens2.Lenses.Basic
 
   defmodule SomeStruct do

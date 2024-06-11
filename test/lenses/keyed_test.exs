@@ -1,7 +1,5 @@
 defmodule Lens2.Lenses.KeyedTest do
-  use ExUnit.Case
-  use Lens2
-  use FlowAssertions
+  use Lens2.Case, async: true
 
   defmodule SomeStruct do
     defstruct [:a, :b]

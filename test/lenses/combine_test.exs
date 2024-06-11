@@ -1,7 +1,5 @@
 defmodule Lens2.Lenses.CombineTest do
-  use ExUnit.Case
-  use Lens2
-  use FlowAssertions
+  use Lens2.Case, async: true
 
   doctest Lens2.Lenses.Combine
 end
