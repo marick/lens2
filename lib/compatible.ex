@@ -13,7 +13,7 @@ defmodule Lens2.Compatible do
   end
 
   alias Lens2.Compatible.Operations
-  use Lens2.Compatible.OriginalLenses
+  use Lens2.Lenses.Use
 
   defdelegate get_and_map(lens, data, fun), to: Operations
   defdelegate to_list(lens, data), to: Operations

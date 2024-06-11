@@ -6,9 +6,7 @@ somewhat more powerful and general-purpose. (For example, lenses work
 with structures like `MapSet` that have neither indexes or keys.)
 
 This package is derived from
-[`Lens`](https://hexdocs.pm/lens/readme.html). If you `use` the
-`Lens2.Compatible` module, you get the same API and functions. So what's the
-point?
+[`Lens`](https://hexdocs.pm/lens/readme.html). Why change it?
 
 
 1. Lenses are notoriously hard to understand. A lot of that, I think,

@@ -3,6 +3,8 @@ defmodule Lens2.Compatibility.LensTest do
   require Integer
   use Lens2.Compatible
 
+  # These are the original Lens1 tests.
+
   defmodule TestStruct do
     defstruct [:a, :b, :c]
   end
