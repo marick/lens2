@@ -56,35 +56,48 @@ defmodule Lens2.Lenses.Combine do
 
 
   @doc ~S"""
-  Convert a pointer into pointers for each level below it.
+  Use a `descender` lens to replace one or more pointers with all the matching pointers below them.
 
-  The `descender` lens is used recursively. Consider this structure:
+  The `descender` lens is used recursively. Here is an example. (For a less terse explanation, see <<<<>>>>>
+
+  Consider this structure:
 
       %{below:
            %{..., below: ...}}
 
-  `Lens.key?(:below)` will give you a pointer to the first substructure:
+  `Lens.key?(:below)` will transform a pointer to the root into a
+  pointer to the first substructure:
 
            %{..., below: ...}}
 
-  That lens can be combined to give you pointers to all the places under a `:below` key:
+  This function can use that lens to give you pointers all the places under a `:below` key:
 
+      iex> lens = Lens.levels_below(Lens.key?(:below))
       iex> tree = %{below:
       ...>           %{value: 1, below:
       ...>                         %{value: 2}}}
-      iex> lens = Lens.levels_below(Lens.key?(:below))
       iex> Deeply.to_list(tree, lens)
       [%{value: 2},
        %{value: 1, below: %{value: 2}}
+       # Note that the original `tree` is not included.
       ]
 
-  To see how to combine this lens with later lenses to, for example,
-  pick out all the `:values` at every level of the tree, see ... add
-  the real name and link...
+  Given pointers to the levels, a later lens can point to values at all of those levels:
 
-  If you use `Lens2.Deeply.to_list/2`, the values appear in a
-  predictable order, but I think you're better off considering them
-  unpredictable, as with `Enum.to_list/1` applied to maps.
+      iex> lens = Lens.levels_below(Lens.key?(:below)) |> Lens.key(:value)
+      iex> tree = %{below:
+      ...>           %{value: 1, below:
+      ...>                         %{value: 2}}}
+      iex> Deeply.update(tree, lens, & &1 * 111111)
+      %{below:
+         %{value: 111111, below:
+                          %{value: 222222}}}
+      ...>
+      iex> Deeply.to_list(tree, lens)
+      [2, 1]
+
+  See `add_levels_below/1` for a lens that doesn't replace the
+  top-level pointers, but rather adds to them.
 
   This name is a synonym for `recur/1`, the name in the original `Lens` package.
   """
@@ -92,7 +105,10 @@ defmodule Lens2.Lenses.Combine do
   deflens levels_below(descender), do: recur(descender)
 
   @doc ~S"""
-  Add levels below a given place to that place.
+  a pointer into pointers for each level below it.
+
+
+  Given one or more pointers, add in pointers to all levels below them.
   """
   @spec add_levels_below(Lens2.lens) :: Lens2.lens
   deflens add_levels_below(descender), do: recur_root(descender)
