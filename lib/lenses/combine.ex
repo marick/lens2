@@ -5,14 +5,46 @@ defmodule Lens2.Lenses.Combine do
 
   """
   use Lens2.Deflens
-  alias Lens2.Lenses.Basic
   alias Lens2.Deeply
 
-  @type lens :: Access.access_fun
+  @doc ~S"""
+  Returns a lens that yields the entirety of the data currently under focus.
+
+  """
+  @spec root :: Lens2.lens
+  deflens_raw root do
+    fn data, fun ->
+      {res, updated} = fun.(data)
+      {[res], updated}
+    end
+  end
+
+
+  @doc ~S"""
+  Returns a lens that does not focus on any part of the data.
+
+  """
+  @spec empty :: Lens2.lens
+  deflens_raw empty, do: fn data, _fun -> {[], data} end
+
+
+  @doc ~S"""
+  Returns a lens that ignores the data and always focuses on the given value.
+
+  """
+  @spec const(any) :: Lens.lens
+  deflens_raw const(value) do
+    fn _data, fun ->
+      {res, updated} = fun.(value)
+      {[res], updated}
+    end
+  end
+
+
 
   @doc ~S"""
   """
-  @spec match((any -> lens)) :: lens
+  @spec match((any -> Lens2.lens)) :: Lens2.lens
   deflens_raw match(matcher_fun) do
     fn data, fun ->
       Deeply.get_and_update(data, matcher_fun.(data), fun)
@@ -20,12 +52,12 @@ defmodule Lens2.Lenses.Combine do
   end
 
 
-  @spec multiple([lens]) :: lens
-  deflens multiple(lenses), do: lenses |> Enum.reverse() |> Enum.reduce(Basic.empty(), &both/2)
+  @spec multiple([Lens2.lens]) :: Lens2.lens
+  deflens multiple(lenses), do: lenses |> Enum.reverse() |> Enum.reduce(empty(), &both/2)
 
   @doc ~s"""
   """
-  @spec both(lens, lens) :: lens
+  @spec both(Lens2.lens, Lens2.lens) :: Lens2.lens
   deflens_raw both(lens1, lens2) do
     fn data, fun ->
       {res1, changed1} = Deeply.get_and_update(data, lens1, fun)
@@ -37,7 +69,7 @@ defmodule Lens2.Lenses.Combine do
 
   @doc ~S"""
   """
-  @spec seq(lens, lens) :: lens
+  @spec seq(Lens2.lens, Lens2.lens) :: Lens2.lens
   deflens_raw seq(lens1, lens2) do
     fn data, fun ->
       {res, changed} =
@@ -51,7 +83,7 @@ defmodule Lens2.Lenses.Combine do
 
   @doc ~S"""
   """
-  @spec seq_both(lens, lens) :: lens
+  @spec seq_both(Lens2.lens, Lens2.lens) :: Lens2.lens
   deflens seq_both(lens1, lens2), do: both(seq(lens1, lens2), lens1)
 
 
@@ -119,13 +151,13 @@ defmodule Lens2.Lenses.Combine do
 
   @doc ~S"""
   """
-  @spec recur(lens) :: lens
+  @spec recur(Lens2.lens) :: Lens2.lens
   deflens_raw recur(lens), do: &do_recur(lens, &1, &2)
 
   @doc ~S"""
   """
-  @spec recur_root(lens) :: lens
-  deflens recur_root(lens), do: both(recur(lens), Basic.root())
+  @spec recur_root(Lens2.lens) :: Lens2.lens
+  deflens recur_root(lens), do: both(recur(lens), root())
 
   defp do_recur(lens, data, fun) do
     {res, changed} =
@@ -140,7 +172,7 @@ defmodule Lens2.Lenses.Combine do
 
   @doc """
   """
-  @spec context(lens, lens) :: lens
+  @spec context(Lens2.lens, Lens2.lens) :: Lens2.lens
   deflens_raw context(context_lens, item_lens) do
     fn data, fun ->
       {results, changed} =
@@ -154,7 +186,7 @@ defmodule Lens2.Lenses.Combine do
 
   @doc ~S"""
   """
-  @spec either(lens, lens) :: lens
+  @spec either(Lens2.lens, Lens2.lens) :: Lens2.lens
   deflens_raw either(lens, other_lens) do
     fn data, fun ->
       case Deeply.get_and_update(data, lens, fun) do

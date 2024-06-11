@@ -27,7 +27,8 @@ defmodule Lens2.Lenses.Keyed do
   """
   use Lens2.Deflens
   alias Lens2.Helpers.DefOps
-  alias Lens2.Lenses.{Basic,Combine,Indexed}
+  alias Lens2.Lenses
+  alias Lenses.{Combine,Indexed}
 
   # `deflens` doesn't cooperate with guards, so need an explicit precondition.
   defmacrop assert_list(first_arg) do
@@ -280,6 +281,6 @@ defmodule Lens2.Lenses.Keyed do
   keys of a struct, since all the keys are known at compile time.
   """
   @spec map_keys :: Lens2.lens
-  deflens map_keys, do: Basic.all() |> Basic.into(%{}) |> Indexed.at(0)
+  deflens map_keys, do: Lenses.Enum.all() |> Lenses.Enum.into(%{}) |> Indexed.at(0)
 
 end

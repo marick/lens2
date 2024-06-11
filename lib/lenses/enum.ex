@@ -1,4 +1,4 @@
-defmodule Lens2.Lenses.Basic do
+defmodule Lens2.Lenses.Enum do
   @moduledoc """
   Lenses that work on miscellaneous data structures. Ones that don't fit elsewhere.
 
@@ -6,41 +6,6 @@ defmodule Lens2.Lenses.Basic do
   """
   use Lens2.Deflens
   alias Lens2.Deeply
-
-  @type lens :: Access.access_fun
-
-  @doc ~S"""
-  Returns a lens that yields the entirety of the data currently under focus.
-
-  """
-  @spec root :: lens
-  deflens_raw root do
-    fn data, fun ->
-      {res, updated} = fun.(data)
-      {[res], updated}
-    end
-  end
-
-
-  @doc ~S"""
-  Returns a lens that does not focus on any part of the data.
-
-  """
-  @spec empty :: lens
-  deflens_raw empty, do: fn data, _fun -> {[], data} end
-
-
-  @doc ~S"""
-  Returns a lens that ignores the data and always focuses on the given value.
-
-  """
-  @spec const(any) :: lens
-  deflens_raw const(value) do
-    fn _data, fun ->
-      {res, updated} = fun.(value)
-      {[res], updated}
-    end
-  end
 
   @doc ~S"""
   Returns a lens that focuses on all the values in an enumerable.
@@ -51,7 +16,7 @@ defmodule Lens2.Lenses.Basic do
 
   See [into](#into/2) on how to rectify this.
   """
-  @spec all :: lens
+  @spec all :: Lens2.lens
   deflens_raw all do
     fn data, fun ->
       {res, updated} =
@@ -73,7 +38,7 @@ defmodule Lens2.Lenses.Basic do
   To prevent this, avoid using `|>` with `into`:
 
   """
-  @spec into(lens, Collectable.t()) :: lens
+  @spec into(Lens2.lens, Collectable.t()) :: Lens2.lens
   deflens_raw into(lens, collectable) do
     fn data, fun ->
       {res, updated} = Deeply.get_and_update(data, lens, fun)

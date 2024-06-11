@@ -23,14 +23,14 @@ defmodule Lens2.Lenses.Filter do
   """
   use Lens2.Deflens
   alias Lens2.Deeply
-  alias Lens2.Lenses.Basic
+  alias Lens2.Lenses.Combine
 
   @doc ~S"""
   Returns a lens that focuses on a subset of elements focused on by the given lens that satisfy the given condition.
 
   """
   @spec filter(Lens2.lens, (any -> boolean)) :: Lens2.lens
-  def filter(predicate), do: Basic.root() |> filter(predicate)
+  def filter(predicate), do: Combine.root() |> filter(predicate)
 
   deflens_raw filter(lens, predicate) do
     fn data, fun ->

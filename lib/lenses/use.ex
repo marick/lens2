@@ -3,14 +3,12 @@ defmodule Lens2.Lenses.Use do
   defmacro __using__(_) do
     quote do
 
-      alias Lens2.Lenses.{Basic, Indexed, Combine, Keyed, Filter}
+      alias Lens2.Lenses
+      alias Lenses.{Basic, Indexed, Combine, Keyed, Filter}
       import Lens2.Helpers.Delegate
 
-      delegate_to(Basic, [
-        const(value),
+      delegate_to(Lenses.Enum, [
         all(),
-        empty(),
-        root(),
         into(lens, collectable),
       ])
 
@@ -41,6 +39,9 @@ defmodule Lens2.Lenses.Use do
       ])
 
       delegate_to(Combine, [
+        const(value),
+        empty(),
+        root(),
         match(matcher_fun),
         multiple(lenses),
         both(lens1, lens2),

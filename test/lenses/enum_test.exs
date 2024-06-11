@@ -1,13 +1,8 @@
-defmodule Lens2.Lenses.BasicTest do
+defmodule Lens2.Lenses.EnumTest do
   use Lens2.Case, async: true
 
-  doctest Lens2.Lenses.Basic
+  doctest Lens2.Lenses.Enum
 
-  defmodule SomeStruct do
-    defstruct [:a, :b]
-  end
-
-  doctest Lens2.Lenses.Basic
 
   describe "all/0" do
     test "typical" do
@@ -40,5 +35,6 @@ defmodule Lens2.Lenses.BasicTest do
       {1, 2} |> Deeply.to_list(Lens.all |> Lens.into({})) |> dbg
     end
   end
+
 
 end

@@ -4,7 +4,7 @@ defmodule Lens2.Lenses do
   Makes all the predefined lens-makers available.
   """
 
-  alias Lens2.Lenses.{Basic, Indexed, Combine, Keyed, Filter}
+  alias Lens2.Lenses.{Indexed, Combine, Keyed, Filter}
   import Lens2.Helpers.Delegate
   use Lens2.Lenses.Use
 end
