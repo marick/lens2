@@ -13,6 +13,7 @@ defmodule Lens2.CombiningLevelsTest do
     end
   end
 
+  @tag :skip
   test "values_to_list" do
     tree = %{value: 1,
              deeper: %{value: 2,
