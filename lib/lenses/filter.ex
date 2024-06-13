@@ -30,6 +30,9 @@ defmodule Lens2.Lenses.Filter do
 
   """
   @spec filter(Lens2.lens, (any -> boolean)) :: Lens2.lens
+
+
+  # I can't imagine the use case for the following.
   def filter(predicate), do: Combine.root() |> filter(predicate)
 
   deflens_raw filter(lens, predicate) do

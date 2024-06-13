@@ -57,7 +57,49 @@ defmodule Lens2.Lenses.Combine do
 
 
   @doc ~S"""
-  Returns a lens that ignores the data and always focuses on the given value.
+  Returns a lens that replaces any incoming pointers with a pointer to the given data.
+
+  **If you try to use this function for anything ambitious, you risk suddenly
+    comprehending – _truly_ comprehending – the universe's profound
+    indifference to all human needs, desires, and expectations. Take it from me: it
+    feels like plunging eternally into a vile pit of gibbering
+    horror, surrounded by the thin monotonous whine of accursed flutes.**
+
+  With that said...
+
+  Remember that there are three classes of functions:
+  1. Those that raise an error for a missing value. (Lens.key!/1)
+  2. Those that
+
+  When used at the end of a pipeline, the `const` value can replace the actual value
+  pointed at:
+
+      iex>  lens = Lens.key(:a) |> Lens.const(10000)
+      iex>  map = %{a: 1}
+      iex>  Deeply.to_list(map, lens)
+      [10000]
+      ...>
+      ...>  # In the case of `put`, the `const` value might as well not be there.
+      iex>  Deeply.put(map, lens, :NEW)
+      %{a: :NEW}
+      ...>
+      ...>  # In the case of `update`, the `const` value is used instead of the actual.
+      iex>  Deeply.update(map, lens, & &1+9)
+      %{a: 10009}
+
+
+  In conjunction with `either/2`, it can be used to provide a default value:
+
+      iex>  # default_to = fn maybe_noplace, default ->
+      ...>  #   Lens.either(maybe_noplace, Lens.const(default))
+      ...>  # end
+      iex>  # lens = Lens.key(:a) |> default_to.(%{count: 0}) |> Lens.key(:count)
+      iex>  # Deeply.update(%{}, lens, fn x ->
+      ...>  #    dbg x
+      ...>  #    x + 1
+      ...>  # end) |> dbg
+
+  %{a: %{count: 33}
 
   """
   @spec const(any) :: Lens.lens
@@ -67,8 +109,6 @@ defmodule Lens2.Lenses.Combine do
       {[res], updated}
     end
   end
-
-
 
   @doc ~S"""
   """
