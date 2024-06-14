@@ -17,7 +17,19 @@ This package is derived from
    This package is a place to put lots of explanatory and tutorial
    documentation.
    
-2. In [`Lens`](https://hexdocs.pm/lens/readme.html), the API for *making* lenses is the same as the one for *using* lenses. (The same is true for `Access`.)
+   
+2. Lenses are composed in a way similar to the `Access`
+   functions. Usually, they're as straightforward as a typical
+   `put_in` list of keys. However, there are some subtle
+   lenses. Whether you use them directly or in combination with other
+   lenses, you may find yourself puzzled. To help you understand,
+   every predefined lens maker (or ones you create yourself) has a
+   `tracing_` variant that describes what it's doing. Composed lenses
+   show a nicely indented log of what's happened.
+   
+         <<<I'm revamping this to be even prettier, so no example right now>>>
+   
+2. In [`Lens`](https://hexdocs.pm/lens/readme.html), the API for *making* lenses is the same as the one for *using* lenses.
    I like the functions for making lenses, but I think the ones for using lenses
    should look like the familiar `get`/`put`/`update` (or `get_in`, etc.)
    So, you can create a lens that points into a data structure and names
