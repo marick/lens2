@@ -4,15 +4,15 @@ defmodule Lens2.TracingTest do
   alias Tracing.LogItem
 
   test "log entry and exit" do
-    item = LogItem.entry("key?(:a)", %{a: 4})
+    item = LogItem.on_entry(:key?, [:a], %{a: 4})
 
     item
-    |> assert_fields(call_string: "key?(:a)", container: %{a: 4})
+    |> assert_fields(call: "key?(:a)", container: "%{a: 4}")
     |> assert_fields(gotten: nil, updated: nil)
 
-    LogItem.exit(item, [4], 5)
-    |> assert_fields(call_string: "key?(:a)", container: %{a: 4})
-    |> assert_fields(gotten: [4], updated: 5)
+    LogItem.on_exit(item, [4], %{a: 5})
+    |> assert_fields(call: "key?(:a)", container: "%{a: 4}")
+    |> assert_fields(gotten: "[4]", updated: "%{a: 5}")
   end
 
   test "building the log" do
@@ -21,15 +21,17 @@ defmodule Lens2.TracingTest do
 
     outer = %{a: %{b: 1}}
     Tracing.entry(:key, [:a], outer)
-    assert Tracing.peek_at_log(level: 0) == LogItem.entry("key(:a)", outer)
+    assert Tracing.peek_at_log(level: 0) == LogItem.on_entry(:key, [:a], outer)
     assert Tracing.current_nesting == 1
 
     Tracing.entry(:key?, [:b], outer.a)
-    assert Tracing.peek_at_log(level: 1) == LogItem.entry("key?(:b)", outer.a)
+    assert Tracing.peek_at_log(level: 1) == LogItem.on_entry(:key?, [:b], outer.a)
     assert Tracing.current_nesting == 2
 
     Tracing.exit({[:inner_gotten], :inner_updated})
-    expected = LogItem.entry("key?(:b)", outer.a) |> LogItem.exit([:inner_gotten], :inner_updated)
+    expected =
+      LogItem.on_entry(:key?, [:b], outer.a)
+      |> LogItem.on_exit([:inner_gotten], :inner_updated)
     assert Tracing.peek_at_log(level: 1) == expected
     assert Tracing.current_nesting == 1
 
@@ -38,7 +40,9 @@ defmodule Lens2.TracingTest do
       Tracing.exit({[:outer_gotten], :outer_updated},
                    &Tracing.peek_at_log/0)
 
-    expected = LogItem.entry("key(:a)", outer) |> LogItem.exit([:outer_gotten], :outer_updated)
+    expected =
+      LogItem.on_entry(:key, [:a], outer)
+      |> LogItem.on_exit([:outer_gotten], :outer_updated)
     assert log[0] == expected
 
     IO.inspect log

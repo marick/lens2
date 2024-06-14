@@ -5,19 +5,25 @@ defmodule Lens2.Helpers.Tracing do
 
   defmodule LogItem do
     typedstruct do
-      field :call_string, String.t, enforce: true
+      field :call, String.t, enforce: true
       field :container, any, enforce: true
       field :gotten, any
       field :updated, any
     end
 
-    def entry(call_string, container) do
-      %__MODULE__{call_string: call_string, container: container}
+    def on_entry(name, args, container) do
+      %__MODULE__{call: call_string(name, args), container: inspect(container)}
     end
 
-    def exit(log_entry, gotten, updated) do
-      %{log_entry | gotten: gotten, updated: updated}
+    def on_exit(log_item, gotten, updated) do
+      %{log_item | gotten: inspect(gotten), updated: inspect(updated)}
     end
+
+    defp call_string(name, args) do
+      formatted_args = Enum.map(args, & inspect(&1))
+      "#{name}(#{Enum.join(formatted_args, ",")})"
+    end
+
   end
 
 
@@ -32,7 +38,7 @@ defmodule Lens2.Helpers.Tracing do
         remember_nesting(0)
         entry(name, args, container)
       _ ->
-        log(call(name, args), container)
+        log(name, args, container)
 #        IO.puts(["> #{call(name, args)} ||   #{inspect data}"])
         increment_nesting()
     end
@@ -59,14 +65,14 @@ defmodule Lens2.Helpers.Tracing do
   @nesting :lens_trace_nesting
 
 
-  def log(call, container) do
-    LogItem.entry(call, container)
+  def log(name, args, container) do
+    LogItem.on_entry(name, args, container)
     |> update_and_stash
   end
 
   def log({gotten, updated}) do
     peek_at_log()[current_nesting()]
-    |> LogItem.exit(gotten, updated)
+    |> LogItem.on_exit(gotten, updated)
     |> update_and_stash
   end
 
@@ -100,8 +106,4 @@ defmodule Lens2.Helpers.Tracing do
 
   # defp padding(n), do: String.duplicate(" ", n)
 
-  defp call(name, args) do
-    formatted_args = Enum.map(args, & inspect(&1))
-    "#{name}(#{Enum.join(formatted_args, ",")})"
-  end
 end
