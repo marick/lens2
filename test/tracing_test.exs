@@ -52,26 +52,72 @@ defmodule Lens2.TracingTest do
     assert Tracing.peek_at_log == nil
   end
 
+  describe "prettifying call strings" do
 
-  test "indented call strings" do
-    input = %{
-      0 => %{call: "key(:a)"},
-      1 => %{call: "map_values()", other: :ignored},
-      2 => %{call: "keys([:aa, :bb])"}
-    }
+    test "prettification" do
+      input = %{
+        0 => %{call: "key(:a)"},
+        1 => %{call: "map_values()", other: :ignored},
+        2 => %{call: "keys([:aa, :bb])"}
+      }
 
-    expected = %{
-      0 => %{call: "key(:a)"},
-      1 => %{call: "   map_values()", other: :ignored},
-      2 => %{call: "             keys([:aa, :bb])"}
-    }
+      expected = %{
+        0 => %{call: "key(:a)                      "},
+        1 => %{call: "   map_values()              ", other: :ignored},
+        2 => %{call: "             keys([:aa, :bb])"}
+      }
 
-    assert Tracing.indent_calls(input) == expected
+      assert Tracing.prettify_calls(input) == expected
+    end
+
+    test "indented call strings" do
+      input = %{
+        0 => %{call: "key(:a)"},
+        1 => %{call: "map_values()", other: :ignored},
+        2 => %{call: "keys([:aa, :bb])"}
+      }
+
+      expected = %{
+        0 => %{call: "key(:a)"},
+        1 => %{call: "   map_values()", other: :ignored},
+        2 => %{call: "             keys([:aa, :bb])"}
+      }
+
+      assert Tracing.indent_calls(input, :call) == expected
+    end
+
+    test "length_of_name" do
+      assert Tracing.length_of_name("key(:a)") == 3
+    end
+
+    test "max_length" do
+      input = %{
+        0 => %{gotten: "1234"},
+        1 => %{gotten: "12345"},
+        2 => %{gotten: "12"}
+      }
+
+      assert Tracing.max_length(input, :gotten) == 5
+    end
+
+    test "pad_right" do
+      input = %{
+        0 => %{gotten: "1234"},
+        1 => %{gotten: "12345"},
+        2 => %{gotten: "12"}
+      }
+
+      expected = %{
+        0 => %{gotten: "1234 "},
+        1 => %{gotten: "12345"},
+        2 => %{gotten: "12   "}
+      }
+
+      assert Tracing.pad_right(input, :gotten) == expected
+    end
+
   end
 
-  test "length_of_name" do
-    assert Tracing.length_of_name("key(:a)") == 3
-  end
 
   @tag :skip
   test "trace" do
