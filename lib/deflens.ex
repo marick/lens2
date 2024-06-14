@@ -106,32 +106,35 @@ defmodule Lens2.Deflens do
   end
 
   alias Lens2.Lenses.Combine
+  alias Lens2.Helpers.Tracing
 
   defmacro deflens_raw({name, metadata, args}, do: callback) do
     args = canonicalize_arglist(args)
+    tracing_name = Tracing.function_name(name)
     quote do
       unquote(def_access_fun_interface({name, metadata, args},
                                        callback))
 
-      unquote(def_access_fun_interface({tracing_name(name), metadata, args},
-                                       tracing_callback(name, callback)))
+      unquote(def_access_fun_interface({tracing_name, metadata, args},
+                                       tracing_callback(name, args, callback)))
 
       unquote(def_pipe_version(name, args))
-      unquote(def_pipe_version(tracing_name(name), args))
+      unquote(def_pipe_version(tracing_name, args))
     end
   end
 
   defmacro deflens({name, metadata, args}, do: composed_fun) do
     args = canonicalize_arglist(args)
+    tracing_name = Tracing.function_name(name)
     quote do
       unquote(def_composed_fun_interface({name, metadata, args},
                                          composed_fun))
 
-      unquote(def_composed_fun_interface({tracing_name(name), metadata, args},
-                                         tracing_composed_function(name, composed_fun)))
+      unquote(def_composed_fun_interface({tracing_name, metadata, args},
+                                         tracing_composed_function(name, args, composed_fun)))
 
       unquote(def_pipe_version(name, args))
-      unquote(def_pipe_version(tracing_name(name), args))
+      unquote(def_pipe_version(tracing_name, args))
     end
   end
 
@@ -166,35 +169,32 @@ defmodule Lens2.Deflens do
 
   #
 
-
-  defp tracing_callback(name, callback) do
+  defp tracing_callback(name, args, callback) do
     quote do
       fn data, fun ->
         callback = unquote(callback)
-        shift_right(unquote(name), data)
+        Tracing.entry(unquote(name), unquote(args), data)
         result = callback.(data, fun)
-        shift_left(unquote(name), result)
+        Tracing.exit(unquote(name), unquote(args), result)
         result
       end
     end
   end
 
-  def tracing_composed_function(name, composed_fun) do
+  defp tracing_composed_function(name, args, composed_fun) do
     quote do
       fn
         selector, data, implementation ->
           composed_fun = unquote(composed_fun)
-          shift_right(unquote(name), data)
+          Tracing.entry(unquote(name), unquote(args), data)
           result = composed_fun.(selector, data, implementation)
-          shift_left(unquote(name), result)
+          Tracing.exit(unquote(name), unquote(args), result)
           result
       end
     end
   end
 
-  ######
-
-  ###
+  #
 
   defp def_pipe_version(name, args) do
     quote do
@@ -210,31 +210,5 @@ defmodule Lens2.Deflens do
       nil -> []
       _ -> args
     end
-  end
-
-  ###
-
-  def tracing_name(name) do
-    String.to_atom("tracing_#{name}")
-  end
-
-  def shift_right(name, data) do
-    case Process.get(:lens_trace_indent) do
-      nil ->
-        Process.put(:lens_trace_indent, 0)
-        shift_right(name, data)
-      margin ->
-        if margin == 0, do: IO.puts("\n")
-        IO.puts([String.pad_leading("", margin),
-                 "> #{name} #{inspect data}"])
-        Process.put(:lens_trace_indent, margin + String.length(Atom.to_string(name)))
-    end
-  end
-
-  def shift_left(name, result) do
-    margin = Process.get(:lens_trace_indent) - String.length(Atom.to_string(name))
-    IO.puts([String.pad_leading("", margin),
-                 "< #{name} #{inspect result}"])
-    Process.put(:lens_trace_indent, margin)
   end
 end

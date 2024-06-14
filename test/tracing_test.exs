@@ -12,10 +12,10 @@ defmodule Lens2.TracingTest do
     # Macro.expand_once(x, __ENV__) |> Macro.to_string |> IO.puts
 
 #    lens = Lens.tracing_keys([:a]) |> Lens.tracing_key?(:b)
-   lens = Lens.tracing_key(:a) |> Lens.tracing_keys?([:b])
+   lens = Lens.tracing_key(:a) |> Lens.tracing_keys?([:b]) |> Lens.tracing_map_values
     #    lens = Lens.tracing_key(:a)
     # lens = Lens.tracing_keys([:a])
-    Deeply.to_list(%{a: %{b: 1}}, lens) |> dbg
+    Deeply.to_list(%{a: %{b: %{c: 1, d: 2}}}, lens) |> dbg
 #    assert Deeply.to_list(%{a: %{b: 1}}, lens) == [1]
 
     # assert Deeply.put(%{a: %{b: 1}}, lens, :NEW) == %{a: %{b: :NEW}}
