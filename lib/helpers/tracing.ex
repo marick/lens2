@@ -136,19 +136,13 @@ defmodule Tracing do
 
     def pad_right(log, key) do
       length = max_length(log, key)
-      levels = map_size(log)
 
-      replacements =
-        for level <- 0..levels-1 do
-          current = log[level][key]
-          addition = padding(length - String.length(current))
-          {level, current <> addition}
-        end
-      replace_field(log, key, replacements)
+      Deeply.update(log, Log.all_fields(key), fn current ->
+        current <> padding(length - String.length(current))
+      end)
     end
 
     def replace_field(log, key, replacements) do
-
       Enum.reduce(replacements, log, fn {level, replacement}, new_log ->
         put_in(new_log, [level, key], replacement)
       end)
