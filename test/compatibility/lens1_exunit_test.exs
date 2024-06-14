@@ -113,7 +113,7 @@ defmodule Lens2.Compatibility.ExUnitTest do
                {[1, 3], [2, 2, 4, 4]}
     end
 
-    deflensp test_filter() do
+    deflens test_filter() do
       Lens.filter(&Integer.is_odd/1)
     end
   end
