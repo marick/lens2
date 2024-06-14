@@ -45,13 +45,33 @@ defmodule Lens2.TracingTest do
       |> LogItem.on_exit([:outer_gotten], :outer_updated)
     assert log[0] == expected
 
-    IO.inspect log
+    # IO.inspect log
 
     # ready for next go-round
     assert Tracing.current_nesting == nil
     assert Tracing.peek_at_log == nil
   end
 
+
+  test "indented call strings" do
+    input = %{
+      0 => %{call: "key(:a)"},
+      1 => %{call: "map_values()", other: :ignored},
+      2 => %{call: "keys([:aa, :bb])"}
+    }
+
+    expected = %{
+      0 => %{call: "key(:a)"},
+      1 => %{call: "   map_values()", other: :ignored},
+      2 => %{call: "             keys([:aa, :bb])"}
+    }
+
+    assert Tracing.indent_calls(input) == expected
+  end
+
+  test "length_of_name" do
+    assert Tracing.length_of_name("key(:a)") == 3
+  end
 
   @tag :skip
   test "trace" do

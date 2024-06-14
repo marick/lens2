@@ -101,9 +101,35 @@ defmodule Lens2.Helpers.Tracing do
       do: remember_nesting(current_nesting() - 1)
 
 
+  def indent_calls(log) do
+    levels = map_size(log)
+    {_, replacements} =
+      Enum.reduce(0..levels-1, {0, []}, fn level, {left_margin, replacements} ->
+        current = log[level][:call]
+        updated = padding(left_margin) <> current
+        {left_margin + length_of_name(current), [{level, updated} | replacements]}
+      end)
+    replace_field(log, :call, replacements)
+  end
+
+
+  def replace_field(log, key, replacements) do
+    Enum.reduce(replacements, log, fn {level, replacement}, new_log ->
+      put_in(new_log, [level, key], replacement)
+    end)
+  end
+
+
+  def length_of_name(call) do
+    [name, _rest] = String.split(call, "(")
+    String.length(name)
+  end
+
+
+
   # defp nesting_due_to_name(name),
   #      do: String.length(Atom.to_string(name))
 
-  # defp padding(n), do: String.duplicate(" ", n)
+  defp padding(n), do: String.duplicate(" ", n)
 
 end
