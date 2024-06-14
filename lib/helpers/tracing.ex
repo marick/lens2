@@ -1,40 +1,104 @@
 defmodule Lens2.Helpers.Tracing do
   @moduledoc false
 
+  import TypedStruct
+
+  defmodule LogItem do
+    typedstruct do
+      field :call_string, String.t, enforce: true
+      field :container, any, enforce: true
+      field :gotten, any
+      field :updated, any
+    end
+
+    def entry(call_string, container) do
+      %__MODULE__{call_string: call_string, container: container}
+    end
+
+    def exit(log_entry, gotten, updated) do
+      %{log_entry | gotten: gotten, updated: updated}
+    end
+  end
+
+
+
   def function_name(original_name) do
     String.to_atom("tracing_#{original_name}")
   end
 
-  def entry(name, args, data) do
-    case current_indent() do
+  def entry(name, args, container) do
+    case current_nesting() do
       nil ->
-        remember_indent(0)
-        entry(name, args, data)
-      margin ->   # Sigh. Emacs messes up indentation with `indent` because of the `in`.
-        if margin == 0, do: IO.puts("\n")
-        IO.puts([padding(margin), "> #{call(name, args)} ||   #{inspect data}"])
-        remember_indent(margin + indent_due_to_name(name))
+        remember_nesting(0)
+        entry(name, args, container)
+      _ ->
+        log(call(name, args), container)
+#        IO.puts(["> #{call(name, args)} ||   #{inspect data}"])
+        increment_nesting()
     end
   end
 
-  def exit(name, args, result) do
-    margin = current_indent() - indent_due_to_name(name)
-    IO.puts([padding(margin), "< #{call(name, args)} ||   #{inspect result}"])
-    Process.put(:lens_trace_indent, margin)
+  def exit(result, on_level_zero \\ &spill_log/0) do
+    decrement_nesting()
+
+    log(result)
+
+#    IO.puts(["< #{call(name, args)} ||   #{inspect result}"])
+    if current_nesting() == 0 do
+      result = on_level_zero.()
+      forget_tracing()
+      result  # result is used by a test
+    end
   end
 
-  #
+  def spill_log() do
+  end
 
-  defp indent_due_to_name(name),
-       do: String.length(Atom.to_string(name))
 
-  defp remember_indent(value),
-       do: Process.put(:lens_trace_indent, value)
+  @log :lens_trace_log
+  @nesting :lens_trace_nesting
 
-  defp current_indent(),
-       do: Process.get(:lens_trace_indent)
 
-  defp padding(n), do: String.duplicate(" ", n)
+  def log(call, container) do
+    LogItem.entry(call, container)
+    |> update_and_stash
+  end
+
+  def log({gotten, updated}) do
+    peek_at_log()[current_nesting()]
+    |> LogItem.exit(gotten, updated)
+    |> update_and_stash
+  end
+
+  def forget_tracing() do
+    Process.delete(@log)
+    Process.delete(@nesting)
+  end
+
+
+  def update_and_stash(item) do
+    updated =
+      Process.get(@log, %{})
+      |> Map.put(current_nesting(), item)
+    Process.put(@log, updated)
+  end
+
+  def peek_at_log(), do: Process.get(@log)
+  def peek_at_log(level: level), do: peek_at_log()[level]
+
+
+  def current_nesting, do: Process.get(@nesting)
+  def remember_nesting(n), do: Process.put(@nesting, n)
+  def increment_nesting(),
+      do: remember_nesting(current_nesting() + 1)
+  def decrement_nesting(),
+      do: remember_nesting(current_nesting() - 1)
+
+
+  # defp nesting_due_to_name(name),
+  #      do: String.length(Atom.to_string(name))
+
+  # defp padding(n), do: String.duplicate(" ", n)
 
   defp call(name, args) do
     formatted_args = Enum.map(args, & inspect(&1))

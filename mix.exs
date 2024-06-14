@@ -29,7 +29,7 @@ defmodule Lens2.MixProject do
     [
       {:flow_assertions, "~> 0.6", only: :test},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
-      {:typedstruct, "~> 0.5.2", only: :test},
+      {:typedstruct, "~> 0.5.2"},
       {:typed_struct_lens, "~> 0.1.1", only: :test},
       {:bimap, "~> 1.3"},
       # {:dep_from_hexpm, "~> 0.3.0"},
