@@ -1,15 +1,19 @@
-defmodule Lens2.Helpers.Tracing do
+alias Lens2.Helpers.Tracing
+
+defmodule Tracing do
   @moduledoc false
 
   import TypedStruct
   use Private
+  use Lens2
+  alias Tracing.Log
 
   defmodule LogItem do
     typedstruct do
       field :call, String.t, enforce: true
-      field :container, any, enforce: true
-      field :gotten, any
-      field :updated, any
+      field :container, String.t, enforce: true
+      field :gotten, String.t
+      field :updated, String.t
     end
 
     def on_entry(name, args, container) do
@@ -26,7 +30,13 @@ defmodule Lens2.Helpers.Tracing do
     end
   end
 
+
   # External entry points
+
+  def function_name(original_name) do
+    String.to_atom("tracing_#{original_name}")
+  end
+
 
   def entry(name, args, container) do
     case current_nesting() do
@@ -119,8 +129,8 @@ defmodule Lens2.Helpers.Tracing do
     end
 
     def max_length(log, key) do
-      levels = map_size(log)
-      (for level <- 0..levels-1, do: String.length(log[level][key]))
+      Deeply.to_list(log, Log.all_fields(key))
+      |> Enum.map(&String.length/1)
       |> Enum.max
     end
 
@@ -138,6 +148,7 @@ defmodule Lens2.Helpers.Tracing do
     end
 
     def replace_field(log, key, replacements) do
+
       Enum.reduce(replacements, log, fn {level, replacement}, new_log ->
         put_in(new_log, [level, key], replacement)
       end)
@@ -157,10 +168,6 @@ defmodule Lens2.Helpers.Tracing do
 
   private do # miscellaneous utilities
     def padding(n), do: String.duplicate(" ", n)
-
-    def function_name(original_name) do
-      String.to_atom("tracing_#{original_name}")
-    end
   end
 
 
