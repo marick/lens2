@@ -6,7 +6,7 @@ defmodule Tracing do
   import TypedStruct
   use Private
   use Lens2
-  alias Tracing.Log
+  alias Tracing.{Log, Mutable}
 
   defmodule LogItem do
     typedstruct do
@@ -39,30 +39,30 @@ defmodule Tracing do
 
 
   def log_entry(name, args, container) do
-    case current_nesting() do
+    case Mutable.current_nesting() do
       nil ->
-        remember_nesting(0)
+        Mutable.remember_nesting(0)
         log_entry(name, args, container)
       _ ->
         log(name, args, container)
-        increment_nesting()
+        Mutable.increment_nesting()
     end
   end
 
   def log_exit(result, on_level_zero \\ &spill_log/0) do
-    decrement_nesting()
+    Mutable.decrement_nesting()
 
     log(result)
 
-    if current_nesting() == 0 do
+    if Mutable.current_nesting() == 0 do
       result = on_level_zero.()
-      forget_tracing()
+      Mutable.forget_log()
       result  # result is used by a test
     end
   end
 
   def spill_log() do
-    log = peek_at_log() |> prettify_calls
+    log = Mutable.peek_at_log() |> prettify_calls
     for item <- outer_to_inner_items(log) do
       IO.puts("#{item.call} || #{item.container}")
     end
@@ -73,45 +73,16 @@ defmodule Tracing do
   end
 
   private do # Manipulating the process map
-
-    @log :lens_trace_log
-    @nesting :lens_trace_nesting
-
-
     def log(name, args, container) do
       LogItem.on_entry(name, args, container)
-      |> update_and_stash
+      |> Mutable.remember_new_item
     end
 
     def log({gotten, updated}) do
-      peek_at_log()[current_nesting()]
+      Mutable.peek_at_log()[Mutable.current_nesting()]
       |> LogItem.on_exit(gotten, updated)
-      |> update_and_stash
+      |> Mutable.update_previous_item
     end
-
-    def forget_tracing() do
-      Process.delete(@log)
-      Process.delete(@nesting)
-    end
-
-
-    def update_and_stash(item) do
-      updated =
-        Process.get(@log, %{})
-        |> Map.put(current_nesting(), item)
-      Process.put(@log, updated)
-    end
-
-    def peek_at_log(), do: Process.get(@log)
-    def peek_at_log(level: level), do: peek_at_log()[level]
-
-
-    def current_nesting, do: Process.get(@nesting)
-    def remember_nesting(n), do: Process.put(@nesting, n)
-    def increment_nesting(),
-        do: remember_nesting(current_nesting() + 1)
-    def decrement_nesting(),
-        do: remember_nesting(current_nesting() - 1)
 
   end
 

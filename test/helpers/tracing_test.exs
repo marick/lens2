@@ -1,7 +1,8 @@
-defmodule Lens2.TracingTest do
+defmodule Lens2.Helpers.TracingTest do
   use Lens2.Case
   alias Lens2.Helpers.Tracing
   alias Tracing.LogItem
+  alias Tracing.Mutable
 
   test "log entry and exit" do
     item = LogItem.on_entry(:key?, [:a], %{a: 4})
@@ -16,29 +17,29 @@ defmodule Lens2.TracingTest do
   end
 
   test "building the log" do
-    assert Tracing.current_nesting == nil
-    assert Tracing.peek_at_log == nil
+    assert Mutable.current_nesting == nil
+    assert Mutable.peek_at_log == nil
 
     outer = %{a: %{b: 1}}
     Tracing.log_entry(:key, [:a], outer)
-    assert Tracing.peek_at_log(level: 0) == LogItem.on_entry(:key, [:a], outer)
-    assert Tracing.current_nesting == 1
+    assert Mutable.peek_at_log(level: 0) == LogItem.on_entry(:key, [:a], outer)
+    assert Mutable.current_nesting == 1
 
     Tracing.log_entry(:key?, [:b], outer.a)
-    assert Tracing.peek_at_log(level: 1) == LogItem.on_entry(:key?, [:b], outer.a)
-    assert Tracing.current_nesting == 2
+    assert Mutable.peek_at_log(level: 1) == LogItem.on_entry(:key?, [:b], outer.a)
+    assert Mutable.current_nesting == 2
 
     Tracing.log_exit({[:inner_gotten], :inner_updated})
     expected =
       LogItem.on_entry(:key?, [:b], outer.a)
       |> LogItem.on_exit([:inner_gotten], :inner_updated)
-    assert Tracing.peek_at_log(level: 1) == expected
-    assert Tracing.current_nesting == 1
+    assert Mutable.peek_at_log(level: 1) == expected
+    assert Mutable.current_nesting == 1
 
     # Normally the log is spilled when pop out of final level
     log =
       Tracing.log_exit({[:outer_gotten], :outer_updated},
-                       &Tracing.peek_at_log/0)
+                       &Mutable.peek_at_log/0)
 
     expected =
       LogItem.on_entry(:key, [:a], outer)
@@ -48,8 +49,8 @@ defmodule Lens2.TracingTest do
     # IO.inspect log
 
     # ready for next go-round
-    assert Tracing.current_nesting == nil
-    assert Tracing.peek_at_log == nil
+    assert Mutable.current_nesting == nil
+    assert Mutable.peek_at_log == nil
   end
 
   describe "prettifying call strings" do
