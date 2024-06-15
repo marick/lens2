@@ -38,24 +38,22 @@ defmodule Tracing do
   end
 
 
-  def entry(name, args, container) do
+  def log_entry(name, args, container) do
     case current_nesting() do
       nil ->
         remember_nesting(0)
-        entry(name, args, container)
+        log_entry(name, args, container)
       _ ->
         log(name, args, container)
-#        IO.puts(["> #{call(name, args)} ||   #{inspect data}"])
         increment_nesting()
     end
   end
 
-  def exit(result, on_level_zero \\ &spill_log/0) do
+  def log_exit(result, on_level_zero \\ &spill_log/0) do
     decrement_nesting()
 
     log(result)
 
-#    IO.puts(["< #{call(name, args)} ||   #{inspect result}"])
     if current_nesting() == 0 do
       result = on_level_zero.()
       forget_tracing()

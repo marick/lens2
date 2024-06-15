@@ -20,15 +20,15 @@ defmodule Lens2.TracingTest do
     assert Tracing.peek_at_log == nil
 
     outer = %{a: %{b: 1}}
-    Tracing.entry(:key, [:a], outer)
+    Tracing.log_entry(:key, [:a], outer)
     assert Tracing.peek_at_log(level: 0) == LogItem.on_entry(:key, [:a], outer)
     assert Tracing.current_nesting == 1
 
-    Tracing.entry(:key?, [:b], outer.a)
+    Tracing.log_entry(:key?, [:b], outer.a)
     assert Tracing.peek_at_log(level: 1) == LogItem.on_entry(:key?, [:b], outer.a)
     assert Tracing.current_nesting == 2
 
-    Tracing.exit({[:inner_gotten], :inner_updated})
+    Tracing.log_exit({[:inner_gotten], :inner_updated})
     expected =
       LogItem.on_entry(:key?, [:b], outer.a)
       |> LogItem.on_exit([:inner_gotten], :inner_updated)
@@ -37,8 +37,8 @@ defmodule Lens2.TracingTest do
 
     # Normally the log is spilled when pop out of final level
     log =
-      Tracing.exit({[:outer_gotten], :outer_updated},
-                   &Tracing.peek_at_log/0)
+      Tracing.log_exit({[:outer_gotten], :outer_updated},
+                       &Tracing.peek_at_log/0)
 
     expected =
       LogItem.on_entry(:key, [:a], outer)

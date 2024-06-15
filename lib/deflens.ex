@@ -173,9 +173,9 @@ defmodule Lens2.Deflens do
     quote do
       fn data, fun ->
         callback = unquote(callback)
-        Tracing.entry(unquote(name), unquote(args), data)
+        Tracing.log_entry(unquote(name), unquote(args), data)
         result = callback.(data, fun)
-        Tracing.exit(result)
+        Tracing.log_exit(result)
         result
       end
     end
@@ -186,9 +186,9 @@ defmodule Lens2.Deflens do
       fn
         selector, data, implementation ->
           composed_fun = unquote(composed_fun)
-          Tracing.entry(unquote(name), unquote(args), data)
+          Tracing.log_entry(unquote(name), unquote(args), data)
           result = composed_fun.(selector, data, implementation)
-          Tracing.exit(result)
+          Tracing.log_exit(result)
           result
       end
     end
