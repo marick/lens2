@@ -64,6 +64,7 @@ defmodule Tracing do
   end
 
   def spill_log() do
+
   end
 
   private do # Manipulating the process map
@@ -118,20 +119,33 @@ defmodule Tracing do
     end
 
     def indent_calls(log, key) do
-      levels = map_size(log)
+      in_order_reduce(log, key, 0, fn left_margin, current ->
+        {left_margin + length_of_name(current), padding(left_margin) <> current}
+      end)
+    end
+
+    def reduce_by_range(log, range, key, init, f) do
       {_, replacements} =
-        Enum.reduce(0..levels-1, {0, []}, fn level, {left_margin, replacements} ->
+        Enum.reduce(range, {init, []}, fn level, {acc, replacements} ->
           current = log[level][key]
-          updated = padding(left_margin) <> current
-          {left_margin + length_of_name(current), [{level, updated} | replacements]}
+          {new_acc, replacement} = f.(acc, current)
+          {new_acc, [{level, replacement} | replacements]}
         end)
       replace_field(log, key, replacements)
+    end
+
+    def in_order_reduce(log, key, init, f) do
+      reduce_by_range(log, ascending_indices(log), key, init, f)
     end
 
     def max_length(log, key) do
       Deeply.to_list(log, Log.all_fields(key))
       |> Enum.map(&String.length/1)
       |> Enum.max
+    end
+
+    def ascending_indices(log) do
+      Range.new(0, map_size(log)-1, 1)
     end
 
     def pad_right(log, key) do
