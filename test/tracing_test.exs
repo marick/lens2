@@ -118,30 +118,27 @@ defmodule Lens2.TracingTest do
 
   end
 
-
   @tag :skip
   test "trace" do
 
-    # alias Lens2.Lenses.Keyed
+    map = %{a: %{b: %{c: %{d: 1}}}}
+    lens = Lens.key?(:a) |> Lens.key?(:b) |> Lens.key?(:c) |> Lens.key?(:d)
 
-    # x = quote do
-    #       Keyed.tracing_keys([:a])
-    # end
+    Deeply.put(map, lens, :NEW) |> dbg
 
-    # Macro.expand_once(x, __ENV__) |> Macro.to_string |> IO.puts
+    IO.puts("======")
 
-#    lens = Lens.tracing_keys([:a]) |> Lens.tracing_key?(:b)
-   lens = Lens.tracing_key(:a) |> Lens.tracing_keys?([:b]) |> Lens.tracing_map_values
-    #    lens = Lens.tracing_key(:a)
-    # lens = Lens.tracing_keys([:a])
-    Deeply.to_list(%{a: %{b: %{c: 1, d: 2}}}, lens) |> dbg
-#    assert Deeply.to_list(%{a: %{b: 1}}, lens) == [1]
+    lens = Lens.tracing_key?(:a) |> Lens.tracing_key?(:b) |> Lens.tracing_key?(:c) |> Lens.tracing_key?(:d)
+    Deeply.put(map, lens, :NEW) |> dbg
 
-    # assert Deeply.put(%{a: %{b: 1}}, lens, :NEW) == %{a: %{b: :NEW}}
+    # map = %{a: %{bb: %{c: 1, d: 2},
+    #              cc: %{c: 3}}}
+    # lens = Lens.key(:a) |> Lens.keys?([:bb, :cc]) |> Lens.key!(:c) # |> Lens.map_values
 
-    # Deeply.get_and_update(%{a: %{b: 1}}, lens, fn value ->
-    #   {value, value * 1111}
-    # end)
+
+    # lens = Lens.tracing_key(:a) |> Lens.tracing_keys?([:bb, :cc]) |> Lens.tracing_key!(:c) # |> Lens.tracing_map_values
+    # Deeply.to_list(map, lens) |> dbg
+
 
   end
 

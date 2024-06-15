@@ -64,7 +64,14 @@ defmodule Tracing do
   end
 
   def spill_log() do
+    log = peek_at_log() |> prettify_calls
+    for item <- outer_to_inner_items(log) do
+      IO.puts("#{item.call} || #{item.container}")
+    end
 
+    for item <- inner_to_outer_items(log) do
+      IO.puts("#{item.call} || #{item.gotten} || #{item.updated}")
+    end
   end
 
   private do # Manipulating the process map
@@ -124,10 +131,14 @@ defmodule Tracing do
       end)
     end
 
-    def reduce_by_range(log, range, key, init, f) do
+    def reduce_levels(log, level_range, key, init, f) do
       {_, replacements} =
-        Enum.reduce(range, {init, []}, fn level, {acc, replacements} ->
-          current = log[level][key]
+        Enum.reduce(level_range, {init, []}, fn level, {acc, replacements} ->
+
+          # current = Deeply.one!(log, Log.one_field(level, key))
+          # The above version is better, but interferes with debugging by
+          # instrumenting lens functions
+          current = log[level] |> Map.get(key)
           {new_acc, replacement} = f.(acc, current)
           {new_acc, [{level, replacement} | replacements]}
         end)
@@ -135,7 +146,7 @@ defmodule Tracing do
     end
 
     def in_order_reduce(log, key, init, f) do
-      reduce_by_range(log, ascending_indices(log), key, init, f)
+      reduce_levels(log, outer_to_inner_levels(log), key, init, f)
     end
 
     def max_length(log, key) do
@@ -144,8 +155,22 @@ defmodule Tracing do
       |> Enum.max
     end
 
-    def ascending_indices(log) do
+    def outer_to_inner_levels(log) do
       Range.new(0, map_size(log)-1, 1)
+    end
+
+    def inner_to_outer_levels(log) do
+      Range.new(map_size(log)-1, 0, -1)
+    end
+
+    def outer_to_inner_items(log) do
+      outer_to_inner_levels(log)
+      |> Enum.map(fn level -> log[level] end)
+    end
+
+    def inner_to_outer_items(log) do
+      inner_to_outer_levels(log)
+      |> Enum.map(fn level -> log[level] end)
     end
 
     def pad_right(log, key) do
@@ -158,7 +183,7 @@ defmodule Tracing do
 
     def replace_field(log, key, replacements) do
       Enum.reduce(replacements, log, fn {level, replacement}, new_log ->
-        put_in(new_log, [level, key], replacement)
+        Deeply.put(new_log, Log.one_field(level, key), replacement)
       end)
     end
 
