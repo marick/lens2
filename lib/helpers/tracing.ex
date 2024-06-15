@@ -6,7 +6,7 @@ defmodule Tracing do
   import TypedStruct
   use Private
   use Lens2
-  alias Tracing.{Mutable, Pretty}
+  alias Tracing.{Mutable, Pretty, Log}
 
   defmodule LogItem do
     typedstruct do
@@ -63,11 +63,11 @@ defmodule Tracing do
 
   def spill_log() do
     log = Mutable.peek_at_log() |> Pretty.prettify
-    for item <- Pretty.outer_to_inner_items(log) do
+    for item <- Log.outer_to_inner_items(log) do
       IO.puts("#{item.call} || #{item.container}")
     end
 
-    for item <- Pretty.inner_to_outer_items(log) do
+    for item <- Log.inner_to_outer_items(log) do
       IO.puts("#{item.call} || #{item.gotten} || #{item.updated}")
     end
   end
