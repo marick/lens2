@@ -1,60 +1,47 @@
 defmodule Lens2.Helpers.TracingTest do
   use Lens2.Case
-  alias Lens2.Helpers.Tracing
-  alias Tracing.LogItem
-  alias Tracing.Mutable
+#  alias Lens2.Helpers.Tracing
+#  alias Tracing.LogItem
+#  alias Tracing.Mutable
 
-  test "log entry and exit" do
-    item = LogItem.on_entry(:key?, [:a], %{a: 4})
+  # test "building the log" do
+  #   assert Mutable.current_nesting == nil
+  #   assert Mutable.peek_at_log == nil
 
-    item
-    |> assert_fields(call: "key?(:a)", container: "%{a: 4}")
-    |> assert_fields(gotten: nil, updated: nil)
+  #   outer = %{a: %{b: 1}}
+  #   Tracing.log_entry(:key, [:a], outer)
+  #   assert Mutable.peek_at_log(level: 0) == LogItem.on_entry(:key, [:a], outer)
+  #   assert Mutable.current_nesting == 1
 
-    LogItem.on_exit(item, [4], %{a: 5})
-    |> assert_fields(call: "key?(:a)", container: "%{a: 4}")
-    |> assert_fields(gotten: "[4]", updated: "%{a: 5}")
-  end
+  #   Tracing.log_entry(:key?, [:b], outer.a)
+  #   assert Mutable.peek_at_log(level: 1) == LogItem.on_entry(:key?, [:b], outer.a)
+  #   assert Mutable.current_nesting == 2
 
-  test "building the log" do
-    assert Mutable.current_nesting == nil
-    assert Mutable.peek_at_log == nil
+  #   Tracing.log_exit({[:inner_gotten], :inner_updated})
+  #   expected =
+  #     LogItem.on_entry(:key?, [:b], outer.a)
+  #     |> LogItem.on_exit([:inner_gotten], :inner_updated)
+  #   assert Mutable.peek_at_log(level: 1) == expected
+  #   assert Mutable.current_nesting == 1
 
-    outer = %{a: %{b: 1}}
-    Tracing.log_entry(:key, [:a], outer)
-    assert Mutable.peek_at_log(level: 0) == LogItem.on_entry(:key, [:a], outer)
-    assert Mutable.current_nesting == 1
+  #   # Normally the log is spilled when pop out of final level
+  #   log =
+  #     Tracing.log_exit({[:outer_gotten], :outer_updated},
+  #                      &Mutable.peek_at_log/0)
 
-    Tracing.log_entry(:key?, [:b], outer.a)
-    assert Mutable.peek_at_log(level: 1) == LogItem.on_entry(:key?, [:b], outer.a)
-    assert Mutable.current_nesting == 2
+  #   expected =
+  #     LogItem.on_entry(:key, [:a], outer)
+  #     |> LogItem.on_exit([:outer_gotten], :outer_updated)
+  #   assert log[0] == expected
 
-    Tracing.log_exit({[:inner_gotten], :inner_updated})
-    expected =
-      LogItem.on_entry(:key?, [:b], outer.a)
-      |> LogItem.on_exit([:inner_gotten], :inner_updated)
-    assert Mutable.peek_at_log(level: 1) == expected
-    assert Mutable.current_nesting == 1
+  #   # IO.inspect log
 
-    # Normally the log is spilled when pop out of final level
-    log =
-      Tracing.log_exit({[:outer_gotten], :outer_updated},
-                       &Mutable.peek_at_log/0)
-
-    expected =
-      LogItem.on_entry(:key, [:a], outer)
-      |> LogItem.on_exit([:outer_gotten], :outer_updated)
-    assert log[0] == expected
-
-    # IO.inspect log
-
-    # ready for next go-round
-    assert Mutable.current_nesting == nil
-    assert Mutable.peek_at_log == nil
-  end
+  #   # ready for next go-round
+  #   assert Mutable.current_nesting == nil
+  #   assert Mutable.peek_at_log == nil
+  # end
 
 
-  @tag :skip
   test "trace" do
 
     map = %{a: %{b: %{c: %{d: 1}}}}
@@ -67,13 +54,13 @@ defmodule Lens2.Helpers.TracingTest do
     lens = Lens.tracing_key?(:a) |> Lens.tracing_key?(:b) |> Lens.tracing_key?(:c) |> Lens.tracing_key?(:d)
     Deeply.put(map, lens, :NEW) |> dbg
 
-    # map = %{a: %{bb: %{c: 1, d: 2},
-    #              cc: %{c: 3}}}
-    # lens = Lens.key(:a) |> Lens.keys?([:bb, :cc]) |> Lens.key!(:c) # |> Lens.map_values
+    # # map = %{a: %{bb: %{c: 1, d: 2},
+    # #              cc: %{c: 3}}}
+    # # lens = Lens.key(:a) |> Lens.keys?([:bb, :cc]) |> Lens.key!(:c) # |> Lens.map_values
 
 
-    # lens = Lens.tracing_key(:a) |> Lens.tracing_keys?([:bb, :cc]) |> Lens.tracing_key!(:c) # |> Lens.tracing_map_values
-    # Deeply.to_list(map, lens) |> dbg
+    # # lens = Lens.tracing_key(:a) |> Lens.tracing_keys?([:bb, :cc]) |> Lens.tracing_key!(:c) # |> Lens.tracing_map_values
+    # # Deeply.to_list(map, lens) |> dbg
 
 
   end

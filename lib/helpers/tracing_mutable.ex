@@ -1,38 +1,50 @@
 alias Lens2.Helpers.Tracing
 
 defmodule Tracing.Mutable do
+  alias Tracing.{EntryLine, ExitLine}
+  use Private
 
   @log :lens_trace_log
-  @nesting :lens_trace_nesting
+  @next_level :lens_next_level
 
   def forget_log() do
-    Process.delete(@log)
-    Process.delete(@nesting)
+    Process.put(@log, [])
+    Process.put(@next_level, 0)
   end
 
-  def remember_new_item(item) do
-    updated =
-      Process.get(@log, %{})
-      |> Map.put(current_nesting(), item)
-    Process.put(@log, updated)
+  def empty_stack?() do
+    ensure_log()
+    Process.get(@next_level) == 0
   end
 
-  def update_previous_item(item) do
-    remember_new_item(item)
+  def add_log_item(%EntryLine{} = line) do
+    ensure_log()
+    add_to_end(line)
+    update_level(1)
   end
 
-  def current_nesting, do: Process.get(@nesting)
+  def add_log_item(%ExitLine{} = line) do
+    add_to_end(line)
+    update_level(-1)
+  end
 
-  def peek_at_log(), do: Process.get(@log)
-  def peek_at_log(level: level), do: peek_at_log()[level]
+  def peek_at_log(), do: Process.get(@log) |> Enum.reverse
+  def peek_at_log(at: index), do: peek_at_log() |> Enum.at(index)
 
+  private do
+    def ensure_log() do
+      if Process.get(@log) == nil do
+        Process.put(@log, [])
+        Process.put(@next_level, 0)
+      end
+    end
 
-  def remember_nesting(n), do: Process.put(@nesting, n)
-  def increment_nesting(),
-      do: remember_nesting(current_nesting() + 1)
-  def decrement_nesting(),
-      do: remember_nesting(current_nesting() - 1)
+    def add_to_end(item),
+        do: Process.put(@log, [item | Process.get(@log)])
 
-
+    def update_level(amount) do
+      Process.put(@next_level, Process.get(@next_level) + amount)
+    end
+  end
 
 end

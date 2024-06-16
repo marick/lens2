@@ -3,39 +3,69 @@ alias Lens2.Helpers.Tracing
 defmodule Tracing.Pretty do
   use Lens2
   use Private
-  alias Tracing.Log
+  alias Tracing.{EntryLine,ExitLine}
+
+  @keys_that_matter [:call, :container, :gotten, :updated]
 
   def prettify(log) do
-    prettify_calls(log)
+    log
+    |> indent_calls
+    |> pad_right(@keys_that_matter)
   end
 
   private do   # main utilities
-    def prettify_calls(log) do
+
+    def indent_calls(log) do
+      reduce_one_line = fn line, {left_margin, building_log} ->
+        case line do
+          %EntryLine{} ->
+            padded = Map.update!(line, :call, & pad_left(left_margin, ">", &1))
+            left_margin = left_margin + length_of_name(line.call)
+            {left_margin, [padded | building_log]}
+          %ExitLine{} ->
+            left_margin = left_margin - length_of_name(line.call)
+            padded = Map.update!(line, :call, & pad_left(left_margin, "<", &1))
+            {left_margin, [padded | building_log]}
+        end
+      end
+
       log
-      |> indent_calls(:call)
-      |> pad_right(:call)
+      |> Enum.reduce({0, []}, reduce_one_line)
+      |> elem(1)
+      |> Enum.reverse
     end
 
-    def indent_calls(log, key) do
-      Log.in_order_reduce(log, key, 0, fn left_margin, current ->
-        {left_margin + length_of_name(current), padding(left_margin) <> current}
-      end)
-    end
+    def pad_right(log, keys_to_adjust) do
+      key_to_length = max_lengths(log, keys_to_adjust)
 
+      for line <- log do
+        Enum.reduce(keys_to_adjust, line, fn key, improving ->
+          case Map.fetch(line, key) do
+            {:ok, string} ->
+              needed = key_to_length[key] - String.length(string)
+              Map.put(improving, key, string <> padding(needed))
+            :error ->
+              improving
+          end
+        end)
+      end;
+    end
   end
 
   private do  # utilities
-    def max_length(log, key) do
-      Deeply.to_list(log, Log.all_fields(key))
-      |> Enum.map(&String.length/1)
-      |> Enum.max
-    end
+    def max_lengths(log, keys_to_count) do
+      starting = for key <- keys_to_count, into: %{}, do: {key, 0}
 
-    def pad_right(log, key) do
-      length = max_length(log, key)
-
-      Deeply.update(log, Log.all_fields(key), fn current ->
-        current <> padding(length - String.length(current))
+      Enum.reduce(log, starting, fn line, improving ->
+        for {perhaps_common_key, max_so_far} <- improving, into: %{} do
+          case Map.fetch(line, perhaps_common_key) do
+            {:ok, string} ->
+              new_max = max(max_so_far, String.length(string))
+              {perhaps_common_key, new_max}
+            :error ->
+              {perhaps_common_key, max_so_far}  # guess it's not common
+          end
+        end
       end)
     end
 
@@ -45,6 +75,7 @@ defmodule Tracing.Pretty do
     end
 
     def padding(n), do: String.duplicate(" ", n)
+    def pad_left(n, pointer, call), do: padding(n) <> pointer <> call
 
   end
 end
