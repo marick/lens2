@@ -3,7 +3,7 @@ alias Lens2.Helpers.Tracing
 defmodule Tracing.Pretty do
   use Lens2
   use Private
-  alias Tracing.{EntryLine,ExitLine}
+  alias Tracing.{Line, EntryLine,ExitLine}
 
   @keys_that_matter [:call, :container, :gotten, :updated]
 
@@ -38,17 +38,14 @@ defmodule Tracing.Pretty do
     def pad_right(log, keys_to_adjust) do
       key_to_length = max_lengths(log, keys_to_adjust)
 
+      line_field_adjuster = fn line_value, map_value ->
+        needed = map_value - String.length(line_value)
+        line_value <> padding(needed)
+      end
+
       for line <- log do
-        Enum.reduce(keys_to_adjust, line, fn key, improving ->
-          case Map.fetch(line, key) do
-            {:ok, string} ->
-              needed = key_to_length[key] - String.length(string)
-              Map.put(improving, key, string <> padding(needed))
-            :error ->
-              improving
-          end
-        end)
-      end;
+        Line.adjust_line_using_map(line, key_to_length, keys_to_adjust, line_field_adjuster)
+      end
     end
   end
 
@@ -56,16 +53,12 @@ defmodule Tracing.Pretty do
     def max_lengths(log, keys_to_count) do
       starting = for key <- keys_to_count, into: %{}, do: {key, 0}
 
-      Enum.reduce(log, starting, fn line, improving ->
-        for {perhaps_common_key, max_so_far} <- improving, into: %{} do
-          case Map.fetch(line, perhaps_common_key) do
-            {:ok, string} ->
-              new_max = max(max_so_far, String.length(string))
-              {perhaps_common_key, new_max}
-            :error ->
-              {perhaps_common_key, max_so_far}  # guess it's not common
-          end
-        end
+      map_field_adjuster = fn map_value, line_value ->
+        max(map_value, String.length(line_value))
+      end
+
+      Enum.reduce(log, starting, fn line, improving_map ->
+        Line.adjust_map_using_line(improving_map, line, keys_to_count, map_field_adjuster)
       end)
     end
 
