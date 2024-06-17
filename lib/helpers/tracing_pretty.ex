@@ -76,25 +76,41 @@ defmodule Tracing.Pretty do
     def align_common_substrings(log) do
       log
       |> split_lines_at_change_of_direction
-      |> Enum.map(&align_chunk/1)
+      |> Enum.map(&align_one_direction/1)
       |> Enum.concat
+    end
+
+    def align_one_direction(lines) do
+      if Line.entering?(lines) do
+        align_each_with_previous(lines, :container)
+      end
     end
 
     def split_lines_at_change_of_direction(log) do
       Enum.chunk_by(log, &Line.entering?/1)
     end
 
-    def align_chunk(lines) do
-      lines
+    def align_each_with_previous([first | rest], key) do
+      [first | align_rest(rest, first, key)]
     end
 
-    def shift_to_align(shorter, longer) do
-      regex = Regex.escape(shorter) |> Regex.compile!
-      case Regex.run(regex, longer, return: :index) do
+    def align_rest([], _previous, _key), do: []
+
+    def align_rest([rest_head | rest_tail], previous, key) do
+      return_head = shift_to_align(rest_head, previous, key)
+      return_tail = align_rest(rest_tail, return_head, key)
+      [return_head | return_tail]
+    end
+
+    def shift_to_align(line, previous_line, key) do
+      line_value = Map.get(line, key)
+      previous_value = Map.get(previous_line, key)
+      regex = Regex.escape(line_value) |> Regex.compile!
+      case Regex.run(regex, previous_value, return: :index) do
         nil ->
-          shorter
+          line
         [{start, _length}] ->
-          padding(start) <> shorter
+          Map.put(line, key, padding(start) <> line_value)
       end
     end
   end

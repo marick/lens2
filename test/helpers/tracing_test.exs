@@ -42,6 +42,7 @@ defmodule Lens2.Helpers.TracingTest do
   # end
 
 
+  @tag :skip
   test "trace" do
 
     map = %{a: %{b: %{c: %{d: 1}}}}

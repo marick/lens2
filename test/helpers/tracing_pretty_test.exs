@@ -93,9 +93,12 @@ defmodule Tracing.PrettyTest do
     assert actual == expected
   end
 
-  test "adjusting one string to match another" do
-    assert Pretty.shift_to_align("1", "abc") == "1"
-    assert Pretty.shift_to_align("12", "ab 12 34") == "   12"
+  test "adjusting one line to match the previous" do
+    actual = Pretty.shift_to_align(%{key: "1"}, %{key: "345"}, :key)
+    assert actual == %{key: "1"}
+
+    actual = Pretty.shift_to_align(%{key: "12"}, %{key: "ab 12 34"}, :key)
+    assert actual == %{key: "   12"}
   end
 
   test "splitting lines by change of direction" do
@@ -104,6 +107,26 @@ defmodule Tracing.PrettyTest do
     |> Pretty.split_lines_at_change_of_direction
     |> assert_equal([[funcall_entry("at(0)"), funcall_entry("at(1)")],
                      [funcall_exit("at(1)"), funcall_exit("at(0)")]])
+  end
+
+  describe "aligning text with the line above or below" do
+    test "aligning EntryLines" do
+      input =
+        ["%{b: %{c: %{d: 1}}}", "%{c: %{d: 1}}", "%{d: 1}", "%{d: 2}", "88888888888888"]
+        |> Enum.map(& %EntryLine{container: &1, call: "irrelevant"})
+
+      actual =
+        Pretty.align_one_direction(input) |> Enum.map(& Map.get(&1, :container))
+
+      expected =
+        ["%{b: %{c: %{d: 1}}}",
+         "     %{c: %{d: 1}}",
+         "          %{d: 1}",
+         "%{d: 2}",
+         "88888888888888"]
+
+      assert actual == expected
+    end
   end
 
   test "length_of_name" do
