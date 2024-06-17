@@ -77,7 +77,7 @@ defmodule Tracing.PrettyTest do
     assert actual == expected
   end
 
-  test "pad right" do
+  test "non-ragged right margins" do
     input =    [%{a: "1234",                        },
                 %{a: "1",    b: "1"                 },
                 %{           b: "123456"            },
@@ -89,74 +89,24 @@ defmodule Tracing.PrettyTest do
                 %{           b: "123   ",  c: :ignored },
     ]
 
-    actual = Pretty.pad_right(input, [:a, :b])
+    actual = Pretty.equalize_widths(input, [:a, :b])
     assert actual == expected
   end
 
-  # describe "prettifying call strings" do
+  test "adjusting one string to match another" do
+    assert Pretty.shift_to_align("1", "abc") == "1"
+    assert Pretty.shift_to_align("12", "ab 12 34") == "   12"
+  end
 
-  #   test "prettification" do
-  #     input = %{
-  #       0 => %{call: "key(:a)"},
-  #       1 => %{call: "map_values()", other: :ignored},
-  #       2 => %{call: "keys([:aa, :bb])"}
-  #     }
+  test "splitting lines by change of direction" do
+    [funcall_entry("at(0)"), funcall_entry("at(1)"),
+     funcall_exit("at(1)"), funcall_exit("at(0)")]
+    |> Pretty.split_lines_at_change_of_direction
+    |> assert_equal([[funcall_entry("at(0)"), funcall_entry("at(1)")],
+                     [funcall_exit("at(1)"), funcall_exit("at(0)")]])
+  end
 
-  #     expected = %{
-  #       0 => %{call: "key(:a)                      "},
-  #       1 => %{call: "   map_values()              ", other: :ignored},
-  #       2 => %{call: "             keys([:aa, :bb])"}
-  #     }
-
-  #     assert Pretty.prettify_calls(input) == expected
-  #   end
-
-  #   test "indented call strings" do
-  #     input = %{
-  #       0 => %{call: "key(:a)"},
-  #       1 => %{call: "map_values()", other: :ignored},
-  #       2 => %{call: "keys([:aa, :bb])"}
-  #     }
-
-  #     expected = %{
-  #       0 => %{call: "key(:a)"},
-  #       1 => %{call: "   map_values()", other: :ignored},
-  #       2 => %{call: "             keys([:aa, :bb])"}
-  #     }
-
-  #     assert Pretty.indent_calls(input, :call) == expected
-  #   end
-
-  #   test "length_of_name" do
-  #     assert Pretty.length_of_name("key(:a)") == 3
-  #   end
-
-  #   test "max_length" do
-  #     input = %{
-  #       0 => %{gotten: "1234"},
-  #       1 => %{gotten: "12345"},
-  #       2 => %{gotten: "12"}
-  #     }
-
-  #     assert Pretty.max_length(input, :gotten) == 5
-  #   end
-
-  #   test "pad_right" do
-  #     input = %{
-  #       0 => %{gotten: "1234"},
-  #       1 => %{gotten: "12345"},
-  #       2 => %{gotten: "12"}
-  #     }
-
-  #     expected = %{
-  #       0 => %{gotten: "1234 "},
-  #       1 => %{gotten: "12345"},
-  #       2 => %{gotten: "12   "}
-  #     }
-
-  #     assert Pretty.pad_right(input, :gotten) == expected
-  #   end
-
-  # end
-
+  test "length_of_name" do
+    assert Pretty.length_of_name("key(:a)") == 3
+  end
 end
