@@ -1,7 +1,6 @@
 alias Lens2.Helpers.Tracing
 
 
-
 defmodule Tracing.EntryLine do
   import TypedStruct
 
