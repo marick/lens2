@@ -4,44 +4,6 @@ defmodule Lens2.Helpers.TracingTest do
 #  alias Tracing.LogItem
 #  alias Tracing.Mutable
 
-  # test "building the log" do
-  #   assert Mutable.current_nesting == nil
-  #   assert Mutable.peek_at_log == nil
-
-  #   outer = %{a: %{b: 1}}
-  #   Tracing.log_entry(:key, [:a], outer)
-  #   assert Mutable.peek_at_log(level: 0) == LogItem.on_entry(:key, [:a], outer)
-  #   assert Mutable.current_nesting == 1
-
-  #   Tracing.log_entry(:key?, [:b], outer.a)
-  #   assert Mutable.peek_at_log(level: 1) == LogItem.on_entry(:key?, [:b], outer.a)
-  #   assert Mutable.current_nesting == 2
-
-  #   Tracing.log_exit({[:inner_gotten], :inner_updated})
-  #   expected =
-  #     LogItem.on_entry(:key?, [:b], outer.a)
-  #     |> LogItem.on_exit([:inner_gotten], :inner_updated)
-  #   assert Mutable.peek_at_log(level: 1) == expected
-  #   assert Mutable.current_nesting == 1
-
-  #   # Normally the log is spilled when pop out of final level
-  #   log =
-  #     Tracing.log_exit({[:outer_gotten], :outer_updated},
-  #                      &Mutable.peek_at_log/0)
-
-  #   expected =
-  #     LogItem.on_entry(:key, [:a], outer)
-  #     |> LogItem.on_exit([:outer_gotten], :outer_updated)
-  #   assert log[0] == expected
-
-  #   # IO.inspect log
-
-  #   # ready for next go-round
-  #   assert Mutable.current_nesting == nil
-  #   assert Mutable.peek_at_log == nil
-  # end
-
-
   test "trace" do
 
     map = %{a: %{b: %{c: %{d: 1}}}}

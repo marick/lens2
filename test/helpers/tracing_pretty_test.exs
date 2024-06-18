@@ -63,53 +63,25 @@ defmodule Tracing.PrettyTest do
     end
   end
 
+  describe "aligning substrings with line above or below" do
+    test "adjusting one line to match the previous" do
+      actual = Pretty.shift_to_align(%{key: "1"}, %{key: "345"}, :key)
+      assert actual == %{key: "1"}
 
-  test "calculating max lengths" do
+      actual = Pretty.shift_to_align(%{key: "12"}, %{key: "ab 12 34"}, :key)
+      assert actual == %{key: "   12"}
+    end
 
-    input = [%{a: "1234",                        },
-             %{a: "1",    b: "1"                 },
-             %{           b: "123456"            },
-             %{           b: "123",  c: :ignored },
-    ]
+    test "splitting lines by change of direction" do
+      [funcall_entry("at(0)"), funcall_entry("at(1)"),
+       funcall_exit("at(1)"), funcall_exit("at(0)")]
+      |> Pretty.split_lines_at_change_of_direction
+      |> assert_equal([[funcall_entry("at(0)"), funcall_entry("at(1)")],
+                       [funcall_exit("at(1)"), funcall_exit("at(0)")]])
+    end
 
-    actual = Pretty.max_lengths(input, [:a, :b])
-    expected = %{a: 4, b: 6}
-    assert actual == expected
-  end
 
-  test "non-ragged right margins" do
-    input =    [%{a: "1234",                        },
-                %{a: "1",    b: "1"                 },
-                %{           b: "123456"            },
-                %{           b: "123",  c: :ignored },
-    ]
-    expected = [%{a: "1234",                        },
-                %{a: "1   ", b: "1     "            },
-                %{           b: "123456"            },
-                %{           b: "123   ",  c: :ignored },
-    ]
 
-    actual = Pretty.equalize_widths(input, [:a, :b])
-    assert actual == expected
-  end
-
-  test "adjusting one line to match the previous" do
-    actual = Pretty.shift_to_align(%{key: "1"}, %{key: "345"}, :key)
-    assert actual == %{key: "1"}
-
-    actual = Pretty.shift_to_align(%{key: "12"}, %{key: "ab 12 34"}, :key)
-    assert actual == %{key: "   12"}
-  end
-
-  test "splitting lines by change of direction" do
-    [funcall_entry("at(0)"), funcall_entry("at(1)"),
-     funcall_exit("at(1)"), funcall_exit("at(0)")]
-    |> Pretty.split_lines_at_change_of_direction
-    |> assert_equal([[funcall_entry("at(0)"), funcall_entry("at(1)")],
-                     [funcall_exit("at(1)"), funcall_exit("at(0)")]])
-  end
-
-  describe "aligning text with the line above or below" do
     test "aligning EntryLines" do
       input =
         [EntryLine.new("some_call", "%{b: %{c: %{d: 1}}}"),
@@ -155,8 +127,37 @@ defmodule Tracing.PrettyTest do
       assert Enum.map(actual, & Map.get(&1, :updated)) == expected
 
     end
+  end
 
+  describe "padding to equal-width lines" do
+    test "calculating max lengths" do
 
+      input = [%{a: "1234",                        },
+               %{a: "1",    b: "1"                 },
+               %{           b: "123456"            },
+               %{           b: "123",  c: :ignored },
+      ]
+
+      actual = Pretty.max_lengths(input, [:a, :b])
+      expected = %{a: 4, b: 6}
+      assert actual == expected
+    end
+
+    test "non-ragged right margins" do
+      input =    [%{a: "1234",                        },
+                  %{a: "1",    b: "1"                 },
+                  %{           b: "123456"            },
+                  %{           b: "123",  c: :ignored },
+      ]
+      expected = [%{a: "1234",                        },
+                  %{a: "1   ", b: "1     "            },
+                  %{           b: "123456"            },
+                  %{           b: "123   ",  c: :ignored },
+      ]
+
+      actual = Pretty.equalize_widths(input, [:a, :b])
+      assert actual == expected
+    end
   end
 
   test "length_of_name" do
