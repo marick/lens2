@@ -10,7 +10,10 @@ defmodule Tracing.EntryLine do
   end
 
   def new(name, args, container),
-      do: %__MODULE__{call: Tracing.Line.call_string(name, args), container: inspect(container)}
+      do: new(Tracing.Line.call_string(name, args), inspect(container))
+
+  def new(call_string, container) when is_binary(call_string),
+      do: %__MODULE__{call: call_string, container: container}
 end
 
 defmodule Tracing.ExitLine do
@@ -23,11 +26,14 @@ defmodule Tracing.ExitLine do
   end
 
   def new(name, args, gotten, updated) do
-    %__MODULE__{call: Tracing.Line.call_string(name, args),
-                gotten: inspect(gotten),
-                updated: inspect(updated)}
+    new(Tracing.Line.call_string(name, args), inspect(gotten), inspect(updated))
   end
 
+  def new(call_string, gotten_string, updated_string) do
+    %__MODULE__{call: call_string,
+                gotten: gotten_string,
+                updated: updated_string}
+  end
 end
 
 

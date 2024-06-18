@@ -82,7 +82,14 @@ defmodule Tracing.Pretty do
 
     def align_one_direction(lines) do
       if Line.entering?(lines) do
-        align_each_with_previous(lines, :container)
+        lines
+        |> align_each_with_previous(:container)
+      else
+        lines
+        |> Enum.reverse
+        |> align_each_with_previous(:gotten)
+        |> align_each_with_previous(:updated)
+        |> Enum.reverse
       end
     end
 

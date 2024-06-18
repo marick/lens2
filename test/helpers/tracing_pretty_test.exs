@@ -112,8 +112,12 @@ defmodule Tracing.PrettyTest do
   describe "aligning text with the line above or below" do
     test "aligning EntryLines" do
       input =
-        ["%{b: %{c: %{d: 1}}}", "%{c: %{d: 1}}", "%{d: 1}", "%{d: 2}", "88888888888888"]
-        |> Enum.map(& %EntryLine{container: &1, call: "irrelevant"})
+        [EntryLine.new("some_call", "%{b: %{c: %{d: 1}}}"),
+         EntryLine.new("some_call", "%{c: %{d: 1}}"),
+         EntryLine.new("some_call", "%{d: 1}"),
+         EntryLine.new("some_call", "%{d: 2}"),
+         EntryLine.new("some_call", "88888888888888")
+        ]
 
       actual =
         Pretty.align_one_direction(input) |> Enum.map(& Map.get(&1, :container))
@@ -127,6 +131,32 @@ defmodule Tracing.PrettyTest do
 
       assert actual == expected
     end
+
+    test "aligning ExitLines" do
+      input =
+        [ExitLine.new("some_call", "[nil]", "1"),
+         ExitLine.new("some_call", "[[nil]]", "%{b: 1}"),
+         ExitLine.new("some_call", "[[[nil]]]", "%{a: %{b: 1}}")
+        ]
+
+      actual = Pretty.align_one_direction(input)
+
+      expected =
+        ["  [nil]",
+         " [[nil]]",
+         "[[[nil]]]"]
+      assert Enum.map(actual, & Map.get(&1, :gotten)) == expected
+
+      expected =
+        ["          1",
+         "     %{b: 1}",
+         "%{a: %{b: 1}}"
+        ]
+      assert Enum.map(actual, & Map.get(&1, :updated)) == expected
+
+    end
+
+
   end
 
   test "length_of_name" do
