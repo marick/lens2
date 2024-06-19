@@ -37,8 +37,6 @@ defmodule Lens2.Lenses.Combine do
   @doc ~S"""
   Returns a lens ignores all input pointers and produces no pointers.
 
-  **Rarely used**
-
   Suppose you have an `Enumeration` of lenses and you want to combine
   them into a single lens with `Enum.reduce/3`:
 
@@ -148,6 +146,8 @@ defmodule Lens2.Lenses.Combine do
        iex>  Deeply.to_list(returns, lens)
        [1, 2]
 
+  Note the use of `empty/0` to handle the "don't care" case.
+
   """
   @spec match((any -> Lens2.lens)) :: Lens2.lens
   deflens_raw match(matcher_fun) do
@@ -157,10 +157,58 @@ defmodule Lens2.Lenses.Combine do
   end
 
 
+  @doc ~S"""
+  Use multiple lenses to convert a single pointer into a multitude of
+  them (usually into the next level down).
+
+  Suppose you have an enumeration of tuple and want to point to the
+  values at indices 0, 1, and 3. You can do that like this:
+
+      iex> lens = Lens.multiple([Lens.at(0), Lens.at(1), Lens.at(3)])
+      iex> list = [0, 1, 2, 3, 4]
+      iex> Deeply.to_list(list, lens)
+      [0, 1, 3]
+      iex> Deeply.update(list, lens, & &1 * 1111)
+      [0, 1111, 2, 3333, 4]
+
+  This is essentially the implementation of `Lens2.Lenses.Indexed.indices/1`.
+  """
   @spec multiple([Lens2.lens]) :: Lens2.lens
   deflens multiple(lenses), do: lenses |> Enum.reverse() |> Enum.reduce(empty(), &both/2)
 
-  @doc ~s"""
+  @doc ~S"""
+  Convert one pointer into two pointers (usually into the next level down).
+
+  Suppose you want a lens that will point at all the elements of an
+  enumeration that are divisible by either two or three. The lenses to
+  point at the two types of values can be made with
+  `Lens2.Lenses.Filter.filter/2`, then combined with `both/2`:
+
+      iex> by_2 = Lens.filter(& rem(&1, 2) == 0)
+      iex> by_3 = Lens.filter(& rem(&1, 3) == 0)
+      iex> list = [0, 1, 2, 3, 4, 5, 6]
+      iex> lens = Lens.all |> Lens.both(by_2, by_3)
+      iex> Deeply.to_list(list, lens)
+      [0, 0, 2, 3, 4, 6, 6]
+
+  You might be surprised by the duplications in the result (I was!),
+  but that shows that the two lenses are independent. `by_2` produces
+  pointers to `0`, `2, `4`, and `6`. `by_3` produces pointers to `0`,
+  `3`, and `6`. `both/2`, when used by `Deeply.to_list` just gathers
+  the values at all the pointer, not caring that sometimes two point
+  at the same thing.
+
+  The possibility of duplications has consequences for `Deeply.update`. For example,
+  consider this:
+
+      Deeply.update(list, lens, & &1 * 1111)
+
+  Here's the result:
+
+      [0, 1, 2222, 3333, 4444, 5, 7405926]
+
+  The original `6` matched both filters, so it was multiplied
+  twice. (So was the `0`, though you can't tell.)
   """
   @spec both(Lens2.lens, Lens2.lens) :: Lens2.lens
   deflens_raw both(lens1, lens2) do

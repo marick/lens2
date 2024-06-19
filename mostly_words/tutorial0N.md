@@ -1,4 +1,5 @@
 ## Missing values
+### Or: Nils! Why does it always have to be nils?
 
 There's another difference, though, which has to do with the handling of missing values. Consider fetching the value of keys `:a` and `:missing`:
 
