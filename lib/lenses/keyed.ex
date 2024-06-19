@@ -128,6 +128,10 @@ defmodule Lens2.Lenses.Keyed do
 
       iex> %{here: nil} |> Deeply.put(Lens.key?(:here), :NEW)
       %{here: :NEW}
+
+  This behavior differs from `Access.key/1` or the shorthand form
+  `put_in(..., [..., :key, ...] ...)`.
+  Use `key/1` for that.
   """
   @spec key?(any) :: Lens2.lens
   deflens_raw key?(key) do

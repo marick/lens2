@@ -56,52 +56,63 @@ defmodule Lens2.Lenses.Combine do
   deflens_raw empty, do: fn data, _fun -> {[], data} end
 
 
+  @doc deprecated: "Too confusing."
   @doc ~S"""
   Returns a lens that replaces any incoming pointers with a pointer to the given data.
 
-  **If you try to use this function for anything ambitious, you risk suddenly
-    comprehending – _truly_ comprehending – the universe's profound
-    indifference to all human needs, desires, and expectations. Take it from me: it
-    feels like plunging eternally into a vile pit of gibbering
-    horror, surrounded by the thin monotonous whine of accursed flutes.**
+  You can use this to produce a sort of a default value. For example, recall that
+  `Lens2.Lenses.Keyed.key?/1` will return nothing for a missing key:
 
-  With that said...
+      iex> Deeply.to_list(%{}, Lens.key?(:a))
+      []
 
-  Remember that there are three classes of functions:
-  1. Those that raise an error for a missing value. (Lens.key!/1)
-  2. Those that
 
-  When used at the end of a pipeline, the `const` value can replace the actual value
-  pointed at:
+  The `either/2` lens will apply its second lens argument if the first
+  has no value, so it can be used to defer to `const`:
 
-      iex>  lens = Lens.key(:a) |> Lens.const(10000)
-      iex>  map = %{a: 1}
-      iex>  Deeply.to_list(map, lens)
-      [10000]
-      ...>
-      ...>  # In the case of `put`, the `const` value might as well not be there.
-      iex>  Deeply.put(map, lens, :NEW)
+      iex> lens = Lens.either(Lens.key?(:a), Lens.const(:DEFAULT))
+      iex> Deeply.to_list(%{a: :GIVEN}, lens)
+      [:GIVEN]
+      iex> Deeply.to_list(%{}, lens)
+      [:DEFAULT]
+
+  The default value can even be used by later lenses:
+
+      iex> lens =
+      ...>   Lens.either(Lens.key?(:a), Lens.const(%{bb: :BB_DEFAULT_VALUE}))
+      ...>   |> Lens.key(:bb)
+      iex> Deeply.to_list(%{a: %{bb: :GIVEN}}, lens)
+      [:GIVEN]
+      iex> Deeply.to_list(%{}, lens)
+      [:BB_DEFAULT_VALUE]
+
+  However, this defaulting is not as useful as it seems.
+
+  First, you must take care to use `key?` and not, say,
+  `Lens2.Lenses.Keyed.lens/1`.  The latter *will* produce a value for a
+  missing key (`nil`), which means `either/2` will not use its second
+  argument.
+
+  Second, `Lens2.Deeply.put/3` and `Lens2.Deeply.update/3` work
+  because a lens pipeline "backtracks" along a path to build up the
+  new nested structure. `const` breaks (or, more accurately,
+  eliminates) that backtracking. For example, in my first use of `const`,
+  I did not expect that using `put` on a map with a missing key would "lose" the map:
+
+      iex> lens = Lens.either(Lens.key?(:a), Lens.const(:DEFAULT))
+      iex> Deeply.put(%{}, lens, :NEW)
+      :NEW    # *not* %{a: :NEW}
+
+  Compare that to using `key/1` or `Kernel.put_in/1
+
+      iex> Deeply.put(%{}, Lens.key(:a), :NEW)
       %{a: :NEW}
-      ...>
-      ...>  # In the case of `update`, the `const` value is used instead of the actual.
-      iex>  Deeply.update(map, lens, & &1+9)
-      %{a: 10009}
+      iex> put_in(%{}, [:a], :NEW)
+      %{a: :NEW}
 
-
-  In conjunction with `either/2`, it can be used to provide a default value:
-
-      iex>  # default_to = fn maybe_noplace, default ->
-      ...>  #   Lens.either(maybe_noplace, Lens.const(default))
-      ...>  # end
-      iex>  # lens = Lens.key(:a) |> default_to.(%{count: 0}) |> Lens.key(:count)
-      iex>  # Deeply.update(%{}, lens, fn x ->
-      ...>  #    dbg x
-      ...>  #    x + 1
-      ...>  # end) |> dbg
-
-  %{a: %{count: 33}
-
+  I think this is all too confusing to justify using `const`.
   """
+
   @spec const(any) :: Lens.lens
   deflens_raw const(value) do
     fn _data, fun ->
@@ -111,6 +122,32 @@ defmodule Lens2.Lenses.Combine do
   end
 
   @doc ~S"""
+  Descend different "shapes" of data differently. Powered by function
+  argument pattern matching.
+
+  `GenServer` message handlers return tuples to the `GenServer` infrastructure. There are quite a variety, but let's say we only care about these three:
+
+        {:noreply, new_state}
+        {:noreply, new_state, something_else}
+        {:reply, reply, new_state}
+
+  We have an `Enumeration` of these and other such tuples. For our
+  three, we wish to descend into `new_state`. That can be done like
+  this:
+
+       iex>  matcher = fn
+       ...>    {:noreply, _} -> Lens.at(1)
+       ...>    {:noreply, _, _} -> Lens.at(1)
+       ...>    {:reply, _, _} -> Lens.at(2)
+       ...>     _ -> Lens.empty
+       ...>  end
+       iex>  lens = Lens.all |> Lens.match(matcher) |> Lens.key?(:code)
+       iex>  returns = [{:noreply, %{code: 1}},
+       ...>             {:reply, :ok, %{code: 2}},
+       ...>             {:stop, 5, %{code: :ignore}}]
+       iex>  Deeply.to_list(returns, lens)
+       [1, 2]
+
   """
   @spec match((any -> Lens2.lens)) :: Lens2.lens
   deflens_raw match(matcher_fun) do
