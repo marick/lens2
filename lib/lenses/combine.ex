@@ -327,6 +327,120 @@ defmodule Lens2.Lenses.Combine do
   end
 
   @doc """
+  Record an intermediate container on the way to selected values.
+
+  A composed lens will descend through nested containers to reach one
+  or more leaf values.  It's occasionally useful to make one or more
+  intermediate containers available to the caller of
+  `Deeply.to_list` or the function passed to
+  `Deeply.update`.
+
+  **Getting**
+
+  One use might be to answer the question, "Where did this leaf value
+  come from?" Consider the following structure, with a list within a map within a list:
+
+       map_0 = %{a: [0, :target_1, 2], name: "first"}
+       map_1 = %{a: [4, :target_5, 6], name: "second"}
+       map_list = [map_0, map_1]
+
+  When fetching the two `:target` atoms, we want to record which map
+  contained them, perhaps to extract the `:name`. We will do that by:
+
+  1. Describing a path *from* the map to the target list element:
+
+         into_map = Lens.key(:a) |> Lens.at(1)
+
+  2. Marking the start of that path as something worth recording:
+
+         Lens.context(into_map)   # Think of this as taking a snapshot.
+
+  3. Combining that with a lens describing the path *to* the map:
+
+         lens = Lens.at(0) |> Lens.context(into_map)
+
+  This lens, applied to `map_list`, will produce two leaf
+  values. `Deeply.to_list` will return those, but also the snapshots
+  taken on the way. The two are wrapped into a tuple. So:
+
+      [{map_0_snapshot, map_0_target}, {map_1_snapshot, map_1_target}] =
+        Lens.to_list(map_list, lens)
+
+  In this case, the result will be:
+
+      map_0_snapshot == %{a: [0, :target_1, 2], name: "first"}
+      map_0_target   == :target_1
+      map_1_snapshot == %{a: [0, :target_1, 2], name: "second"}
+      map_1_target   == :target_5
+
+  **Putting**
+
+  The `context` lens has no effect on `Deeply.put`. That is, using the lens above,
+  we could change the targets like this:
+
+      actual = Deeply.put(map_list, lens, :REPLACEMENT)
+
+      actual == [ %{a: [0, :REPLACEMENT, 2], name: "first"},
+                  %{a: [0, :REPLACEMENT, 2], name: "second"}
+
+  That's the same as you'd get with a lens pipeline that leaves out the `context`:
+
+      lens = Lens.at(0) |> Lens.key(:a) |> Lens.at(1)
+
+  **Updating**
+
+  The function used with `Deeply.update` will take a tuple argument:
+
+      updater = fn {snapshot, leaf} -> ... end
+
+  Let's simplify the previous example to this list-of-maps-of-lists:
+
+      map_list = [
+         %{a: [10, 100, 1000]}
+      ]
+
+  We want to update the `100` element with the sum of the whole `:a`
+  list. For extra fun, we'll add on the current value of the element
+  (100), giving an expected result of `10 + 100 + 1000 + 100 = 1210`.
+
+  Once we have the leaf value `100` and the context `{a: [10, 100,
+  1000]}`, this updater function would serve:
+
+      updater = fn {snapshot, leaf} ->
+        Enum.sum(snapshot) + leaf
+      end
+
+  Then `Deeply.update` will work as hoped:
+
+      actual = Deeply.update(map_list, lens)
+      assert actual == [
+         %{a: [10, 1210, 1000]}
+      ]
+
+  Note that `Deeply.update` can still only update leaf values, not the snapshots.
+
+  **Nested contexts**
+
+  What happens with this composed lens?
+
+      Lens.indices(0) |> Lens.context(Lens.key(:a) |> Lens.context(Lens.at(1)))
+
+  It produces nested tuples of this form:
+
+      {outer_context, {inner_context, leaf_value}}
+
+  ... such as:
+
+      {
+        %{a: [0, :target_1, 2], b: 3},
+        {
+          [0, :target_1, 2],
+          :target_1
+        }
+      }
+
+  A structure of the same shape and values will be given to a `Deeply.update` function.
+
   """
   @spec context(Lens2.lens, Lens2.lens) :: Lens2.lens
   deflens_raw context(context_lens, item_lens) do

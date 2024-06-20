@@ -4,17 +4,24 @@ defmodule Lens2.Helpers.TracingTest do
 #  alias Tracing.LogItem
 #  alias Tracing.Mutable
 
+  @tag :skip
   test "trace" do
 
-    map = %{a: %{b: %{c: %{d: 1}}}}
+    map = %{a: %{aa: %{aaa: %{aaaa: 1,
+                              bbbb: 2},
+                       bbb: %{aaaa: 3,
+                              bbbb: 4}},
+                 bb: %{aaa: %{aaaa: 5}}}
+    }
     lens = Lens.key?(:a) |> Lens.key?(:b) |> Lens.key?(:c) |> Lens.key?(:d)
 
     Deeply.put(map, lens, :NEW) |> dbg
 
     IO.puts("======")
 
-    lens = Lens.tracing_key?(:a) |> Lens.tracing_key?(:b) |> Lens.tracing_key?(:c) |> Lens.tracing_key?(:d)
-    Deeply.put(map, lens, :NEW) |> dbg
+    lens = Lens.tracing_key!(:a) |> Lens.tracing_keys([:aa, :bb])
+    |> Lens.tracing_keys?([:aaa, :bbb]) |> Lens.tracing_keys?([:aaaa, :bbbb])
+    Deeply.to_list(map, lens)
 
     # # map = %{a: %{bb: %{c: 1, d: 2},
     # #              cc: %{c: 3}}}
