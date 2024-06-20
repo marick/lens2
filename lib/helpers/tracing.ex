@@ -28,6 +28,8 @@ defmodule Tracing do
       Mutable.peek_at_log()
       |> Pretty.prettify
 
+    IO.puts("\n")
+
     for line <- log do
       case line do
         %EntryLine{} ->
