@@ -115,10 +115,12 @@ defmodule Lens2.Deflens do
       unquote(def_access_fun_interface({name, metadata, args},
                                        callback))
 
+      @doc false
       unquote(def_access_fun_interface({tracing_name, metadata, args},
                                        tracing_callback(name, args, callback)))
 
       unquote(def_pipe_version(name, args))
+      @doc false
       unquote(def_pipe_version(tracing_name, args))
     end
   end
@@ -130,10 +132,12 @@ defmodule Lens2.Deflens do
       unquote(def_composed_fun_interface({name, metadata, args},
                                          composed_fun))
 
+      @doc false
       unquote(def_composed_fun_interface({tracing_name, metadata, args},
                                          tracing_composed_function(name, args, composed_fun)))
 
       unquote(def_pipe_version(name, args))
+      @doc false
       unquote(def_pipe_version(tracing_name, args))
     end
   end
