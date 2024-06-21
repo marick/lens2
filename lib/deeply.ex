@@ -22,10 +22,10 @@ defmodule Lens2.Deeply do
   These functions have simple implementations because lenses are
   compatible with the `Access` behaviour. For example,
   `Lens2.Deeply.put/3` is just a wrapper around a call to
-  `Kernel.put_in/3`:
+  `put_in/3`:
 
      def put(container, lens, value),
-         do: Kernel.put_in(container, [lens], value)
+         do: put_in(container, [lens], value)
   """
 
   @doc ~S"""
@@ -35,7 +35,7 @@ defmodule Lens2.Deeply do
       iex>  %{a: 1, b: 2, c: 3} |> Deeply.to_list(lens) |> Enum.sort
       [          1,    2,    3]
 
-  `to_list` produces its result with `Kernel.get_in/2`.
+  `to_list` produces its result with `get_in/2`.
   """
 
   @spec to_list(Lens2.container, Lens2.lens) :: list(Lens2.value)
@@ -67,7 +67,7 @@ defmodule Lens2.Deeply do
       iex>  %{a:    1,  b: 2,  c:    3} |> Deeply.put(lens, :NEW)
       %{      a: :NEW,  b: 2,  c: :NEW}
 
-  `put` produces its result with `Kernel.put_in/3`.
+  `put` produces its result with `put_in/3`.
   """
   @spec put(Lens2.container, Lens2.lens, Lens2.value) :: Lens2.container
   def put(container, lens, value),
@@ -88,9 +88,9 @@ defmodule Lens2.Deeply do
   [`Lens`]((https://hexdocs.pm/lens/readme.html)) package. The name
   has been changed for consistency with `Access`.
 
-  `update` produces its result with `Kernel.update_in/3`.
+  `update` produces its result with `update_in/3`.
   """
-  @spec update(Lens2.container, Lens2.lens, (Lens2.value -> Lens2._updated_value)) :: Lens2.container
+  @spec update(Lens2.container, Lens2.lens, (Lens2.value -> Lens2.updated_value)) :: Lens2.container
   def update(container, lens, fun),
       do: Kernel.update_in(container, [lens], fun)
 
@@ -111,7 +111,7 @@ defmodule Lens2.Deeply do
             %{a: 1000,  b: 2,  c: 3000}
       }
 
-  `get_and_update` produces its result with `Kernel.get_and_update_in/3`.
+  `get_and_update` produces its result with `get_and_update_in/3`.
   """
   @spec get_and_update(Lens2.container, Lens2.lens, (Lens2.value -> {Lens2.value, Lens2.updated_value})) :: {list(Lens2.value), Lens2.container}
   def get_and_update(container, lens, fun),

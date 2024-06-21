@@ -1,6 +1,8 @@
 alias Lens2.Helpers.Tracing
 
 defmodule Tracing.Pretty do
+  @moduledoc false
+
   use Lens2
   use Private
   alias Tracing.{Line, EntryLine,ExitLine}

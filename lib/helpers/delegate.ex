@@ -10,8 +10,11 @@ defmodule Lens2.Helpers.Delegate do
       composing_arglist = [Macro.var(:lens, __MODULE__) | arglist]
       quote do
         defdelegate unquote(name)(unquote_splicing(arglist)), to: unquote(module)
+        @doc false
         defdelegate unquote(name)(unquote_splicing(composing_arglist)), to: unquote(module)
+        @doc false
         defdelegate unquote(tracing_name)(unquote_splicing(arglist)), to: unquote(module)
+        @doc false
         defdelegate unquote(tracing_name)(unquote_splicing(composing_arglist)), to: unquote(module)
       end
     end

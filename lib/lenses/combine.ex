@@ -87,7 +87,7 @@ defmodule Lens2.Lenses.Combine do
   However, this defaulting is not as useful as it seems.
 
   First, you must take care to use `key?` and not, say,
-  `Lens2.Lenses.Keyed.lens/1`.  The latter *will* produce a value for a
+  `Lens2.Lenses.Keyed.key/1`.  The latter *will* produce a value for a
   missing key (`nil`), which means `either/2` will not use its second
   argument.
 
@@ -101,7 +101,7 @@ defmodule Lens2.Lenses.Combine do
       iex> Deeply.put(%{}, lens, :NEW)
       :NEW    # *not* %{a: :NEW}
 
-  Compare that to using `key/1` or `Kernel.put_in/1
+  Compare that to using `key/1` or `put_in/1`
 
       iex> Deeply.put(%{}, Lens.key(:a), :NEW)
       %{a: :NEW}
@@ -193,7 +193,7 @@ defmodule Lens2.Lenses.Combine do
 
   You might be surprised by the duplications in the result (I was!),
   but that shows that the two lenses are independent. `by_2` produces
-  pointers to `0`, `2, `4`, and `6`. `by_3` produces pointers to `0`,
+  pointers to `0`, `2`, `4`, and `6`. `by_3` produces pointers to `0`,
   `3`, and `6`. `both/2`, when used by `Deeply.to_list` just gathers
   the values at all the pointer, not caring that sometimes two point
   at the same thing.

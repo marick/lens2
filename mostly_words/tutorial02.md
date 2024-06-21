@@ -96,7 +96,7 @@ iex(9)>  Deeply.to_list(map, Lens.all |> Lens.at(1))
 [1, 2]
 ```
 
-But not quite, because `Deeply.put` (or `Kernel.put_in/3`) produces an odd result:
+But not quite, because `Deeply.put` (or `put_in/3`) produces an odd result:
 
 ```elixir
 iex>  put_in(map, [Lens.all |> Lens.at(1)], :NEW)
@@ -106,7 +106,7 @@ iex>  put_in(map, [Lens.all |> Lens.at(1)], :NEW)
 What's happening here? 
 
 Consider how you might write your own code to `put` all the values of a map. 
-First, you'd iterate over the elements of the map. I'll use `Kernel.for/1`:
+First, you'd iterate over the elements of the map. I'll use `for/1`:
 
 ```elixir
 for {key, value} <- map do
@@ -129,7 +129,7 @@ That produces this:
 ```
 
 The problem is there's no code to reconstitute from the list of
-tuples. `Kernel.for/1` has a way to handle that, the `:into` clause:
+tuples. `for/1` has a way to handle that, the `:into` clause:
 
 ```elixir
 for {key, _overwritten} <- map, into: %{} do

@@ -2,6 +2,7 @@ alias Lens2.Helpers.Tracing
 
 
 defmodule Tracing.EntryLine do
+  @moduledoc false
   import TypedStruct
 
   typedstruct do
@@ -17,6 +18,7 @@ defmodule Tracing.EntryLine do
 end
 
 defmodule Tracing.ExitLine do
+  @moduledoc false
   import TypedStruct
 
   typedstruct do
@@ -38,6 +40,8 @@ end
 
 
 defmodule Tracing.Line do
+  @moduledoc false
+
   def call_string(name, args) do
     formatted_args = Enum.map(args, & inspect(&1))
     "#{name}(#{Enum.join(formatted_args, ",")})"

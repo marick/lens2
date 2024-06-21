@@ -64,7 +64,7 @@ the `:a` in `Map.key(container, :a)`
 
 Functions like `Map.get/3`, `Enum.at/2`, and so on are about a *single
 value* within a container. Their conceptual extension to functions
-like `Kernel.get_in/2` share that assumption. There are
+like `get_in/2` share that assumption. There are
 exceptions like `Access.all/0` or `Access.slice/1`, but I think it
 fair to say those are special cases: both conceptually and in common
 usage.
@@ -108,7 +108,7 @@ When it's used, the lens will produce these pointers for the container I showed 
 
 You can use that lens to set every element in the container by
 wrapping the lens in a singleton list and passing it to
-`Kernel.put_in/3`:
+`put_in/3`:
 
 ```elixir
 iex> map = %{a: 1, b: 2, c: 3, d: 4, e: 5}
@@ -118,7 +118,7 @@ iex> put_in(map, [lens], :NEW)
      ^^^^     ^^^^     ^^^^     ^^^^     ^^^^
 ```
 
-Similarly, you can use the lens with `Kernel.get_in/2` and `Kernel.update_in/3`):
+Similarly, you can use the lens with `get_in/2` and `update_in/3`):
 
 ```elixir
 iex> get_in(map, [lens])
@@ -160,7 +160,7 @@ iex> Deeply.update(map, lens, & 1111111*&1)
 %{c: 3333333, a: 1, d: 4, e: 5, b: 2}
 ```
 
-But let's see what happens if we use this new lens with `Kernel.get_in/2`:
+But let's see what happens if we use this new lens with `get_in/2`:
 
 ```elixir
 iex> get_in(map, [lens])
