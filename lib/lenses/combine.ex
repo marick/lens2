@@ -279,20 +279,6 @@ defmodule Lens2.Lenses.Combine do
        # Note that the original `tree` is not included.
       ]
 
-  **Warning:** The lens *must* make a distinction between "missing"
-  and `nil`.  If the `Lens2.Lenses.Keyed.key?/1` above were replaced
-  with `Lens2.Lenses.Keyed.key/1`, which does not distinguish between
-  a key whose value is `nil` and a missing key, the descent would
-  never finish, as:
-
-      iex> nil |> Deeply.get_all(Lens.key(:a))
-      nil
-      # I think this behavior is for compatibility with `Access`:
-      iex> nil |> get_in([:a])
-      nil
-
-  Continuing...
-
   Given pointers to the levels, a later lens can point to values at all of those levels:
 
       iex> lens = Lens.repeatedly(Lens.key?(:below)) |> Lens.key(:value)
@@ -307,7 +293,28 @@ defmodule Lens2.Lenses.Combine do
       iex> Deeply.get_all(tree, lens)
       [2, 1]
 
-  This name is a synonym for `recur/1`, the name in the original `Lens` package.
+  **Warning:** The lens *must* make a distinction between "missing"
+  and `nil`.  If the `Lens2.Lenses.Keyed.key?/1` above were replaced
+  with `Lens2.Lenses.Keyed.key/1`, which does not distinguish between
+  a key whose value is `nil` and a missing key, the descent would
+  never finish, as:
+
+      iex> nil |> Deeply.get_all(Lens.key(:a))
+      nil
+
+  I think this behavior is for compatibility with `Access`:
+
+      iex> nil |> get_in([:a])
+      nil
+
+  Note: `Lens2.Lenses.Indexed.at/1` does not make a distinction
+  between an index in range or an index containing `nil`, so it cannot
+  be used with this function.
+
+      iex> nil |> get_in([Access.at(3)])
+      nil
+
+  `repeatedly/1` is a synonym for `recur/1`, the name in the original `Lens` package.
   """
   @spec repeatedly(Lens2.lens) :: Lens2.lens
   deflens_raw repeatedly(descender), do: &do_recur(descender, &1, &2)
@@ -338,11 +345,15 @@ defmodule Lens2.Lenses.Combine do
 
 
   @doc ~S"""
+  The Lens 11 name for `repeatedly/1`.
+
+  It confused me, so I retaliated by renaming it.
   """
   @spec recur(Lens2.lens) :: Lens2.lens
   deflens recur(descender), do: repeatedly(descender)
 
   @doc ~S"""
+  The Lens 1 name for `and_repeatedly/1`.
   """
   @spec recur_root(Lens2.lens) :: Lens2.lens
   deflens recur_root(descender), do: and_repeatedly(descender)
