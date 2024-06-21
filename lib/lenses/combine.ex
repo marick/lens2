@@ -16,12 +16,12 @@ defmodule Lens2.Lenses.Combine do
   sometimes you want to *add* those new pointers to the original
   pointer. Use `root/0` to represent the original.
 
-  That's the difference between `levels_below/1` and
-  `add_levels_below/1`: the latter uses `both/2` and `root/0` to add the
-  root pointer to what `levels_below/1` produces.
+  That's the difference between `repeatedly/1` and
+  `and_repeatedly/1`: the latter uses `both/2` and `root/0` to add the
+  root pointer to what `repeatedly/1` produces.
 
-      deflens add_levels_below(descender) do
-        pointers_below = levels_below(descender)
+      deflens and_repeatedly(descender) do
+        pointers_below = repeatedly(descender)
         both(root(), pointers_below)
       end
   """
@@ -241,9 +241,21 @@ defmodule Lens2.Lenses.Combine do
 
 
   @doc ~S"""
-  Use a `descender` lens to replace one or more pointers with all the matching pointers below them.
+  Apply a `descender` lens repeatedly to replace one or more pointers with all the matching pointers below them, descending "all the way into" the container.
 
-  The `descender` lens is used recursively. Here is an example. (For a less terse explanation, see <<<<>>>>>
+  Given a pointer to within a container, `repeatedly(descender)`:
+
+  1. Applies `descender` to get a list of places. Let's suppose there
+     are two such places, and call them `X` and `Y`.
+  2. *Replaces* the original pointer (or pointers) with `X` and `Y`.
+  3. Applies `descender` to `X` and `Y` to get, say, `X_1` and `Y_1`.
+  4. *Appends* the new pointers, giving `[X, Y, X_1, Y_1]`.
+  5. Repeats steps 3 and 4 until no new places are found.
+
+  (If you want to retain the original place or places, rather than
+  replacing them, use `and_repeatedly/1`.)
+
+  Here is an example. (For a less terse explanation, see <<<<>>>>>
 
   Consider this structure:
 
@@ -257,7 +269,7 @@ defmodule Lens2.Lenses.Combine do
 
   This function can use that lens to give you pointers all the places under a `:below` key:
 
-      iex> lens = Lens.levels_below(Lens.key?(:below))
+      iex> lens = Lens.repeatedly(Lens.key?(:below))
       iex> tree = %{below:
       ...>           %{value: 1, below:
       ...>                         %{value: 2}}}
@@ -267,9 +279,23 @@ defmodule Lens2.Lenses.Combine do
        # Note that the original `tree` is not included.
       ]
 
+  **Warning:** The lens *must* make a distinction between "missing"
+  and `nil`.  If the `Lens2.Lenses.Keyed.key?/1` above were replaced
+  with `Lens2.Lenses.Keyed.key/1`, which does not distinguish between
+  a key whose value is `nil` and a missing key, the descent would
+  never finish, as:
+
+      iex> nil |> Deeply.to_list(Lens.key(:a))
+      nil
+      # I think this behavior is for compatibility with `Access`:
+      iex> nil |> get_in([:a])
+      nil
+
+  Continuing...
+
   Given pointers to the levels, a later lens can point to values at all of those levels:
 
-      iex> lens = Lens.levels_below(Lens.key?(:below)) |> Lens.key(:value)
+      iex> lens = Lens.repeatedly(Lens.key?(:below)) |> Lens.key(:value)
       iex> tree = %{below:
       ...>           %{value: 1, below:
       ...>                         %{value: 2}}}
@@ -281,26 +307,32 @@ defmodule Lens2.Lenses.Combine do
       iex> Deeply.to_list(tree, lens)
       [2, 1]
 
-  See `add_levels_below/1` for a lens that doesn't replace the
-  top-level pointers, but rather adds to them.
-
   This name is a synonym for `recur/1`, the name in the original `Lens` package.
   """
-  @spec levels_below(Lens2.lens) :: Lens2.lens
-  deflens_raw levels_below(descender), do: &do_recur(descender, &1, &2)
+  @spec repeatedly(Lens2.lens) :: Lens2.lens
+  deflens_raw repeatedly(descender), do: &do_recur(descender, &1, &2)
 
   @doc ~S"""
+  Apply a `descender` lens repeatedly to augment the current set of
+  pointers with all matching pointers below them, descending "all the
+  way into" the container.
 
-  "Explode" one pointer into many pointers into recursive levels within the original
-  container, plus the original pointer.
+  See `repeatedly/1` for details and a more extensive example. The
+  only difference is that the lens produced by this function will
+  retain the original pointers. Suppose you have this structure:
 
-  You have a pointer into a nested container. You want pointers into
-  each nested level of the container, with the levels defined by a
-  lens.
+      iex>  nested = %{value: 1,
+      ...>             below: %{value: 2,
+      ...>                      below: %{value: 3}}}
+      iex>  values = Lens.and_repeatedly(Lens.key?(:below)) |> Lens.key(:value)
+      iex>  Deeply.to_list(nested, values) |> Enum.sort
+      [1, 2, 3]
+
+   Had `repeatedly/1` be used, the `1` value would not be included in the result.
   """
-  @spec add_levels_below(Lens2.lens) :: Lens2.lens
-  deflens add_levels_below(descender) do
-    pointers_below = levels_below(descender)
+  @spec and_repeatedly(Lens2.lens) :: Lens2.lens
+  deflens and_repeatedly(descender) do
+    pointers_below = repeatedly(descender)
     both(root(), pointers_below)
   end
 
@@ -308,12 +340,12 @@ defmodule Lens2.Lenses.Combine do
   @doc ~S"""
   """
   @spec recur(Lens2.lens) :: Lens2.lens
-  deflens recur(descender), do: levels_below(descender)
+  deflens recur(descender), do: repeatedly(descender)
 
   @doc ~S"""
   """
   @spec recur_root(Lens2.lens) :: Lens2.lens
-  deflens recur_root(descender), do: add_levels_below(descender)
+  deflens recur_root(descender), do: and_repeatedly(descender)
 
   defp do_recur(lens, data, fun) do
     {res, changed} =

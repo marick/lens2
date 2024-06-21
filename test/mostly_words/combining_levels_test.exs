@@ -24,7 +24,7 @@ defmodule Lens2.CombiningLevelsTest do
     assert [1, 2, 3] == values_to_list(tree)
 
 
-    lens = Lens.add_levels_below(Lens.key?(:deeper)) |> Lens.key?(:value)
+    lens = Lens.and_repeatedly(Lens.key?(:deeper)) |> Lens.key?(:value)
 
     dbg Deeply.to_list(tree, lens)
 

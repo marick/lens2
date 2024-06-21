@@ -51,8 +51,8 @@ defmodule Lens2.Lenses.Use do
         recur_root(lens),
         context(context_lens, item_lens),
         either(lens1, fallback),
-        levels_below(descender),
-        add_levels_below(descender),
+        repeatedly(descender),
+        and_repeatedly(descender),
       ])
 
       delegate_to(Keyed, [
