@@ -7,7 +7,7 @@ defmodule Lens2 do
   """
 
   @typedoc "Conceptually, a set of pointers into specified locations in a `container`."
-  @type lens :: Access.access_fun
+  @type lens :: Access.access_fun(container, [value])
 
   @typedoc "A nested data structure described by a `lens`."
   @type container :: any
