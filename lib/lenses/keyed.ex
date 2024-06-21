@@ -16,9 +16,9 @@ defmodule Lens2.Lenses.Keyed do
 
           iex>  use Lens2
           iex>  keylist = [a: 1, other: 2, a: 3]
-          iex>  Deeply.to_list(keylist, Lens.key(:a))
+          iex>  Deeply.get_all(keylist, Lens.key(:a))
           [1]         # not [1, 3]
-          iex>  Deeply.to_list(keylist, Lens.keys([:a, :other]))
+          iex>  Deeply.get_all(keylist, Lens.keys([:a, :other]))
           [1, 2]      # not [1, 2, 3]
 
   2. Update operations will produce maps rather than keyword lists.
@@ -55,14 +55,14 @@ defmodule Lens2.Lenses.Keyed do
       iex>  %{} |> Deeply.update(lens, fn nil -> :NEW end)
       %{missing: :NEW}
 
-  `Lens2.Deeply.to_list/2` and `Lens2.Deeply.one!/2` treats maps and
+  `Lens2.Deeply.get_all/2` and `Lens2.Deeply.get_only/2` treats maps and
   structs the same when it comes to missing keys. That is, a `KeyError` is *not*
   raised as it would be for `struct[:some_misslelled_key]`:
 
       iex>  lens = Lens.key(:missing)
-      iex>  %{a: 1, b: 2} |> Deeply.to_list(lens)
+      iex>  %{a: 1, b: 2} |> Deeply.get_all(lens)
       [nil]
-      iex>  %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+      iex>  %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
       [nil]
 
   Like `Map.put`, you can use this lens to break the
@@ -112,9 +112,9 @@ defmodule Lens2.Lenses.Keyed do
   Here is the difference between this function and
   `Lens2.Lenses.Keyed.key/1` when it comes to retrieving values:
 
-      iex> %{a: 1} |> Deeply.to_list(Lens.key?(:missing))
+      iex> %{a: 1} |> Deeply.get_all(Lens.key?(:missing))
       []
-      iex> %{a: 1} |> Deeply.to_list(Lens.key(:missing))
+      iex> %{a: 1} |> Deeply.get_all(Lens.key(:missing))
       [nil]
 
   This function cannot be used to add missing values:
@@ -154,7 +154,7 @@ defmodule Lens2.Lenses.Keyed do
 
       iex>  map = %{a: 1, b: 2}
       iex>  lens = Lens.keys([:a, :b, :missing])
-      iex>  map |> Deeply.to_list(lens) |> Enum.sort
+      iex>  map |> Deeply.get_all(lens) |> Enum.sort
       [1, 2, nil]
       iex>  map |> Deeply.update(lens, fn
       ...>    nil -> :NEW
@@ -165,7 +165,7 @@ defmodule Lens2.Lenses.Keyed do
   The list can be empty, which gets nothing and updates nothing.
 
       iex> lens = Lens.keys([])
-      iex> %{a: 1} |> Deeply.to_list(lens)
+      iex> %{a: 1} |> Deeply.get_all(lens)
       []
       iex> %{a: 1} |> Deeply.put(lens, :NEW)
       %{a: 1}
@@ -185,7 +185,7 @@ defmodule Lens2.Lenses.Keyed do
   It has the same behavior as `key!/1`, just for multiple keys at once.
 
       iex>  lens = Lens.keys!([:a, :b])
-      iex>  %{a: 1, b: 2, c: 3} |> Deeply.to_list(lens) |> Enum.sort
+      iex>  %{a: 1, b: 2, c: 3} |> Deeply.get_all(lens) |> Enum.sort
       [1, 2]
 
       iex>  lens = Lens.keys!([:a, :missing])
@@ -204,7 +204,7 @@ defmodule Lens2.Lenses.Keyed do
 
       iex>  map = %{a: 1, b: 2, c: 3}
       iex>  lens = Lens.keys?([:a, :b, :missing])
-      iex>  map |> Deeply.to_list(lens) |> Enum.sort
+      iex>  map |> Deeply.get_all(lens) |> Enum.sort
       [1, 2]
       iex>  map |> Deeply.put(lens, :NEW)
       %{a: :NEW, b: :NEW, c: 3}
@@ -220,14 +220,14 @@ defmodule Lens2.Lenses.Keyed do
 
       iex>  lens = Lens.map_values
       iex>  map = %{a: 1, b: 2}
-      iex>  Deeply.to_list(map, lens) |> Enum.sort
+      iex>  Deeply.get_all(map, lens) |> Enum.sort
       [1, 2]
       iex>  Deeply.put(map, lens, :NEW)
       %{a: :NEW, b: :NEW}
 
       iex>  lens = Lens.map_values
       iex>  struct = %SomeStruct{a: 1, b: 2}
-      iex>  Deeply.to_list(struct, lens) |> Enum.sort
+      iex>  Deeply.get_all(struct, lens) |> Enum.sort
       [1, 2]
       iex>  Deeply.put(struct, lens, :NEW)
       %SomeStruct{a: :NEW, b: :NEW}
@@ -247,7 +247,7 @@ defmodule Lens2.Lenses.Keyed do
           {[gotten | building_list], Map.put(building_container, key, updated)}
         end)
 
-      # reversing puts the output list in the same order as a `Map.to_list` would.
+      # reversing puts the output list in the same order as a `Map.get_all` would.
       {Enum.reverse(built_list), built_container}
     end
   end
@@ -272,7 +272,7 @@ defmodule Lens2.Lenses.Keyed do
 
       iex>  lens = Lens.map_keys
       iex>  map = %{[1] => 1, [2] => 2}
-      iex>  Deeply.to_list(map, lens) |> Enum.sort
+      iex>  Deeply.get_all(map, lens) |> Enum.sort
       [[1], [2]]
       iex>  Deeply.update(map, lens, fn [integer] ->
       ...>    [integer * 1111]
@@ -281,7 +281,7 @@ defmodule Lens2.Lenses.Keyed do
 
   A lens produced by this function won't work on a struct. Updating
   struct keys themselves (as opposed to their values) makes no
-  sense. And I'm hoping you won't need to use `to_list` to get all the
+  sense. And I'm hoping you won't need to use `get_all` to get all the
   keys of a struct, since all the keys are known at compile time.
   """
   @spec map_keys :: Lens2.lens

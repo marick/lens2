@@ -3,7 +3,7 @@ defmodule Lens2.Lenses.Indexed do
   Lenses specific to lists, plus one that works on both lists and tuples.
 
   `Deeply.put/3` and `Deeply.update/3` produce lists when applied to
-  lists, tuples when applied to tuples. As always, `Deeply.to_list/2`
+  lists, tuples when applied to tuples. As always, `Deeply.get_all/2`
   produces a list whether it operates on a list or a tuple.
 
   These lenses do *not* work on `Enumerables` (except for lists).
@@ -17,7 +17,7 @@ defmodule Lens2.Lenses.Indexed do
   Returns a lens that points to the n-th element of a list or tuple.
 
       iex>  lens = Lens.at(1)
-      iex>  Deeply.one!({00, 10, 20}, lens)
+      iex>  Deeply.get_only({00, 10, 20}, lens)
       10
       iex>  Deeply.update([00, 10, 20], lens, & &1 / 10)
       [00, 1.0, 20]
@@ -27,10 +27,10 @@ defmodule Lens2.Lenses.Indexed do
   Indexes that are out of bounds are not allowed for tuples:
       iex>  tuple = {1, 2, 3}
       iex>  assert_raise(ArgumentError, fn ->
-      ...>    Deeply.to_list(tuple, Lens.at(-1))
+      ...>    Deeply.get_all(tuple, Lens.at(-1))
       ...>  end)
       iex>  assert_raise(ArgumentError, fn ->
-      ...>    Deeply.to_list(tuple, Lens.at(3))
+      ...>    Deeply.get_all(tuple, Lens.at(3))
       ...>  end)
 
   Negative indices *are* allowed for lists and have their usual meaning (count backwards):
@@ -64,9 +64,9 @@ defmodule Lens2.Lenses.Indexed do
   @doc ~S"""
   Returns a lens that points before the first element of a list.
 
-  Since there is nothing there, `Deeply.one!/2` returns `nil`:
+  Since there is nothing there, `Deeply.get_only/2` returns `nil`:
 
-     iex> Deeply.one!([0, 1, 2], Lens.front)
+     iex> Deeply.get_only([0, 1, 2], Lens.front)
      nil
 
   However, you can use it to prepend to the list:
@@ -82,9 +82,9 @@ defmodule Lens2.Lenses.Indexed do
   @doc ~S"""
   Returns a lens that points after the last element of a list.
 
-  Since there is nothing there, `Deeply.one!/2` returns `nil`:
+  Since there is nothing there, `Deeply.get_only/2` returns `nil`:
 
-     iex> Deeply.one!([0, 1, 2], Lens.back)
+     iex> Deeply.get_only([0, 1, 2], Lens.back)
      nil
 
   However, you can use it to append to the list:
@@ -105,9 +105,9 @@ defmodule Lens2.Lenses.Indexed do
   @doc ~S"""
   Returns a lens that points before the given index, but after the prevous element.
 
-  Since there is nothing there, `Deeply.one!/2` returns `nil`:
+  Since there is nothing there, `Deeply.get_only/2` returns `nil`:
 
-     iex> Deeply.one!([0, 1, 2], Lens.before(2))
+     iex> Deeply.get_only([0, 1, 2], Lens.before(2))
      nil
 
   However, you can use it to insert into the list:
@@ -129,9 +129,9 @@ defmodule Lens2.Lenses.Indexed do
   @doc ~S"""
   Returns a lens that points after the given index, but before the next element.
 
-  Since there is nothing there, `Deeply.one!/2` returns `nil`:
+  Since there is nothing there, `Deeply.get_only/2` returns `nil`:
 
-     iex> Deeply.one!([0, 1, 2], Lens.behind(0))
+     iex> Deeply.get_only([0, 1, 2], Lens.behind(0))
      nil
 
   However, you can use it to insert into the list:
@@ -155,7 +155,7 @@ defmodule Lens2.Lenses.Indexed do
   Returns a lens that points to all of the supplied indices.
 
      iex> lens = Lens.indices([0, 2])
-     iex> Deeply.to_list([00, 10, 20, 30], lens)
+     iex> Deeply.get_all([00, 10, 20, 30], lens)
      [00, 20]
      iex> Deeply.put([00, 10, 20, 30], lens, :NEW)
      [:NEW, 10, :NEW, 30]
@@ -167,7 +167,7 @@ defmodule Lens2.Lenses.Indexed do
   indices are ignored.
 
      iex> lens = Lens.indices([0, 2, -1, 40])
-     iex> Deeply.to_list([00, 10, 20, 30], lens)
+     iex> Deeply.get_all([00, 10, 20, 30], lens)
      [00, 20, 30, nil]
      iex> Deeply.put([00, 10, 20, 30], lens, :NEW)
      [:NEW, 10, :NEW, :NEW]

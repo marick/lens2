@@ -26,7 +26,7 @@ defmodule Lens2.CombiningLevelsTest do
 
     lens = Lens.and_repeatedly(Lens.key?(:deeper)) |> Lens.key?(:value)
 
-    dbg Deeply.to_list(tree, lens)
+    dbg Deeply.get_all(tree, lens)
 
   end
 end

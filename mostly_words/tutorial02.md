@@ -43,7 +43,7 @@ iex>  map = %{a: 1, b: 2, c: 3, d: 4, e: 5}
 iex>  nested = %{map | c: map}
 %{c: %{c: 3, a: 1, d: 4, e: 5, b: 2}, a: 1, d: 4, e: 5, b: 2}
 
-iex>  Deeply.to_list(nested, lens)
+iex>  Deeply.get_all(nested, lens)
 [1, 5]
 iex>  Deeply.put(nested, lens, :NEW)
 %{c: %{c: 3, a: :NEW, d: 4, e: :NEW, b: 2}, a: 1, d: 4, e: 5, b: 2}
@@ -61,7 +61,7 @@ To see this, you can use `Lens.all` to get the tuples:
 
 ```elixir
 iex>    map = %{a: 1, b: 2, c: 3, d: 4, e: 5}
-iex>    Deeply.to_list(map, Lens.all)
+iex>    Deeply.get_all(map, Lens.all)
 [c: 3, a: 1, d: 4, e: 5, b: 2]
 ```
 
@@ -75,7 +75,7 @@ iex>  map = %{[:a] => 1, [:b] => 2}
 Now the `Inspect` protocol highlights the tuples:
 
 ```elixir
-iex>  Deeply.to_list(map, Lens.all)
+iex>  Deeply.get_all(map, Lens.all)
 [{[:a], 1}, {[:b], 2}]
 ```
 
@@ -84,7 +84,7 @@ As containers, tuples have lenses that apply to them. For example,
 as of any `Enumerable`):
 
 ```elixir
-iex>  Deeply.one!({:key, :value}, Lens.at(1))
+iex>  Deeply.get_only({:key, :value}, Lens.at(1))
 :value
 ```
 
@@ -92,7 +92,7 @@ What this means is that it seems like `Lens2.Keyed.map_values/0` be defined by t
 composition of lenses:
 
 ```elixir
-iex(9)>  Deeply.to_list(map, Lens.all |> Lens.at(1))
+iex(9)>  Deeply.get_all(map, Lens.all |> Lens.at(1))
 [1, 2]
 ```
 

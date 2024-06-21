@@ -17,13 +17,13 @@ arithmetic example, then explain how `recur` works.
 
 Every node has either the two keys or neither.
 
-Rather than jump into the lens, here's a simple recursive implementation of `to_list`:
+Rather than jump into the lens, here's a simple recursive implementation of `get_all`:
 
 ```elixir
-  def to_list(tree) do
+  def get_all(tree) do
     case tree do
       %{value: value, deeper: deeper} ->
-        [value | values_to_list(deeper)]
+        [value | get_all(deeper)]
       %{} ->
         []
     end
@@ -31,7 +31,7 @@ Rather than jump into the lens, here's a simple recursive implementation of `to_
 
 This would not be a good implementation for a really deep data
 structure because it's not tail-recursive. (In a tree 1000 levels
-deep, 100 partially finished invocations of `values_to_list` would be
+deep, 100 partially finished invocations of `get_all` would be
 stacked up above the one that finally returns `[]`.) But really deep
 structures deserve custom code. For other ones, this textbook
 recursive implementation is fine. Even better is having a lens that

@@ -61,7 +61,7 @@ defmodule Lens2.Lenses.Combine do
   You can use this to produce a sort of a default value. For example, recall that
   `Lens2.Lenses.Keyed.key?/1` will return nothing for a missing key:
 
-      iex> Deeply.to_list(%{}, Lens.key?(:a))
+      iex> Deeply.get_all(%{}, Lens.key?(:a))
       []
 
 
@@ -69,9 +69,9 @@ defmodule Lens2.Lenses.Combine do
   has no value, so it can be used to defer to `const`:
 
       iex> lens = Lens.either(Lens.key?(:a), Lens.const(:DEFAULT))
-      iex> Deeply.to_list(%{a: :GIVEN}, lens)
+      iex> Deeply.get_all(%{a: :GIVEN}, lens)
       [:GIVEN]
-      iex> Deeply.to_list(%{}, lens)
+      iex> Deeply.get_all(%{}, lens)
       [:DEFAULT]
 
   The default value can even be used by later lenses:
@@ -79,9 +79,9 @@ defmodule Lens2.Lenses.Combine do
       iex> lens =
       ...>   Lens.either(Lens.key?(:a), Lens.const(%{bb: :BB_DEFAULT_VALUE}))
       ...>   |> Lens.key(:bb)
-      iex> Deeply.to_list(%{a: %{bb: :GIVEN}}, lens)
+      iex> Deeply.get_all(%{a: %{bb: :GIVEN}}, lens)
       [:GIVEN]
-      iex> Deeply.to_list(%{}, lens)
+      iex> Deeply.get_all(%{}, lens)
       [:BB_DEFAULT_VALUE]
 
   However, this defaulting is not as useful as it seems.
@@ -143,7 +143,7 @@ defmodule Lens2.Lenses.Combine do
        iex>  returns = [{:noreply, %{code: 1}},
        ...>             {:reply, :ok, %{code: 2}},
        ...>             {:stop, 5, %{code: :ignore}}]
-       iex>  Deeply.to_list(returns, lens)
+       iex>  Deeply.get_all(returns, lens)
        [1, 2]
 
   Note the use of `empty/0` to handle the "don't care" case.
@@ -166,7 +166,7 @@ defmodule Lens2.Lenses.Combine do
 
       iex> lens = Lens.multiple([Lens.at(0), Lens.at(1), Lens.at(3)])
       iex> list = [0, 1, 2, 3, 4]
-      iex> Deeply.to_list(list, lens)
+      iex> Deeply.get_all(list, lens)
       [0, 1, 3]
       iex> Deeply.update(list, lens, & &1 * 1111)
       [0, 1111, 2, 3333, 4]
@@ -188,13 +188,13 @@ defmodule Lens2.Lenses.Combine do
       iex> by_3 = Lens.filter(& rem(&1, 3) == 0)
       iex> list = [0, 1, 2, 3, 4, 5, 6]
       iex> lens = Lens.all |> Lens.both(by_2, by_3)
-      iex> Deeply.to_list(list, lens)
+      iex> Deeply.get_all(list, lens)
       [0, 0, 2, 3, 4, 6, 6]
 
   You might be surprised by the duplications in the result (I was!),
   but that shows that the two lenses are independent. `by_2` produces
   pointers to `0`, `2`, `4`, and `6`. `by_3` produces pointers to `0`,
-  `3`, and `6`. `both/2`, when used by `Deeply.to_list` just gathers
+  `3`, and `6`. `both/2`, when used by `Deeply.get_all` just gathers
   the values at all the pointer, not caring that sometimes two point
   at the same thing.
 
@@ -273,7 +273,7 @@ defmodule Lens2.Lenses.Combine do
       iex> tree = %{below:
       ...>           %{value: 1, below:
       ...>                         %{value: 2}}}
-      iex> Deeply.to_list(tree, lens)
+      iex> Deeply.get_all(tree, lens)
       [%{value: 2},
        %{value: 1, below: %{value: 2}}
        # Note that the original `tree` is not included.
@@ -285,7 +285,7 @@ defmodule Lens2.Lenses.Combine do
   a key whose value is `nil` and a missing key, the descent would
   never finish, as:
 
-      iex> nil |> Deeply.to_list(Lens.key(:a))
+      iex> nil |> Deeply.get_all(Lens.key(:a))
       nil
       # I think this behavior is for compatibility with `Access`:
       iex> nil |> get_in([:a])
@@ -304,7 +304,7 @@ defmodule Lens2.Lenses.Combine do
          %{value: 111111, below:
                           %{value: 222222}}}
       ...>
-      iex> Deeply.to_list(tree, lens)
+      iex> Deeply.get_all(tree, lens)
       [2, 1]
 
   This name is a synonym for `recur/1`, the name in the original `Lens` package.
@@ -325,7 +325,7 @@ defmodule Lens2.Lenses.Combine do
       ...>             below: %{value: 2,
       ...>                      below: %{value: 3}}}
       iex>  values = Lens.and_repeatedly(Lens.key?(:below)) |> Lens.key(:value)
-      iex>  Deeply.to_list(nested, values) |> Enum.sort
+      iex>  Deeply.get_all(nested, values) |> Enum.sort
       [1, 2, 3]
 
    Had `repeatedly/1` be used, the `1` value would not be included in the result.
@@ -364,7 +364,7 @@ defmodule Lens2.Lenses.Combine do
   A composed lens will descend through nested containers to reach one
   or more leaf values.  It's occasionally useful to make one or more
   intermediate containers available to the caller of
-  `Deeply.to_list` or the function passed to
+  `Deeply.get_all` or the function passed to
   `Deeply.update`.
 
   **Getting**
@@ -392,11 +392,11 @@ defmodule Lens2.Lenses.Combine do
          lens = Lens.at(0) |> Lens.context(into_map)
 
   This lens, applied to `map_list`, will produce two leaf
-  values. `Deeply.to_list` will return those, but also the snapshots
+  values. `Deeply.get_all` will return those, but also the snapshots
   taken on the way. The two are wrapped into a tuple. So:
 
       [{map_0_snapshot, map_0_target}, {map_1_snapshot, map_1_target}] =
-        Lens.to_list(map_list, lens)
+        Lens.get_all(map_list, lens)
 
   In this case, the result will be:
 

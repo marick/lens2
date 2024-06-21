@@ -4,21 +4,21 @@ defmodule Lens2.DeeplyTest do
   use FlowAssertions
   doctest Deeply
 
-  test "to_list" do
+  test "get_all" do
     %{a: 1, b: 2, c: 3}
-    |> Deeply.to_list(Lens.map_values)
+    |> Deeply.get_all(Lens.map_values)
     |> assert_good_enough(in_any_order([1, 2, 3]))
   end
 
-  test "one!" do
+  test "get_only" do
     assert_raise(MatchError, fn ->
       %{a: 1, b: 2, c: 3}
-      |> Deeply.one!(Lens.map_values)
+      |> Deeply.get_only(Lens.map_values)
     end)
 
     assert_raise(MatchError, fn ->
       %{a: 1, b: 2, c: 3}
-      |> Deeply.one!(Lens.key?(:missing))
+      |> Deeply.get_only(Lens.key?(:missing))
     end)
   end
 

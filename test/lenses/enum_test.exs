@@ -6,10 +6,10 @@ defmodule Lens2.Lenses.EnumTest do
 
   describe "all/0" do
     test "typical" do
-      [1, 2, 3] |> Deeply.to_list(Lens.all)
+      [1, 2, 3] |> Deeply.get_all(Lens.all)
       |> assert_equals([1, 2, 3])
 
-      %{:a => 1, 3 => 4} |> Deeply.to_list(Lens.all) |> Enum.sort
+      %{:a => 1, 3 => 4} |> Deeply.get_all(Lens.all) |> Enum.sort
       |> assert_equals([{3, 4}, {:a, 1}])
 
       [1, 2, 3] |> Deeply.update(Lens.all, & &1+1)
@@ -29,10 +29,10 @@ defmodule Lens2.Lenses.EnumTest do
       # lists and structs to maps, but the reverse conversion (usually
       # done with Lens.into) becomes a puzzle.
 
-      {1, 2} |> Deeply.to_list(Lens.all)
+      {1, 2} |> Deeply.get_all(Lens.all)
       |> assert_equals([1, 2])
 
-      {1, 2} |> Deeply.to_list(Lens.all |> Lens.into({})) |> dbg
+      {1, 2} |> Deeply.get_all(Lens.all |> Lens.into({})) |> dbg
     end
   end
 

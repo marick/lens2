@@ -189,22 +189,22 @@ whose name implies "return a single value" actually return a list of
 values is asking for confusion and bugs. Therefore, when using `Lens2.Deeply`,
 you have two options.
 
-`Lens2.Deeply.to_list/2` returns the list of values:
+`Lens2.Deeply.get_all/2` returns the list of values:
 
 ```elixir
-iex> Deeply.to_list(map, Lens.key(:c))
+iex> Deeply.get_all(map, Lens.key(:c))
 [3]
 ```
 
-If you're sure that there's a single value, you can use `Lens2.Deeply.one!/2`:
+If you're sure that there's a single value, you can use `Lens2.Deeply.get_only/2`:
 
 
 ```elixir
-iex(62)> Deeply.one!(map, lens)
+iex(62)> Deeply.get_only(map, lens)
 3
 ```
 
-As the exclamation point in the name hints, `one!` will raise
+`get_only` will raise
 an error for cases where there isn't exactly one value.
 
 -----
@@ -216,7 +216,7 @@ As a final example, you can point at a subset of the values:
 
 ```elixir
 iex> lens = Lens.keys([:a, :e])
-iex> Deeply.to_list(map, lens)
+iex> Deeply.get_all(map, lens)
 [1, 5]
 
 ```

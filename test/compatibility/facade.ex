@@ -43,7 +43,7 @@ defmodule Lens2.Lens1.Facade do
   """
   @spec to_list(t, any) :: list(any)
   def to_list(lens, data),
-      do: Deeply.to_list(data, lens)
+      do: Deeply.get_all(data, lens)
 
   @doc ~S"""
   Performs a side effect for each values this lens focuses on in the given data.

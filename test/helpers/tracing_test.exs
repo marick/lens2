@@ -21,7 +21,7 @@ defmodule Lens2.Helpers.TracingTest do
 
     lens = Lens.tracing_key!(:a) |> Lens.tracing_keys([:aa, :bb])
     |> Lens.tracing_keys?([:aaa, :bbb]) |> Lens.tracing_keys?([:aaaa, :bbbb])
-    Deeply.to_list(map, lens)
+    Deeply.get_all(map, lens)
 
     # # map = %{a: %{bb: %{c: 1, d: 2},
     # #              cc: %{c: 3}}}
@@ -29,7 +29,7 @@ defmodule Lens2.Helpers.TracingTest do
 
 
     # # lens = Lens.tracing_key(:a) |> Lens.tracing_keys?([:bb, :cc]) |> Lens.tracing_key!(:c) # |> Lens.tracing_map_values
-    # # Deeply.to_list(map, lens) |> dbg
+    # # Deeply.get_all(map, lens) |> dbg
 
 
   end

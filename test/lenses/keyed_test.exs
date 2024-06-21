@@ -11,13 +11,13 @@ defmodule Lens2.Lenses.KeyedTest do
     test "key" do
       lens = Lens.key(:a)
 
-      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
       actual = %SomeStruct{a: 1, b: 2} |> Deeply.update(lens, & &1*1000)
       assert %SomeStruct{a: 1000, b: 2} == actual
 
       lens = Lens.key(:missing)
 
-      assert [nil] == %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+      assert [nil] == %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
 
       actual = %SomeStruct{a: 1, b: 2} |> Deeply.put(lens, :NEW)
       expected = %{missing: :NEW, a: 1, __struct__: Lens2.Lenses.KeyedTest.SomeStruct, b: 2}
@@ -27,14 +27,14 @@ defmodule Lens2.Lenses.KeyedTest do
     test "key!" do
       lens = Lens.key!(:a)
 
-      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
       actual = %SomeStruct{a: 1, b: 2} |> Deeply.update(lens, & &1*1000)
       assert %SomeStruct{a: 1000, b: 2} == actual
 
       lens = Lens.key!(:missing)
 
       assert_raise(KeyError, ~r/key :missing.*SomeStruct/, fn ->
-        %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+        %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
       end)
 
       assert_raise(KeyError, ~r/key :missing.*SomeStruct/, fn ->
@@ -45,13 +45,13 @@ defmodule Lens2.Lenses.KeyedTest do
     test "key?" do
       lens = Lens.key?(:a)
 
-      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
       actual = %SomeStruct{a: 1, b: 2} |> Deeply.update(lens, & &1*1000)
       assert %SomeStruct{a: 1000, b: 2} == actual
 
       lens = Lens.key?(:missing)
 
-      assert [] == %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+      assert [] == %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
 
       actual = %SomeStruct{a: 1, b: 2} |> Deeply.update(lens, & &1*1000)
       assert %SomeStruct{a: 1, b: 2} == actual
@@ -63,13 +63,13 @@ defmodule Lens2.Lenses.KeyedTest do
     test "keys" do
       lens = Lens.keys([:a])
 
-      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
       actual = %SomeStruct{a: 1, b: 2} |> Deeply.update(lens, & &1*1000)
       assert %SomeStruct{a: 1000, b: 2} == actual
 
       lens = Lens.keys([:missing])
 
-      assert [nil] == %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+      assert [nil] == %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
 
       actual = %SomeStruct{a: 1, b: 2} |> Deeply.put(lens, :NEW)
       expected = %{missing: :NEW, a: 1, __struct__: Lens2.Lenses.KeyedTest.SomeStruct, b: 2}
@@ -79,14 +79,14 @@ defmodule Lens2.Lenses.KeyedTest do
     test "keys!" do
       lens = Lens.keys!([:a])
 
-      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
       actual = %SomeStruct{a: 1, b: 2} |> Deeply.update(lens, & &1*1000)
       assert %SomeStruct{a: 1000, b: 2} == actual
 
       lens = Lens.keys!([:missing])
 
       assert_raise(KeyError, ~r/key :missing.*SomeStruct/, fn ->
-        %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+        %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
       end)
 
       assert_raise(KeyError, ~r/key :missing.*SomeStruct/, fn ->
@@ -97,13 +97,13 @@ defmodule Lens2.Lenses.KeyedTest do
     test "keys?" do
       lens = Lens.keys?([:a])
 
-      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+      assert [1] == %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
       actual = %SomeStruct{a: 1, b: 2} |> Deeply.update(lens, & &1*1000)
       assert %SomeStruct{a: 1000, b: 2} == actual
 
       lens = Lens.keys?([:missing])
 
-      assert [] == %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens)
+      assert [] == %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens)
 
       actual = %SomeStruct{a: 1, b: 2} |> Deeply.update(lens, & &1*1000)
       assert %SomeStruct{a: 1, b: 2} == actual
@@ -111,7 +111,7 @@ defmodule Lens2.Lenses.KeyedTest do
 
     test "map_values" do
       lens = Lens.map_values
-      actual = %SomeStruct{a: 1, b: 2} |> Deeply.to_list(lens) |> Enum.sort
+      actual = %SomeStruct{a: 1, b: 2} |> Deeply.get_all(lens) |> Enum.sort
       assert [1, 2] == actual
 
 
@@ -124,7 +124,7 @@ defmodule Lens2.Lenses.KeyedTest do
 
       lens = Lens.key(:outer) |> Lens.map_values |> Lens.at(1)
 
-      actual = Deeply.to_list(container, lens) |> Enum.sort
+      actual = Deeply.get_all(container, lens) |> Enum.sort
       assert actual == ["b", "one"]
 
       actual = Deeply.update(container, lens, & &1 <> &1)

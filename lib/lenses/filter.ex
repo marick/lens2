@@ -14,7 +14,7 @@ defmodule Lens2.Lenses.Filter do
 
       iex> lens = Lens.keys([:a, :c]) |> Lens.filter(& &1 > 0)
       iex> container = %{a: 1, b: 9, c: -1}
-      iex> Deeply.to_list(container, lens)
+      iex> Deeply.get_all(container, lens)
       [1]
       iex> Deeply.update(container, lens, & -1111 * &1)
       %{a: -1111, b: 9, c: -1}

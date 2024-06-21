@@ -7,7 +7,7 @@ There's another difference, though, which has to do with the handling of missing
 iex> Map.take(map, [:a, :missing])
 %{a: 1}
 
-iex(31)> Deeply.to_list(map, Lens.keys([:a, :missing]))
+iex(31)> Deeply.get_all(map, Lens.keys([:a, :missing]))
 [1, nil]
 ```
 
