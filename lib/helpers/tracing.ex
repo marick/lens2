@@ -28,42 +28,26 @@ defmodule Tracing do
       Mutable.peek_at_log()
       |> Pretty.common_adjustments
 
-
-    if true do
-      aligned =
-        common
-        |> Pretty.align_common_substrings(:gotten)
-        |> Pretty.equalize_widths([:call, :container, :gotten, :updated])
-
-      IO.puts("\n")
-
-      for line <- aligned do
-        case line do
-          %EntryLine{} ->
-            IO.puts("#{line.call} || #{line.container}")
-          %ExitLine{} ->
-            IO.puts("#{line.call} || #{line.gotten}")
-        end
-      end
-    end
-
-    if true do
-      aligned =
-        common
-        |> Pretty.align_common_substrings(:updated)
-        |> Pretty.equalize_widths([:call, :container, :gotten, :updated])
-
-      IO.puts("\n")
-
-      for line <- aligned do
-        case line do
-          %EntryLine{} ->
-            IO.puts("#{line.call} || #{line.container}")
-          %ExitLine{} ->
-            IO.puts("#{line.call} || #{line.updated}")
-        end
-      end
-    end
-
+    if true, do: spill_one_result(common, :gotten, "GET")
+    if true, do: spill_one_result(common, :updated, "UPDATE")
   end
+
+  def spill_one_result(log, result_key, operation_tag) do
+    aligned =
+      log
+      |> Pretty.align_common_substrings(result_key)
+      |> Pretty.equalize_widths([:call, :container, result_key])
+
+    IO.puts("\n#{operation_tag}")
+
+    for line <- aligned do
+      case line do
+        %EntryLine{} ->
+          IO.puts("#{line.call} || #{line.container}")
+        %ExitLine{} ->
+          IO.puts("#{line.call} || #{Map.get(line, result_key)}")
+      end
+    end
+  end
+
 end
