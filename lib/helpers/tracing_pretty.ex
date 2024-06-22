@@ -11,9 +11,26 @@ defmodule Tracing.Pretty do
 
   def prettify(log) do
     log
+    |> abbreviate_long_calls
     |> indent_calls
     |> align_common_substrings
     |> equalize_widths(@keys_that_matter)
+  end
+
+  private do # abbreviate_long_calls
+    def rename_call(call) do
+      if String.length(call) <= 10 do
+        call
+      else
+        String.slice(call, 0, length_of_name(call)) <> "(...)"
+      end
+    end
+
+    def abbreviate_long_calls(log) do
+      for line <- log do
+        Map.update!(line, :call, &rename_call/1)
+      end
+    end
   end
 
   private do #indent_calls
@@ -55,7 +72,7 @@ defmodule Tracing.Pretty do
     def pad_left(n, pointer, call), do: padding(n) <> pointer <> call
 
     def length_of_name(call) do
-      [name, _rest] = String.split(call, "(")
+      [name, _rest] = String.split(call, "(", parts: 2)
       String.length(name)
     end
   end

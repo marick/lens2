@@ -10,6 +10,17 @@ defmodule Tracing.PrettyTest do
   def funcall_exit(string),
       do: %ExitLine{call: string, gotten: "irrelevant", updated: "irrelevant"}
 
+
+  describe "abbreviate_long_calls" do
+    test "rename_call" do
+      assert Pretty.rename_call("key(:a)") == "key(:a)"
+
+      input = "seq(#Function<22.71732265/3 in Lens2.Lenses.Keyed.tracing_map_values/0>,#Function<7.73076862/3 in Lens2.Lenses.Enum.tracing_into/2>)"
+      assert Pretty.rename_call(input) == "seq(...)"
+    end
+  end
+
+
   describe "calculate leading spaces" do
     test "a simple entry and exit" do
       log = [funcall_entry("key(a)"),
@@ -160,7 +171,14 @@ defmodule Tracing.PrettyTest do
     end
   end
 
-  test "length_of_name" do
-    assert Pretty.length_of_name("key(:a)") == 3
+  describe "length_of_name" do
+    test "normal case" do
+      assert Pretty.length_of_name("key(:a)") == 3
+    end
+
+    test "not fooled by extra parentheses" do
+      call = "into(#Function<5.7307686...>,MapSet.new([]))"
+      assert Pretty.length_of_name(call) == 4
+    end
   end
 end
