@@ -10,6 +10,12 @@ defmodule Tracing.PrettyTest do
   def funcall_exit(string),
       do: %ExitLine{call: string, gotten: "irrelevant", updated: "irrelevant"}
 
+  @tag :skip
+  test "scratch" do
+    lens = Lens.tracing_seq(Lens.tracing_map_values, Lens.tracing_all |> Lens.tracing_into(MapSet.new))
+    Deeply.update(%{a: 0..2, b: 3..4}, lens, &inspect/1)
+  end
+
 
   describe "abbreviate_long_calls" do
     test "rename_call" do

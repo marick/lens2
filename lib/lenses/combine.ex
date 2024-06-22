@@ -221,20 +221,67 @@ defmodule Lens2.Lenses.Combine do
 
 
   @doc ~S"""
+  Given two lenses, apply the second to the results of the first.
+
+  This is the mechanism behind pipelining. This:
+
+      Lens.key(:a) |> Lens.key(:b)
+
+  ... is the same as this:
+
+      Lens.seq(Lens.key(:a), Lens.key(:b))
   """
   @spec seq(Lens2.lens, Lens2.lens) :: Lens2.lens
   deflens_raw seq(lens1, lens2) do
-    fn data, fun ->
-      {res, changed} =
-        Deeply.get_and_update(data, lens1, fn item ->
-          Deeply.get_and_update(item, lens2, fun)
+    fn container, descender ->
+      {gotten, updated} =
+        Deeply.get_and_update(container, lens1, fn value ->
+          Deeply.get_and_update(value, lens2, descender)
         end)
 
-      {Enum.concat(res), changed}
+      {Enum.concat(gotten), updated}
     end
   end
 
   @doc ~S"""
+  Like `seq/2` but retains the pointers from the first lens.
+
+
+  Whereas `seq/2` discards the pointers from the first lens after the
+  second consumes them, `seq_both` retains them. It is literally defined as:
+
+      both(seq(lens1, lens2), lens1)
+
+  This is similar to `and_repeatedly`, except it stops after one application.
+
+      iex> map = %{a: %{c: 1},
+      ...>         b: %{c: 2}}
+      iex> lens = Lens.keys([:a, :b]) |> Lens.seq_both(Lens.key(:c))
+      iex> Deeply.get_all(map, lens)
+      [ 1, 2, %{c: 1}, %{c: 2} ]
+
+  This behavior means that `Lens2.Deeply.update/3` applies "bottom
+  up". Consider summing a nested list with `Enum.sum/1`:
+
+      iex> nested = %{a: [1, [20, 30, 40], 5]}
+      iex> lens = Lens.seq_both(Lens.key(:a), Lens.at(1))
+      iex> Deeply.update(nested, lens, &Enum.sum/1)
+      %{a: 96}
+
+  *First*, the interior list `[20, 30, 40]` is summed, resulting in
+  the list `[1, 90, 5]`. *Then* the summation function is applied to
+  that, producing the final value of `96`.
+
+  `Lens2.Deeply.put/3` can be used, but it (in effect) ignores the deeper pointers:
+
+      iex> nested = [ [ 1 ] ]
+      iex> lens = Lens.seq_both(Lens.at(0), Lens.at(0))
+      iex> Deeply.put(nested, lens, :NEW)
+      [ :NEW ]
+
+  Presumably, the `1` in the `[1]` sublist was replaced with `:NEW`
+  before the entire sublist was itself replaced, but you can't tell.
+
   """
   @spec seq_both(Lens2.lens, Lens2.lens) :: Lens2.lens
   deflens seq_both(lens1, lens2), do: both(seq(lens1, lens2), lens1)
@@ -345,7 +392,7 @@ defmodule Lens2.Lenses.Combine do
 
 
   @doc ~S"""
-  The Lens 11 name for `repeatedly/1`.
+  The Lens 1 name for `repeatedly/1`.
 
   It confused me, so I retaliated by renaming it.
   """
@@ -498,6 +545,28 @@ defmodule Lens2.Lenses.Combine do
   end
 
   @doc ~S"""
+  Replace pointers with the pointers returned by the first lens. If there are none,
+  follow the second lens.
+
+  For example, to descend through key `:a` or – if there is no such
+  key – then key `:b`:
+
+      iex> lens = Lens.key?(:a) |> Lens.either(Lens.key?(:b))
+      iex> Deeply.get_only(%{a: 1}, lens)
+      1
+      iex> Deeply.get_only(%{b: 2}, lens)
+      2
+
+  The first lens must be a lens that treats missing values differently
+  than nils. Otherwise, the second lens will never be used. Consider changing the
+  above to use `Lens2.Lenses.Keyed.key/1` instead of `Lens2.Lenses.Keyed.key?/1`:
+
+      iex> lens = Lens.key(:a) |> Lens.either(Lens.key?(:b))
+      iex> Deeply.get_only(%{b: 2}, lens)
+      nil
+
+  The `nil` final result is because the first lens produces `nil` for
+  the missing `:a` key.
   """
   @spec either(Lens2.lens, Lens2.lens) :: Lens2.lens
   deflens_raw either(lens, other_lens) do
