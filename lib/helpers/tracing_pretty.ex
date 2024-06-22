@@ -7,14 +7,30 @@ defmodule Tracing.Pretty do
   use Private
   alias Tracing.{Line, EntryLine,ExitLine}
 
-  @keys_that_matter [:call, :container, :gotten, :updated]
-
-  def prettify(log) do
+  def common_adjustments(log) do
     log
     |> abbreviate_long_calls
     |> indent_calls
-    |> align_common_substrings
-    |> equalize_widths(@keys_that_matter)
+  end
+
+  def align_common_substrings(log, result_field) do
+    log
+    |> split_lines_at_change_of_direction
+    |> Enum.map(& align_one_direction(&1, result_field))
+    |> Enum.concat
+  end
+
+  def equalize_widths(log, keys_to_adjust) do
+    key_to_length = max_lengths(log, keys_to_adjust)
+
+    line_field_adjuster = fn line_value, map_value ->
+      needed = map_value - String.length(line_value)
+      line_value <> padding(needed)
+    end
+
+    for line <- log do
+      Line.adjust_line_using_map(line, key_to_length, keys_to_adjust, line_field_adjuster)
+    end
   end
 
   private do # abbreviate_long_calls
@@ -92,22 +108,14 @@ defmodule Tracing.Pretty do
     #             %{c: %{d: 1}}
     #                  %{d: 1}
 
-    def align_common_substrings(log) do
-      log
-      |> split_lines_at_change_of_direction
-      |> Enum.map(&align_one_direction/1)
-      |> Enum.concat
-    end
-
-    def align_one_direction(lines) do
+    def align_one_direction(lines, result_field) do
       if Line.entering?(lines) do
         lines
         |> align_each_with_previous(:container)
       else
         lines
         |> Enum.reverse
-        |> align_each_with_previous(:gotten)
-        |> align_each_with_previous(:updated)
+        |> align_each_with_previous(result_field)
         |> Enum.reverse
       end
     end
@@ -162,19 +170,6 @@ defmodule Tracing.Pretty do
     # because they're the only fields that have other fields printed after them.
     # But might as well do them all, so that copy-and-paste gives a proper rectangle
     # on the offhand chance someone wants to annotate on the right.
-
-    def equalize_widths(log, keys_to_adjust) do
-      key_to_length = max_lengths(log, keys_to_adjust)
-
-      line_field_adjuster = fn line_value, map_value ->
-        needed = map_value - String.length(line_value)
-        line_value <> padding(needed)
-      end
-
-      for line <- log do
-        Line.adjust_line_using_map(line, key_to_length, keys_to_adjust, line_field_adjuster)
-      end
-    end
 
     def max_lengths(log, keys_to_count) do
       starting = for key <- keys_to_count, into: %{}, do: {key, 0}

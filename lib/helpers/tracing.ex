@@ -24,19 +24,46 @@ defmodule Tracing do
   end
 
   def spill_log() do
-    log =
+    common =
       Mutable.peek_at_log()
-      |> Pretty.prettify
+      |> Pretty.common_adjustments
 
-    IO.puts("\n")
 
-    for line <- log do
-      case line do
-        %EntryLine{} ->
-          IO.puts("#{line.call} || #{line.container}")
-        %ExitLine{} ->
-          IO.puts("#{line.call} || #{line.gotten} || #{line.updated}")
+    if true do
+      aligned =
+        common
+        |> Pretty.align_common_substrings(:gotten)
+        |> Pretty.equalize_widths([:call, :container, :gotten, :updated])
+
+      IO.puts("\n")
+
+      for line <- aligned do
+        case line do
+          %EntryLine{} ->
+            IO.puts("#{line.call} || #{line.container}")
+          %ExitLine{} ->
+            IO.puts("#{line.call} || #{line.gotten}")
+        end
       end
     end
+
+    if true do
+      aligned =
+        common
+        |> Pretty.align_common_substrings(:updated)
+        |> Pretty.equalize_widths([:call, :container, :gotten, :updated])
+
+      IO.puts("\n")
+
+      for line <- aligned do
+        case line do
+          %EntryLine{} ->
+            IO.puts("#{line.call} || #{line.container}")
+          %ExitLine{} ->
+            IO.puts("#{line.call} || #{line.updated}")
+        end
+      end
+    end
+
   end
 end
