@@ -18,27 +18,12 @@ This package is derived from
    documentation.
    
    
-2. Lenses are composed in a way similar to the `Access`
-   functions. Usually, they're as straightforward as a typical
-   `put_in` list of keys. However, there are some subtle
-   lenses. Whether you use them directly or in combination with other
-   lenses, you may find yourself puzzled. To help you understand,
-   every predefined lens maker (or ones you create yourself) has a
-   `tracing_` variant that describes what it's doing. Composed lenses
-   show a nicely indented log of what's happened. Here's an example of the first version:
-   
-         > key %{a: %{b: 1}}
-             > keys? %{b: 1}
-             < keys? {[1], %{b: 1}}
-         < key {[[1]], %{a: %{b: 1}}}
-   
-   I'm revamping this to be way more clear.
-   
-2. In [`Lens`](https://hexdocs.pm/lens/readme.html), the API for *making* lenses is the same as the one for *using* lenses.
-   I like the functions for making lenses, but I think the ones for using lenses
-   should look like the familiar `get`/`put`/`update` (or `get_in`, etc.)
-   So, you can create a lens that points into a data structure and names
-   a few keys in there:
+2. In [`Lens`](https://hexdocs.pm/lens/readme.html), the API for
+   *making* lenses is the same as the one for *using* lenses.  I like
+   the functions for making lenses, but I think the ones for using
+   lenses should look like the familiar `get`/`put`/`update` (or
+   `get_in`, etc.)  So, you can create a lens that points into a data
+   structure and names a few keys in there:
    
    ```elixir
    lens = Lens.key(:clusters) |> Lens.MapSet.values |> Lens.keys([:a, :z]) |> Lens.key(:age)
@@ -50,8 +35,29 @@ This package is derived from
    Deeply.put(structure, lens, 5)
    ```
    
-   ... to set the age of deeply nested keys `:a` and `:z` (while
+   ... to set the `:age` of deeply nested keys `:a` and `:z` (while
    leaving keys `:b` through `:y` alone).
+   
+2. As shown in the previous example, descent into a nested container
+   is described by composing lens-making functions like `Lens.key`. Usually, such
+   compositions are straightforward to understand, but some of the
+   `Lens` functions have subtle effects. I try to call those out in
+   their documentation. Moreover, each predefined lens-maker
+   (and the ones you create yourself) has a `tracing_` variant that
+   describes what it's doing. For example, suppose you have this lens:
+   
+       lens = 
+         Lens.tracing_seq(Lens.tracing_map_values,
+                          Lens.tracing_all |> Lens.tracing_into(MapSet.new))
+
+   ... and you use it with `Deeply.update`:
+   
+       Deeply.update(%{a: 0..2, b: 3..4}, lens, &inspect/1)
+       
+   You'll see this:
+
+   ![Alt-text is coming](pics/tracing_example.png)
+
    
 3. The API encourages information hiding more than does base `Lens`
    (or `put_in` and friends). My preferred usage is to expose lenses in the module

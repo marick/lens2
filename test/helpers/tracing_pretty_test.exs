@@ -11,8 +11,12 @@ defmodule Tracing.PrettyTest do
       do: %ExitLine{call: string, gotten: "irrelevant", updated: "irrelevant"}
 
   test "scratch" do
-    lens = Lens.tracing_seq(Lens.tracing_map_values, Lens.tracing_all |> Lens.tracing_into(MapSet.new))
+    lens = Lens.tracing_seq(Lens.tracing_map_values,
+                            Lens.tracing_all |> Lens.tracing_into(MapSet.new))
+#    Deeply.get_and_update(%{a: 0..2, b: 3..4}, lens, &{&1, inspect(&1)})
     Deeply.update(%{a: 0..2, b: 3..4}, lens, &inspect/1)
+#    Deeply.put(%{a: 0..2, b: 3..4}, lens, :NEW) |> dbg
+#    Deeply.get_all(%{a: 0..2, b: 3..4}, lens)
   end
 
 
