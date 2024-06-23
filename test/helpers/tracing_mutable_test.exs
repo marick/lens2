@@ -52,7 +52,7 @@ defmodule Lens2.Tracing.MutableTest do
     assert Enum.at(log, 0) == expected1_in
     assert Enum.at(log, 7) == expected1_out
 
-    assert Mutable.forget_log
+    Mutable.forget_tracing
     assert Mutable.peek_at_log == []
   end
 end

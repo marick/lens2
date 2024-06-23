@@ -27,6 +27,7 @@ defmodule Lens2.Deeply do
      def put(container, lens, value),
          do: put_in(container, [lens], value)
   """
+  alias Lens2.Helpers.Tracing.Mutable
 
   @doc ~S"""
   Returns a list of the values that the lens points at.
@@ -39,8 +40,10 @@ defmodule Lens2.Deeply do
   """
 
   @spec get_all(Lens2.container, Lens2.lens) :: list(Lens2.value)
-  def get_all(container, lens),
-      do: Kernel.get_in(container, [lens])
+  def get_all(container, lens) do
+    Mutable.remember_reasons([:get])
+    Kernel.get_in(container, [lens])
+  end
 
 
   @doc ~S"""
@@ -65,9 +68,6 @@ defmodule Lens2.Deeply do
   """
   @spec to_list(Lens2.container, Lens2.lens) :: list(Lens2.value)
   def to_list(container, lens), do: get_all(container, lens)
-
-
-
 
   @doc ~S"""
   Return the single value the lens points at.
@@ -113,8 +113,10 @@ defmodule Lens2.Deeply do
   `put` produces its result with `put_in/3`.
   """
   @spec put(Lens2.container, Lens2.lens, Lens2.value) :: Lens2.container
-  def put(container, lens, value),
-      do: Kernel.put_in(container, [lens], value)
+  def put(container, lens, value) do
+    Mutable.remember_reasons([:update])
+    Kernel.put_in(container, [lens], value)
+  end
 
   # ============
   @doc ~S"""
@@ -134,9 +136,10 @@ defmodule Lens2.Deeply do
   `update` produces its result with `update_in/3`.
   """
   @spec update(Lens2.container, Lens2.lens, (Lens2.value -> Lens2.updated_value)) :: Lens2.container
-  def update(container, lens, fun),
-      do: Kernel.update_in(container, [lens], fun)
-
+  def update(container, lens, fun) do
+    Mutable.remember_reasons([:update])
+    Kernel.update_in(container, [lens], fun)
+  end
 
   @doc ~S"""
   Retrieve all pointed-at values and, at the same time, update them.
@@ -157,8 +160,10 @@ defmodule Lens2.Deeply do
   `get_and_update` produces its result with `get_and_update_in/3`.
   """
   @spec get_and_update(Lens2.container, Lens2.lens, (Lens2.value -> {Lens2.value, Lens2.updated_value})) :: {list(Lens2.value), Lens2.container}
-  def get_and_update(container, lens, fun),
-      do: Kernel.get_and_update_in(container, [lens], fun)
+  def get_and_update(container, lens, fun) do
+    Mutable.remember_reasons([:get, :update])
+    Kernel.get_and_update_in(container, [lens], fun)
+  end
 
   # =====
 

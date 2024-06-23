@@ -8,15 +8,32 @@ defmodule Tracing.Mutable do
 
   @log :lens_trace_log
   @next_level :lens_next_level
+  @why_are_we_tracing :lens_trace_operations
 
-  def forget_log() do
+  def forget_tracing() do
     Process.put(@log, [])
     Process.put(@next_level, 0)
+    Process.delete(@why_are_we_tracing)
   end
 
   def empty_stack?() do
     ensure_log()
     Process.get(@next_level) == 0
+  end
+
+  def remember_reasons(list) do
+    if Process.get(@why_are_we_tracing) == nil do
+      Process.put(@why_are_we_tracing, list)
+    end
+  end
+
+  def should_show_this_log?(key) do
+    case Process.get(@why_are_we_tracing) do
+      nil -> # Unless instructed, default to showing both
+        true
+      reasons ->
+        key in reasons
+    end
   end
 
   def add_log_item(%EntryLine{} = line) do

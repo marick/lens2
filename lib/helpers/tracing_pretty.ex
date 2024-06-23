@@ -184,7 +184,5 @@ defmodule Tracing.Pretty do
     end
   end
 
-  private do  # common
-    def padding(n), do: String.duplicate(" ", n)
-  end
+  def padding(n), do: String.duplicate(" ", n)
 end
