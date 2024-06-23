@@ -11,7 +11,7 @@ defmodule Lens2.Lens1.Facade do
   defmacro __using__(_opts \\ []) do
     quote do
       alias Lens2.Lens1.Facade, as: Lens1
-      import Lens2.Deflens
+      import Lens2.Makers
     end
   end
 

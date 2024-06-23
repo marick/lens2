@@ -8,7 +8,7 @@ defmodule Lens2.Lenses.Indexed do
 
   These lenses do *not* work on `Enumerables` (except for lists).
   """
-  use Lens2.Deflens
+  use Lens2.Makers
   alias Lens2.Helpers.DefOps
   alias Lens2.Lenses.Combine
   alias Lens2.Deeply
@@ -46,7 +46,7 @@ defmodule Lens2.Lenses.Indexed do
 
   """
   @spec at(non_neg_integer) :: Lens2.lens
-  deflens_raw at(index) do
+  def_maker at(index) do
     fn data, fun ->
       {res, updated} = fun.(DefOps.at(data, index))
       {[res], DefOps.put_at(data, index, updated)}
@@ -57,7 +57,7 @@ defmodule Lens2.Lenses.Indexed do
   An alias for `at`.
   """
   @spec index(non_neg_integer) :: Lens2.lens
-  deflens index(index), do: at(index)
+  def_composed_maker index(index), do: at(index)
 
 
 
@@ -77,7 +77,7 @@ defmodule Lens2.Lenses.Indexed do
   `front` raises an error if used on a tuple.
   """
   @spec front :: Lens2.lens
-  deflens front, do: before(0)
+  def_composed_maker front, do: before(0)
 
   @doc ~S"""
   Returns a lens that points after the last element of a list.
@@ -95,7 +95,7 @@ defmodule Lens2.Lenses.Indexed do
   Raises an error if used on a tuple.
   """
   @spec back :: Lens2.lens
-  deflens_raw back do
+  def_maker back do
     fn data, fun ->
       lens = behind(Enum.count(data))
       Deeply.get_and_update(data, lens, fun)
@@ -118,7 +118,7 @@ defmodule Lens2.Lenses.Indexed do
   Raises an error if used on a tuple.
   """
   @spec before(non_neg_integer) :: Lens2.lens
-  deflens_raw before(index) do
+  def_maker before(index) do
     fn data, fun ->
       {res, item} = fun.(nil)
       {init, tail} = Enum.split(data, index)
@@ -142,7 +142,7 @@ defmodule Lens2.Lenses.Indexed do
   Raises an error if used on a tuple.
   """
   @spec behind(non_neg_integer) :: Lens2.lens
-  deflens_raw behind(index) do
+  def_maker behind(index) do
     fn data, fun ->
       {res, item} = fun.(nil)
       {init, tail} = Enum.split(data, index + 1)
@@ -175,5 +175,5 @@ defmodule Lens2.Lenses.Indexed do
   Raises an error if used on a tuple.
   """
   @spec indices([non_neg_integer]) :: Lens2.lens
-  deflens indices(indices), do: indices |> Enum.map(&index/1) |> Combine.multiple
+  def_composed_maker indices(indices), do: indices |> Enum.map(&index/1) |> Combine.multiple
 end

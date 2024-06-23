@@ -4,7 +4,6 @@ defmodule Lens2.Lenses.CombineTest do
 
   doctest Lens2.Lenses.Combine
 
-
   test "both" do
     by_2 = Lens.filter(& rem(&1, 2) == 0)
     by_3 = Lens.filter(& rem(&1, 3) == 0)

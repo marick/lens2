@@ -2,7 +2,7 @@ defmodule Lens2.Lenses.Enum do
   @moduledoc """
   Lenses that work on `Enumerable` and `Collectable` containers.
   """
-  use Lens2.Deflens
+  use Lens2.Makers
   alias Lens2.Deeply
 
   @doc ~S"""

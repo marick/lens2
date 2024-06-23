@@ -25,12 +25,12 @@ defmodule Lens2.Lenses.Keyed do
 
   See the `Lens2.Lenses.Keyword` module for an alternative.
   """
-  use Lens2.Deflens
+  use Lens2.Makers
   alias Lens2.Helpers.DefOps
   alias Lens2.Lenses
   alias Lenses.{Combine,Indexed}
 
-  # `deflens` doesn't cooperate with guards, so need an explicit precondition.
+  # `def_composed_maker` doesn't cooperate with guards, so need an explicit precondition.
   defmacrop assert_list(first_arg) do
     quote do
       unless is_list(unquote(first_arg)) do
@@ -81,10 +81,10 @@ defmodule Lens2.Lenses.Keyed do
   """
 
   @spec key(any) :: Lens2.lens
-  deflens_raw key(key) do
-    fn data, fun ->
-      {res, updated} = fun.(DefOps.get(data, key))
-      {[res], DefOps.put(data, key, updated)}
+  def_maker key(key) do
+    fn container, descender ->
+      {gotten, updated} = descender.(DefOps.get(container, key))
+      {[gotten], DefOps.put(container, key, updated)}
     end
   end
 
@@ -97,10 +97,10 @@ defmodule Lens2.Lenses.Keyed do
       ** (KeyError) key :missing not found in: %{a: 1}
   """
   @spec key!(any) :: Lens2.lens
-  deflens_raw key!(key) do
-    fn data, fun ->
-      {res, updated} = fun.(DefOps.fetch!(data, key))
-      {[res], DefOps.put(data, key, updated)}
+  def_maker key!(key) do
+    fn container, descender ->
+      {gotten, updated} = descender.(DefOps.fetch!(container, key))
+      {[gotten], DefOps.put(container, key, updated)}
     end
   end
 
@@ -134,15 +134,15 @@ defmodule Lens2.Lenses.Keyed do
   Use `key/1` for that.
   """
   @spec key?(any) :: Lens2.lens
-  deflens_raw key?(key) do
-    fn data, fun ->
-      case DefOps.fetch(data, key) do
+  def_maker key?(key) do
+    fn container, descender ->
+      case DefOps.fetch(container, key) do
         :error ->
-          {[], data}
+          {[], container}
 
         {:ok, value} ->
-          {res, updated} = fun.(value)
-          {[res], DefOps.put(data, key, updated)}
+          {gotten, updated} = descender.(value)
+          {[gotten], DefOps.put(container, key, updated)}
       end
     end
   end
@@ -173,7 +173,7 @@ defmodule Lens2.Lenses.Keyed do
   That's the same behavior as `Lens2.Lenses.Basic.empty/0`.
   """
   @spec keys(list(any)) :: Lens2.lens
-  deflens keys(keys) do
+  def_composed_maker keys(keys) do
     assert_list(keys)
     keys |> Enum.map(&key/1) |> Combine.multiple
   end
@@ -193,7 +193,7 @@ defmodule Lens2.Lenses.Keyed do
       ** (KeyError) key :missing not found in: %{a: :NEW}
   """
   @spec keys!(list(any)) :: Lens2.lens
-  deflens keys!(keys) do
+  def_composed_maker keys!(keys) do
     assert_list(keys)
     keys |> Enum.map(&key!/1) |> Combine.multiple
   end
@@ -210,7 +210,7 @@ defmodule Lens2.Lenses.Keyed do
       %{a: :NEW, b: :NEW, c: 3}
   """
   @spec keys?(list(any)) :: Lens2.lens
-  deflens keys?(keys) do
+  def_composed_maker keys?(keys) do
     assert_list(keys)
     keys |> Enum.map(&key?/1) |> Combine.multiple
   end
@@ -237,7 +237,7 @@ defmodule Lens2.Lenses.Keyed do
   does not work with structs.
   """
   @spec map_values :: Lens2.lens
-  deflens_raw map_values do
+  def_maker map_values do
     fn container, get_and_update ->
       {built_list, built_container} =
         extract_keys(container)
@@ -285,6 +285,6 @@ defmodule Lens2.Lenses.Keyed do
   keys of a struct, since all the keys are known at compile time.
   """
   @spec map_keys :: Lens2.lens
-  deflens map_keys, do: Lenses.Enum.all() |> Lenses.Enum.into(%{}) |> Indexed.at(0)
+  def_composed_maker map_keys, do: Lenses.Enum.all() |> Lenses.Enum.into(%{}) |> Indexed.at(0)
 
 end

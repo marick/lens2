@@ -14,7 +14,7 @@ defmodule Lens2 do
      `Deeply.update`. (See `Lens2.Deeply`.)
 
   3. ... define its own lens makers with `deflens` and `deflens_raw`. (See
-     `Lens2.Deflens`.)
+     `Lens2.Makers`.)
 
 
   It also defines the types used in specs.
@@ -36,7 +36,7 @@ defmodule Lens2 do
   defmacro __using__(_opts \\ []) do
     quote do
       alias Lens2.Lenses, as: Lens
-      import Lens2.Deflens
+      import Lens2.Makers
       alias Lens2.Deeply
     end
   end

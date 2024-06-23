@@ -21,7 +21,7 @@ defmodule Lens2.Lenses.Filter do
 
 
   """
-  use Lens2.Deflens
+  use Lens2.Makers
   alias Lens2.Deeply
   alias Lens2.Lenses.Combine
 
