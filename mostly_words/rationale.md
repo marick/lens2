@@ -46,13 +46,17 @@ This package is derived from
    (and the ones you create yourself) has a `tracing_` variant that
    describes what it's doing. For example, suppose you have this lens:
    
-       lens = 
-         Lens.tracing_seq(Lens.tracing_map_values,
-                          Lens.tracing_all |> Lens.tracing_into(MapSet.new))
-
+   ```elixir
+   lens = 
+     Lens.tracing_seq(Lens.tracing_map_values,
+                      Lens.tracing_all |> Lens.tracing_into(MapSet.new))
+   ```
+       
    ... and you use it with `Deeply.update`:
-   
-       Deeply.update(%{a: 0..2, b: 3..4}, lens, &inspect/1)
+
+   ```elixir
+   Deeply.update(%{a: 0..2, b: 3..4}, lens, &inspect/1)
+   ```
        
    You'll see this:
 
