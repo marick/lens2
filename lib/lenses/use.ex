@@ -4,10 +4,10 @@ defmodule Lens2.Lenses.Use do
     quote do
 
       alias Lens2.Lenses
-      alias Lenses.{Basic, Indexed, Combine, Keyed, Filter}
+      alias Lenses.{Enum, Indexed, Combine, Keyed, Filter}
       import Lens2.Helpers.Delegate
 
-      delegate_to(Lenses.Enum, [
+      delegate_to(Enum, [
         all(),
         into(lens, collectable),
       ])

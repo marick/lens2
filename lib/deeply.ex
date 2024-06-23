@@ -24,8 +24,8 @@ defmodule Lens2.Deeply do
   `Lens2.Deeply.put/3` is just a wrapper around a call to
   `put_in/3`:
 
-     def put(container, lens, value),
-         do: put_in(container, [lens], value)
+       def put(container, lens, value),
+           do: put_in(container, [lens], value)
   """
   alias Lens2.Helpers.Tracing.Mutable
 
@@ -148,14 +148,14 @@ defmodule Lens2.Deeply do
   1. A list (as with `get_all/2`) of the values *before* the update.
   2. The entire container, updated as with `update/3`.
 
-      iex>  lens = Lens.keys([:a, :c])
-      ...>  fun = fn value ->
-      ...>    {value, value * 1000}
-      ...>  end
-      iex>  %{a:    1,  b: 2,  c:    3} |> Deeply.get_and_update(lens, fun)
-      {     [       1,               3],
-            %{a: 1000,  b: 2,  c: 3000}
-      }
+         iex>  lens = Lens.keys([:a, :c])
+         ...>  fun = fn value ->
+         ...>    {value, value * 1000}
+         ...>  end
+         iex>  %{a:    1,  b: 2,  c:    3} |> Deeply.get_and_update(lens, fun)
+         {     [       1,               3],
+               %{a: 1000,  b: 2,  c: 3000}
+         }
 
   `get_and_update` produces its result with `get_and_update_in/3`.
   """

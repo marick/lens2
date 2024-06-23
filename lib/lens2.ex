@@ -1,6 +1,21 @@
 defmodule Lens2 do
   @moduledoc """
-  `Use` this module to `alias` or `import` all the right files.
+  `Use` this module for convenience. A module that does that can...
+
+  1. ... access all the lens-making functions from the Lens 1 package
+     under the same names: `Lens.key/1`, for example. See
+     `Lens2.Lenses` for the complete list.
+
+  2. ... make lenses for `MapSet` containers with `Lens2.MapSet` and
+     lenses for `BiMap` with `Lens2.BiMap`. Those are aliases for
+     `Lens2.Lenses.MapSet` and `Lens2.Lenses.BiMap`.
+
+  3. ... traverse containers with lens-using functions like
+     `Deeply.update`. (See `Lens2.Deeply`.)
+
+  3. ... define its own lens makers with `deflens` and `deflens_raw`. (See
+     `Lens2.Deflens`.)
+
 
   It also defines the types used in specs.
 
