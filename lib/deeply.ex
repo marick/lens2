@@ -13,19 +13,24 @@ defmodule Lens2.Deeply do
      a single value being returned, you can use `Lens2.Deeply.get_only/2` to avoid having
      to pick a value out of a singleton list.
 
-  2. In such APIs, it's the operations that decide what to do about
+  2. In those Elixir core APIs, it's the operations that decides what to do about
      missing keys and the like. Consider `Map.update/4` (use a default)
      and `Map.update!/3` (raise an error). In this lens package, it's the
      *lens* that decides. See, for example, `Lens2.Lenses.Keyed.key/1`,
      `Lens2.Lenses.Keyed.key?/1`, and `Lens2.Lenses.Keyed.key!/1`.
 
-  These functions have simple implementations because lenses are
+  The functions in this module have simple implementations because lenses are
   compatible with the `Access` behaviour. For example,
   `Lens2.Deeply.put/3` is just a wrapper around a call to
   `put_in/3`:
 
        def put(container, lens, value),
            do: put_in(container, [lens], value)
+
+  You can use the `Kernel` functions if you prefer. Don't forget the bracket!
+
+  For convenience and backwards compatibility, this package also provides the [Lens 1](https://hexdocs.pm/lens/readme.html) functions `to_list/2`, and `one!/2`.
+
   """
   alias Lens2.Helpers.Tracing.Mutable
 
