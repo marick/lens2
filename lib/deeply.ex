@@ -49,7 +49,7 @@ defmodule Lens2.Deeply do
   @doc ~S"""
   Returns a list of the values that the lens points at.
 
-  This is the name the `get_all/2` function had in Lens 1. I prefer `get_all/2`,
+  This is the name the `get_all/2` function had in [Lens 1](https://hexdocs.pm/lens/readme.html). I prefer `get_all/2`,
   note least because if I forget and use `Deeply.get`, I get a helpful error message:
 
       Lens2.Deeply.get/2 is undefined or private. Did you mean:
@@ -88,7 +88,7 @@ defmodule Lens2.Deeply do
   @doc ~S"""
   Return the single value the lens points at.
 
-  This is the name the `get_only/2` function had in Lens 1. I prefer `get_only/2`,
+  This is the name the `get_only/2` function had in [Lens 1](https://hexdocs.pm/lens/readme.html). I prefer `get_only/2`,
   but if you prefer this name, more power to you.
 
   This calls `get_all/2` and unwraps the single value in the resulting list.

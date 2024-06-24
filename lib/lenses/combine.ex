@@ -392,7 +392,7 @@ defmodule Lens2.Lenses.Combine do
 
 
   @doc ~S"""
-  The Lens 1 name for `repeatedly/1`.
+  The [Lens 1](https://hexdocs.pm/lens/readme.html) name for `repeatedly/1`.
 
   It confused me, so I retaliated by renaming it.
   """
@@ -400,7 +400,7 @@ defmodule Lens2.Lenses.Combine do
   def_composed_maker recur(descender), do: repeatedly(descender)
 
   @doc ~S"""
-  The Lens 1 name for `and_repeatedly/1`.
+  The [Lens 1](https://hexdocs.pm/lens/readme.html) name for `and_repeatedly/1`.
   """
   @spec recur_root(Lens2.lens) :: Lens2.lens
   def_composed_maker recur_root(descender), do: and_repeatedly(descender)

@@ -2,7 +2,7 @@ defmodule Lens2 do
   @moduledoc """
   `Use` this module for convenience. A module that does that can...
 
-  1. ... access all the lens-making functions from the Lens 1 package
+  1. ... access all the lens-making functions from the [Lens 1](https://hexdocs.pm/lens/readme.html) package
      under the same names: `Lens.key/1`, for example. See
      `Lens2.Lenses` for the complete list.
 
@@ -33,6 +33,11 @@ defmodule Lens2 do
   @typedoc "A `value`, but named differently so it's clear it's been updated by the application of some function."
   @type updated_value :: value
 
+  @doc """
+  Provide standard imports and aliases.
+
+  See the top of this page for more.
+  """
   defmacro __using__(_opts \\ []) do
     quote do
       alias Lens2.Lenses, as: Lens

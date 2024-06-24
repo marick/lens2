@@ -11,7 +11,7 @@ defmodule Lens2.Lenses do
   `Lens2.Lenses.Keyed`.
 
   Traditionally, this module is aliased to `Lens`, so that the makers
-  have the same name as in the Lens 1 package. See the `Lens2` module.
+  have the same name as in the [Lens 1](https://hexdocs.pm/lens/readme.html) package. See the `Lens2` module.
   """
 
   import Lens2.Helpers.Delegate

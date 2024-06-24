@@ -88,7 +88,7 @@ defmodule Lens2.Makers do
 
   Lenses can also be built by wrapping an `access_fun` around another
   type of function which I'll call a "raw" function (for backwards compatibility
-  with code that uses Lens 1).
+  with code that uses [Lens 1](https://hexdocs.pm/lens/readme.html)).
 
   This is a function like this:
 
@@ -347,8 +347,9 @@ defmodule Lens2.Makers do
          keys |> Enum.map(&key/1) |> Combine.multiple
        end
 
-  The only requirement is that the last thing the function does is call a lens maker.
-  (Or, I suppose, produce a lens in some other way, but you'd probably use `def_maker/2` for that.)
+  The only requirement is that the last thing the code does must be to
+  call a lens maker.  (Or, I suppose, produce a lens in some other
+  way, but you'd probably use `def_maker/2` for that.)
 
   """
 
@@ -362,7 +363,7 @@ defmodule Lens2.Makers do
   @doc ~S"""
   Alternate spelling of `def_maker/2`.
 
-  This is the equivalent macro from Lens 1.
+  This is the equivalent macro from [Lens 1](https://hexdocs.pm/lens/readme.html).
   """
   defmacro deflens_raw({name, metadata, args}, do: anonymous_function),
            do: _def_maker(name, metadata, args, anonymous_function)
@@ -372,7 +373,7 @@ defmodule Lens2.Makers do
   @doc ~S"""
   Alternate spelling of `def_composed_maker/2`.
 
-  This is the equivalent macro from Lens 1. You won't break my heart
+  This is the equivalent macro from [Lens 1](https://hexdocs.pm/lens/readme.html). You won't break my heart
   if you prefer it to `def_composed_maker/1`, but I had early troubles confusing
   a lens and a lens *maker*. I suspect this name will help other novices avoid my
   mistakes.

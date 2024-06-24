@@ -67,6 +67,10 @@ defmodule Lens2.MixProject do
       groups_for_extras: [
         "Tutorial": Path.wildcard("mostly_words/tutorial??.md"),
       ],
+
+      groups_for_modules: [
+        "Predefined": ~r/Lens2.Lenses.*/
+      ],
       assets: %{
         "mostly_words/pics" => "pics",
       },
