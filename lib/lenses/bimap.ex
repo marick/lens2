@@ -52,6 +52,12 @@ defmodule Lens2.Lenses.BiMap do
       iex>  assert key in [:a, :b, :c, :d, :e]
       ...>  # On my machine, today, it turns out to be `:e`.
 
+
+  This module follows the convention of using names like `key` to mean
+  using a key to obtain a value. Names like `to_key` go in the reverse
+  direction: from value to key. Using `value(1)` to refer to the key
+  `:a` would be just too weird.
+
   """
   def_composed_maker all_values() do
     Lens.into(Lens.all |> Lens.at(1), BiMap.new)
@@ -167,37 +173,34 @@ defmodule Lens2.Lenses.BiMap do
   end
 
   @doc """
-  Point at the values of an `Enumeration` of [`BiMap`](https://hexdocs.pm/bimap/readme.html) keys, ignoring missing keys.
+  Like `key?/1` but takes a list of keys.
+
+  Missing keys are ignored.
+
+      iex>  bimap = BiMap.new(a: 2)
+      iex>  lens = Lens.BiMap.keys?([:a, :missing])
+      iex>  Deeply.update(bimap, lens, & &1*1111)
+      BiMap.new(a: 2222)
+      iex>  Deeply.get_only(bimap, lens)
+      2
+
   """
   def_composed_maker keys?(keys) do
     keys |> Enum.map(&key?/1) |> Lens.multiple
   end
 
-  # @doc """
-  # Differs from `missing` in that the missing key is passed to a `map` function.
+  @doc """
+  Like `key!/1` but takes a list of keys.
 
-  # This is useful when adding keys to a map, where the value somehow depends on the key.
+  Missing keys raise an error.
 
-  #    A.map(bimap, LensX.bimap_keys([:a, :b]), fn missing_key ->
-  #      // create a process that remembers the `missing_key` and put it into the
-  #      // BiMap under the `missing_ley`
-  #    end
+      iex>  bimap = BiMap.new(a: 2)
+      iex>  lens = Lens.BiMap.keys!([:a, :missing])
+      iex>  Deeply.get_only(bimap, lens)
+      ** (ArgumentError) key :missing not found in: BiMap.new([a: 2])
 
-  # """
-  # def_maker missing_keys(list) do
-  #   fn bimap, descender ->
-  #     reducer =
-  #       fn key, {gotten_so_far, updated_so_far} ->
-  #         if BiMap.has_key?(bimap, key) do
-  #           {gotten_so_far, updated_so_far}
-  #         else
-  #           {gotten, updated} = descender.(key)
-  #           {[gotten | gotten_so_far], BiMap.put(updated_so_far, key, updated)}
-  #         end
-  #       end
-
-  #     {gotten_final, updated_final} = Enum.reduce(list, {[], bimap}, reducer)
-  #     {gotten_final, updated_final}
-  #   end
-  # end
+  """
+  def_composed_maker keys!(keys) do
+    keys |> Enum.map(&key!/1) |> Lens.multiple
+  end
 end
