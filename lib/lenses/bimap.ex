@@ -32,6 +32,13 @@ defmodule Lens2.Lenses.BiMap do
   Note that `BiMap` does not implement `Access`. However, lenses
   created with these functions do, so they can be used with `get_in/2`
   and friends.
+
+  This module follows the convention of using names like `key` to mean
+  using a key to obtain a value. Names like `to_key` go in the reverse
+  direction: from value to key. Using `value(1)` to refer to the key
+  `:a` would be just too weird.
+
+
   """
 
   section "RETURN ALL KEYS OR ALL VALUES" do
@@ -54,14 +61,8 @@ defmodule Lens2.Lenses.BiMap do
         iex>  [key] = BiMap.keys(updated)
         iex>  assert key in [:a, :b, :c, :d, :e]
         ...>  # On my machine, today, it turns out to be `:e`.
-
-
-    This module follows the convention of using names like `key` to mean
-    using a key to obtain a value. Names like `to_key` go in the reverse
-    direction: from value to key. Using `value(1)` to refer to the key
-    `:a` would be just too weird.
-
     """
+    @spec all_values :: Lens2.lens
     def_composed_maker all_values() do
       Lens.into(Lens.all |> Lens.at(1), BiMap.new)
     end
@@ -82,6 +83,7 @@ defmodule Lens2.Lenses.BiMap do
     that updating the `{0, 0}` tuple will wipe out the existing `{1, 1}` tuple.
 
     """
+    @spec all_keys :: Lens2.lens
     def_composed_maker all_keys() do
       Lens.into(Lens.all |> Lens.at(0), BiMap.new)
     end
@@ -107,6 +109,7 @@ defmodule Lens2.Lenses.BiMap do
         iex> Deeply.put(BiMap.new, Lens.BiMap.key?(:missing), :NEW)
         BiMap.new
     """
+    @spec key?(any) :: Lens2.lens
     def_maker key?(key) do
       fn bimap, descender ->
         case BiMap.fetch(bimap, key) do
@@ -122,7 +125,7 @@ defmodule Lens2.Lenses.BiMap do
     @doc """
 
     Return a lens that points at the key associated with a given value,
-    provided there is such a value.
+    provided there is any such value.
 
         iex>  bimap = BiMap.new(a: 1)
         iex>  Deeply.get_all(bimap, Lens.BiMap.to_key?(1))
@@ -130,12 +133,13 @@ defmodule Lens2.Lenses.BiMap do
         iex>  Deeply.get_all(bimap, Lens.BiMap.to_key?(11111))
         []
 
-    You can create a new key-value pair with `key/1` or
-    `pair/1`. `Lens2.Deeply.put/3` will not work with this lens:
+    You can create a new key-value pair with `key/1`.
+    `Lens2.Deeply.put/3` will not work with this lens:
 
         iex> Deeply.put(BiMap.new, Lens.BiMap.to_key?("value"), :new_key)
         BiMap.new
     """
+    @spec to_key?(any) :: Lens2.lens
     def_maker to_key?(value) do
       fn bimap, descender ->
         case BiMap.fetch_key(bimap, value) do
@@ -161,8 +165,27 @@ defmodule Lens2.Lenses.BiMap do
         2
 
     """
+    @spec keys?([any]) :: Lens2.lens
     def_composed_maker keys?(keys) do
       keys |> Enum.map(&key?/1) |> Lens.multiple
+    end
+
+    @doc """
+    Like `to_key?/1` but takes a list of values.
+
+    Missing keys are ignored.
+
+        iex>  bimap = BiMap.new(%{1 => "value"})
+        iex>  lens = Lens.BiMap.to_keys?(["value", "some missing value"])
+        iex>  Deeply.update(bimap, lens, & &1*1111)
+        BiMap.new(%{1111 => "value"})
+        iex>  Deeply.get_only(bimap, lens)
+        1
+
+    """
+    @spec to_keys?([any]) :: Lens2.lens
+    def_composed_maker to_keys?(keys) do
+      keys |> Enum.map(&to_key?/1) |> Lens.multiple
     end
 
   end
@@ -179,6 +202,7 @@ defmodule Lens2.Lenses.BiMap do
         iex>  Deeply.put(bimap, Lens.BiMap.key!(:missing), :NEW)
         ** (ArgumentError) key :missing not found in: BiMap.new([a: 1])
     """
+    @spec key!(any) :: Lens2.lens
     def_maker key!(key) do
       fn bimap, descender ->
         {gotten, updated} = descender.(BiMap.fetch!(bimap, key))
@@ -198,6 +222,7 @@ defmodule Lens2.Lenses.BiMap do
         ** (ArgumentError) value 11111 not found in: BiMap.new([a: 1])
 
     """
+    @spec to_key!(any) :: Lens2.lens
     def_maker to_key!(value) do
       fn bimap, descender ->
         {gotten, updated} = descender.(BiMap.fetch_key!(bimap, value))
@@ -209,7 +234,7 @@ defmodule Lens2.Lenses.BiMap do
     @doc """
     Like `key!/1` but takes a list of keys.
 
-    Missing keys raise an error.
+    Any missing key raises an error.
 
         iex>  bimap = BiMap.new(a: 2)
         iex>  lens = Lens.BiMap.keys!([:a, :missing])
@@ -217,8 +242,25 @@ defmodule Lens2.Lenses.BiMap do
         ** (ArgumentError) key :missing not found in: BiMap.new([a: 2])
 
     """
+    @spec keys!([any]) :: Lens2.lens
     def_composed_maker keys!(keys) do
       keys |> Enum.map(&key!/1) |> Lens.multiple
+    end
+
+    @doc """
+    Like `to_key!/1` but takes a list of values.
+
+    Any missing value raises an error.
+
+        iex>  bimap = BiMap.new(a: 2)
+        iex>  lens = Lens.BiMap.to_keys!([2, "missing value"])
+        iex>  Deeply.get_all(bimap, lens)
+        ** (ArgumentError) value "missing value" not found in: BiMap.new([a: 2])
+
+    """
+    @spec to_keys!([any]) :: Lens2.lens
+    def_composed_maker to_keys!(keys) do
+      keys |> Enum.map(&to_key!/1) |> Lens.multiple
     end
   end
 
@@ -241,6 +283,7 @@ defmodule Lens2.Lenses.BiMap do
         BiMap.new(%{missing: :NEW})
     """
 
+    @spec key(any) :: Lens2.lens
     def_maker key(key) do
       fn bimap, descender ->
         {gotten, updated} = descender.(BiMap.get(bimap, key))
@@ -265,9 +308,9 @@ defmodule Lens2.Lenses.BiMap do
         BiMap.new(a: 2222, missing: "newly added")
 
     """
+    @spec keys([any]) :: Lens2.lens
     def_composed_maker keys(keys) do
       keys |> Enum.map(&key/1) |> Lens.multiple
     end
   end
-
 end

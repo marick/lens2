@@ -1,7 +1,7 @@
 alias Lens2.Helpers.Section
 
 defmodule Section do
-  @moduledoc "Idiosyncratic grouping macros"
+  @moduledoc false
 
   defmacro section(_comment, do: block) do
     quote do
