@@ -1,6 +1,8 @@
 defmodule Lens2 do
   @moduledoc """
-  `Use` this module for convenience. A module that does that can...
+  `Use` this module for convenience.
+
+  A module that does that can...
 
   1. ... access all the lens-making functions from the [Lens 1](https://hexdocs.pm/lens/readme.html) package
      under the same names: `Lens.key/1`, for example. See
