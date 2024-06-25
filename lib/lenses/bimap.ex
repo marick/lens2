@@ -190,6 +190,25 @@ defmodule Lens2.Lenses.BiMap do
     end
   end
 
+  @doc """
+
+  Return a lens that points at the key associated with a given value. Raises an
+  error if there is no such value.
+
+      iex>  bimap = BiMap.new(a: 1)
+      iex>  Deeply.get_all(bimap, Lens.BiMap.to_key!(1))
+      [:a]
+      iex>  Deeply.get_all(bimap, Lens.BiMap.to_key!(11111))
+      ** (ArgumentError) value 11111 not found in: BiMap.new([a: 1])
+
+  """
+  def_maker to_key!(value) do
+    fn bimap, descender ->
+      {gotten, updated} = descender.(BiMap.fetch_key!(bimap, value))
+      {[gotten], BiMap.put(bimap, updated, value)}
+    end
+  end
+
 
 
 
