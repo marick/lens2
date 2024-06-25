@@ -33,6 +33,8 @@ defmodule Lens2.Lenses.BiMap do
   and friends.
   """
 
+  #-
+
   @doc """
   Return a lens that points at all values of a [`BiMap`](https://hexdocs.pm/bimap/readme.html).
 
@@ -106,6 +108,10 @@ defmodule Lens2.Lenses.BiMap do
     end
   end
 
+  # There is no `to_key` because a `nil` key is not worth much.
+
+  # -
+
   @doc """
   Return a lens that points at the value of a single
   [`BiMap`](https://hexdocs.pm/bimap/readme.html) key, ignoring
@@ -136,6 +142,37 @@ defmodule Lens2.Lenses.BiMap do
   end
 
   @doc """
+
+  Return a lens that points at the key associated with a given value,
+  provided there is such a value.
+
+      iex>  bimap = BiMap.new(a: 1)
+      iex>  Deeply.get_all(bimap, Lens.BiMap.to_key?(1))
+      [:a]
+      iex>  Deeply.get_all(bimap, Lens.BiMap.to_key?(11111))
+      []
+
+  You can create a new key-value pair with `key/1` or
+  `pair/1`. `Lens2.Deeply.put/3` will not work with this lens:
+
+      iex> Deeply.put(BiMap.new, Lens.BiMap.to_key?("value"), :new_key)
+      BiMap.new
+  """
+  def_maker to_key?(value) do
+    fn bimap, descender ->
+      case BiMap.fetch_key(bimap, value) do
+        :error ->
+          {[], bimap}
+        {:ok, key} ->
+          {gotten, updated} = descender.(key)
+          {[gotten], BiMap.put(bimap, updated, value)}
+      end
+    end
+  end
+
+  # -
+
+  @doc """
   Like `key/1` and `key?/1` except that the lens will raise an error for a missing key.
 
   This works the same as `Lens2.Lenses.Keyed.key!/1`.
@@ -152,6 +189,11 @@ defmodule Lens2.Lenses.BiMap do
       {[gotten], BiMap.put(bimap, key, updated)}
     end
   end
+
+
+
+
+
 
   @doc """
   Like `key/1` but takes a list of keys.
