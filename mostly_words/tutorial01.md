@@ -1,4 +1,4 @@
-# Lenses are pointers
+# Lenses move pointers
 
 The word "lens" is a metaphor. We're supposed to gain some
 understanding of what this particular software construct does, based on our
@@ -48,17 +48,27 @@ right from the single pointer on the left. That is, a lens is a
 
 
 ```elixir
-iex(2)> Lens.at(3)
+iex> use Lens2     # sets up aliases `Lens` and `Deeply`
+iex> Lens.at(3)
 #Function<1.126734921/3 in Lens2.Lenses.Indexed.at/1>
 ```
 
-... and `Lens.at` is a function-making (or "higher order") function.
+... and `Lens.at` is a function-making (or "higher order")
+function. I'm going to give such higher-order functions the kinda ugly
+name "lens makers".
 
 Except when you're writing a new lens from scratch, your code never
 calls a lens function directly. Instead, your code passes the lens to
 some other function that does that work. As far as you're concerned,
 the lens is no different than the `3` in `Enum.at(container, 3)` or
 the `:a` in `Map.key(container, :a)`
+
+To peek ahead, the functions that use lenses are in the `Lens2.Deeply` package (usually aliased as `Deeply`). Here's one:
+
+```elixir
+iex> Deeply.update([0, 1, 2], Lens.at(1), & &1 * 1111)
+[0, 1111, 2]
+```
 
 ## Lenses are all about "zero, one, many"
 
@@ -175,7 +185,11 @@ iex> get_in(map, [:c])
 3
 ```
 
-... so why do we get it for the lens version? Right now, I want to
+... so why do we get it with a lens?
+
+
+
+Right now, I want to
 defer the answer to later, when it will be easier to explain. As a teaser, though, it's like the difference between using `Enum.map/2` and
 `Enum.flat_map/2`, or between these two lists:
 
