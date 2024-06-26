@@ -60,6 +60,7 @@ defmodule Lens2.MixProject do
       main: "rationale",
       extras: [
                "mostly_words/rationale.md",
+               "mostly_words/for_access_novices.md",
                "mostly_words/are_lenses_for_you.md",
                "mostly_words/tutorial01.md",
                "mostly_words/tutorial02.md",

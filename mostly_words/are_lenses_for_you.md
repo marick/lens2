@@ -1,170 +1,8 @@
-# Are lenses worth it to you?
+# Are lenses for you?
 
-Here I'll try to convince you that lenses have some advantages over
-both recursive functions and Elixir's built-in `Access` behaviour and its
-associated `Kernel` functions: `put_in/2`, `update_in/2`, `put_in/2`
-and so on.
+## It depends
 
-## Lenses and the `Access` module
-
-Languages like Elixir don't let you change data structures; instead,
-you create a new data structure that's different from the
-original. That can be somewhat annoying when you want to change a
-single place within a deeply nested structure. From now on, I'm
-going to call such structures *containers*. We're interested in nested
-containers.
-
-Here's a simple example. We have `Network` structure. It has various
-fields, one of which is named `:name_to_cluster`. A `Cluster`
-structure has various fields, one of which, `:downstream`, holds a
-`MapSet` of atoms (cluster names). Like this:
-
-![here is some text](pics/tidy.png)
-
-We want to add the value `:c` to
-a single mapset. This code works:
-
-
-```elixir
-    new_cluster =
-      network.name_to_cluster[:gate]
-      |> Map.update!(:downstream, & MapSet.put(&1, :some_name))
-
-    new_map =
-      network.name_to_cluster
-      |> Map.put(:gate, new_cluster)
-
-    %{network | name_to_cluster: new_map}
-```
-
-Fine, but what I'm doing has two conceptual steps:
-
-1. Point at the place you want to change.
-2. Cause the change.
-
-In the above code, those two steps are buried inside a lot of
-bookkeeping code that does the work of constructing each level of the
-new nested container. What really matters are highlighted below: the
-path and the `MapSet.put` use.
-
-
-We want the compiler to write the bookkeeping code for us, inserting
-the path and update function.
-
-You probably know that Elixir offers the `Access` behaviour that does
-just that. Here's a better implementation of the above:
-
-```elixir
-    update_in(network.name_to_cluster[:gate].downstream,
-              & MapSet.put(&1, :some_name))
-```
-
-Looks pretty clear: every word is about either the path or the
-operation to be done on what's at the end. Alternately, we can use
-syntax that's a little longer but not as reliant on macro magic to
-describe the path:
-
-```elixir
-    path = [Access.key(:name_to_cluster), :gate, Access.key(:downstream)]
-    update_in(network, path,
-              & MapSet.put(&1, :some_name))
-```
-
-So where do lenses come in?
-
-Well, let's say we want to add `:some_name` to *all* the clusters. I
-was surprised that you couldn't do that with a single `update_in`
-because I thought `Access.all/0` would do it. Something like:
-
-```elixir
-    path = [Access.key(:name_to_cluster),
-            Access.all(),    # `all` will produce list of {key, value} tuples.
-            Access.elem(1)]  # Take the value
-```
-
-But no joy:
-
-```
-** (RuntimeError) Access.all/0 expected a list, got: %{gate: %Cluster{downstream: MapSet.new([:big_edit, :has_fragments]), name: :gate}, watcher: %Cluster{downstream: MapSet.new([]), name: :watcher}}
-```
-
-(I don't know why `Access.all` is restricted to lists.)
-
-To handle multiple clusters, you need some kind of a loop, perhaps
-using `for`. `for` does what I expected `Access.all` to do, and
-produces tuples:
-
-
-```elixir
-    new_map =
-      for {name, cluster} <- network.name_to_cluster, into: %{} do
-        new_cluster = update_in(cluster.downstream, & MapSet.put(&1, :some_name))
-        {name, new_cluster}
-      end
-    %{network | name_to_cluster: new_map}
-```
-
-There are a variety of other looping or recursive styles you could use. (Actually,
-that's sort of a problem: it would be better to have one concise
-solution than, say, four that are long enough you actually have to
-think to write them or, sometimes, read them.)
-
-
-In this `Lens2` package (and others like it), updating multiple
-clusters in the network doesn't require a loop:
-
-```elixir
-   lens = Lens.key(:name_to_cluster) |> Lens.map_values |> Lens.key(:downstream)
-   #                                    ^^^^^^^^^^^^^^^
-   Deeply.update(network, lens, & MapSet.update(&1, :some_name))
-```
-
-As it should, it looks almost the same to update a *subset* of the clusters:
-
-```elixir
-   lens = Lens.key(:name_to_cluster) |> Lens.keys([:gate, :watcher]) |> Lens.key(:downstream)
-   #                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   Deeply.update(network, lens, & MapSet.update(&1, :some_name))
-```
-
-Or, if you prefer, you can use `update_in`, because lenses are
-functions that implement the behavior that `Access` requires;
-
-
-```elixir
-    path = [Access.key(:name_to_cluster),  # Note Access
-            Lens.keys([:gate, :watcher]),  # Note Lens
-            Access.key(:downstream)]
-    update_in(network, path, & MapSet.put(&1, :some_name))
-```
-
-This would be more compelling, I guess, if I were using maps instead
-of structs. With maps, you can avoid `Access.key`:
-
-
-```elixir
-    path = [:name_to_cluster,
-            Lens.keys([:gate, :watcher]),
-            :downstream]
-    update_in(network, path, & MapSet.put(&1, :some_name))
-```
-
-I personally just use `Deeply` everywhere except when the
-`dot.and[bracket].notation` fits too well to pass up. I tend to avoid
-nested structures that expose the structure of their innards to all
-their clients, so that's not as often as you might guess.
-
-You *can*, however, read this series as descriptions of how to create
-custom path elements for `update_in` and friends (the way `Lens.keys`
-was used above). You can do that directly by writing functions that
-match the required `Access` behaviour, but since lenses *are*
-functions that match that behaviour, and (I believe) are not (or not
-much) harder to write than `Access` functions – both are a *little*
-brain-twisting – maybe learning lenses is still worthwhile.
-
-## Tradeoffs
-
-Lenses, like `Access` are used for getting data from within nested
+Lenses, like `Access`, are used for getting data from within nested
 containers, for putting data in nested containers, and for updating
 existing data. They're part of the long tradition of methods to do
 CRUD (create/read/update/delete) that include relational databases,
@@ -192,14 +30,6 @@ And is that often enough that spending time seeing if learning lenses
 think there are that many such cases. I'll point them out as this
 series goes along.)
 
-At this point, I've only shown you one example of how lenses are more
-pleasant. I could list some other reasons why I've found lenses
-worthwhile – as you might guess, the `Cluster` example is derived
-from my own code – but, at this point, I think you're either
-intrigued enough that you'll hold your reasonable skepticism in check
-while you read on, or you aren't. If the former, continue! (You can
-always give up later!)
-
 ## A note on choosing
 
 It may seem weird and offputting to say you should decide on
@@ -211,7 +41,7 @@ I got my first job as a programmer in 1975 (at the age of 16). I've
 seen a *lot* of programmers making judgments about technology new to
 them. When they reach for generalizations about "all programmers" or
 "all programs", they tend to predict poorly. For example, from about 1983
-(when I was a [Common Lisp](https://en.wikipedia.org/wiki/Common_Lisp) implementor) to the early '90s, I heard an
+(when I was a [Common Lisp](https://en.wikipedia.org/wiki/Common_Lisp) implementer) to the early '90s, I heard an
 endless number of people say that garbage collection was impractical
 for "serious work". Machines (except for
 [expensive custom hardware](https://en.wikipedia.org/wiki/Lisp_machine))
@@ -245,3 +75,20 @@ dispassionate person optimizing some objective criterion. That is:
 2. If you accept that you are prone to subjective judgments: welcome!
    I hope to show you why my subjective judgment about lenses just
    might mesh with yours, and that you might find lenses pleasant.
+
+## Efficiency
+
+I suspect lenses are somewhat slower than `Access` functions, which
+are in turn somewhat slower than hand-crafted recursion, which would
+likely be faster still if done with a
+[C](https://www.erlang.org/doc/apps/erl_interface/ei_users_guide) or
+[Rust](https://github.com/rusterlium/rustler) (etc.) foreign function
+interface. I haven't measured any of them, though. The hoary old
+interface applies: you're probably better writing the code in the way
+most readable to your team, then optimizing after performance
+measurements shows you where the bottlenecks are.
+
+It's worth calling out [Pathex](https://github.com/hissssst/pathex), a
+lens-like package said to be faster than `Access`. (I haven't measured that either.)
+
+   

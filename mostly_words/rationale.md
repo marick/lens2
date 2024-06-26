@@ -1,5 +1,10 @@
 # Rationale
 
+I've written this rationale for people who are already familiar with
+Elixir's built-in `Access` module and its related
+functions(`get_in/2`, `put_in/3`, `update_in/3`, etc. If you're not
+familiar with that, you might want to read "For `Access` novices", then skip to [Part 2](#part-2-why-a-new-package) on this page.
+
 ## Part 1: Why not `Access`?
 
 Lenses are a tool for working with nested data structures, which I'll
