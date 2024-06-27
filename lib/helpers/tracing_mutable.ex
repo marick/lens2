@@ -38,12 +38,12 @@ defmodule Tracing.Mutable do
 
   def add_log_item(%EntryLine{} = line) do
     ensure_log()
-    add_to_end(line)
+    add_most_recent(line)
     update_level(1)
   end
 
   def add_log_item(%ExitLine{} = line) do
-    add_to_end(line)
+    add_most_recent(line)
     update_level(-1)
   end
 
@@ -58,7 +58,7 @@ defmodule Tracing.Mutable do
       end
     end
 
-    def add_to_end(item),
+    def add_most_recent(item),
         do: Process.put(@log, [item | Process.get(@log)])
 
     def update_level(amount) do
