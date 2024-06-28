@@ -82,7 +82,7 @@ defmodule Tracing.OutputTest do
     assert_update(map, lens, &inspect/1,
       """
       >key(:a) || %{a: %{aa: %{aaa: 1}}, b: %{aa: %{aaa: 2}}}
-      <key(:a) || %{a: \"%{aa: %{aaa: 1}}\", b: %{aa: %{aaa: 2}}}
+      <key(:a) || %{a: "%{aa: %{aaa: 1}}", b: %{aa: %{aaa: 2}}}
       """)
 
     assert_get_and_update(map, lens, &{&1, inspect(&1)},
@@ -92,7 +92,7 @@ defmodule Tracing.OutputTest do
       """,
       """
       >key(:a) || %{a: %{aa: %{aaa: 1}}, b: %{aa: %{aaa: 2}}}
-      <key(:a) || %{a: \"%{aa: %{aaa: 1}}\", b: %{aa: %{aaa: 2}}}
+      <key(:a) || %{a: "%{aa: %{aaa: 1}}", b: %{aa: %{aaa: 2}}}
       """)
 
     assert_get(map, lens,
