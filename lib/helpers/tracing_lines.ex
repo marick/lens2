@@ -4,6 +4,7 @@ alias Lens2.Helpers.Tracing
 defmodule Tracing.EntryLine do
   @moduledoc false
   import TypedStruct
+  alias Tracing.Line
 
   typedstruct do
     field :call, String.t, enforce: true
@@ -11,7 +12,7 @@ defmodule Tracing.EntryLine do
   end
 
   def new(name, args, container),
-      do: new(Tracing.Line.call_string(name, args), inspect(container))
+      do: new(Tracing.Line.call_string(name, args), Line.i(container))
 
   def new(call_string, container) when is_binary(call_string),
       do: %__MODULE__{call: call_string, container: container}
@@ -20,6 +21,7 @@ end
 defmodule Tracing.ExitLine do
   @moduledoc false
   import TypedStruct
+  alias Tracing.Line
 
   typedstruct do
     field :call, String.t, enforce: true
@@ -28,7 +30,7 @@ defmodule Tracing.ExitLine do
   end
 
   def new(name, args, gotten, updated) do
-    new(Tracing.Line.call_string(name, args), inspect(gotten), inspect(updated))
+    new(Tracing.Line.call_string(name, args), Line.i(gotten), Line.i(updated))
   end
 
   def new(call_string, gotten_string, updated_string) do
@@ -41,6 +43,8 @@ end
 
 defmodule Tracing.Line do
   @moduledoc false
+
+  def i(data), do: inspect(data, charlists: :as_lists, custom_options: [sort_maps: true])
 
   def call_string(name, args) do
     formatted_args = Enum.map(args, & inspect(&1))
