@@ -454,7 +454,7 @@ defmodule Lens2.Lenses.Combine do
   taken on the way. The two are wrapped into a tuple. So:
 
       [{map_0_snapshot, map_0_target}, {map_1_snapshot, map_1_target}] =
-        Lens.get_all(map_list, lens)
+        Deeply.get_all(map_list, lens)
 
   In this case, the result will be:
 
@@ -513,7 +513,7 @@ defmodule Lens2.Lenses.Combine do
 
   What happens with this composed lens?
 
-      Lens.indices(0) |> Lens.context(Lens.key(:a) |> Lens.context(Lens.at(1)))
+      Lens.at(0) |> Lens.context(Lens.key(:a) |> Lens.context(Lens.at(1)))
 
   It produces nested tuples of this form:
 
@@ -537,7 +537,10 @@ defmodule Lens2.Lenses.Combine do
     fn data, fun ->
       {results, changed} =
         Deeply.get_and_update(data, context_lens, fn context ->
-          Deeply.get_and_update(context, item_lens, fn item -> fun.({context, item}) end)
+          Deeply.get_and_update(context, item_lens, fn item ->
+            dbg item
+            fun.({context, item})
+          end)
         end)
 
       {Enum.concat(results), changed}
