@@ -538,7 +538,6 @@ defmodule Lens2.Lenses.Combine do
       {results, changed} =
         Deeply.get_and_update(data, context_lens, fn context ->
           Deeply.get_and_update(context, item_lens, fn item ->
-            dbg item
             fun.({context, item})
           end)
         end)

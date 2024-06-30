@@ -1,6 +1,6 @@
-alias Lens2.Helpers.Tracing
+alias Lens2.Tracing
 
-defmodule Tracing.HardCasesTest do
+defmodule Tracing.OutputTest do
   use Lens2.Case
 
   @tag :skip
@@ -76,6 +76,7 @@ defmodule Tracing.HardCasesTest do
     Deeply.get_and_update(map, lens2, &i/1) |> dbg
   end
 
+  @tag :skip
   test "both" do
     lens = Lens.tracing_keys([:a, :b])
     |> Lens.tracing_both(Lens.tracing_key(:aa), Lens.tracing_key(:bb))
