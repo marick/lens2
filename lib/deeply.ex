@@ -32,7 +32,8 @@ defmodule Lens2.Deeply do
   For convenience and backwards compatibility, this package also provides the [Lens 1](https://hexdocs.pm/lens/readme.html) functions `to_list/2`, and `one!/2`.
 
   """
-  alias Lens2.Helpers.Tracing.Mutable
+  alias Lens2.Tracing
+  require Tracing
 
   @doc ~S"""
   Returns a list of the values that the lens points at.
@@ -46,8 +47,7 @@ defmodule Lens2.Deeply do
 
   @spec get_all(Lens2.container, Lens2.lens) :: list(Lens2.value)
   def get_all(container, lens) do
-    Mutable.remember_reasons([:get])
-    Kernel.get_in(container, [lens])
+    Tracing.wrap [:get], do: Kernel.get_in(container, [lens])
   end
 
 
@@ -119,8 +119,7 @@ defmodule Lens2.Deeply do
   """
   @spec put(Lens2.container, Lens2.lens, Lens2.value) :: Lens2.container
   def put(container, lens, value) do
-    Mutable.remember_reasons([:update])
-    Kernel.put_in(container, [lens], value)
+    Tracing.wrap [:update], do: Kernel.put_in(container, [lens], value)
   end
 
   # ============
@@ -142,8 +141,7 @@ defmodule Lens2.Deeply do
   """
   @spec update(Lens2.container, Lens2.lens, (Lens2.value -> Lens2.updated_value)) :: Lens2.container
   def update(container, lens, fun) do
-    Mutable.remember_reasons([:update])
-    Kernel.update_in(container, [lens], fun)
+    Tracing.wrap [:update], do: Kernel.update_in(container, [lens], fun)
   end
 
   @doc ~S"""
@@ -166,8 +164,7 @@ defmodule Lens2.Deeply do
   """
   @spec get_and_update(Lens2.container, Lens2.lens, (Lens2.value -> {Lens2.value, Lens2.updated_value})) :: {list(Lens2.value), Lens2.container}
   def get_and_update(container, lens, fun) do
-    Mutable.remember_reasons([:get, :update])
-    Kernel.get_and_update_in(container, [lens], fun)
+    Tracing.wrap [:get, :update], do: Kernel.get_and_update_in(container, [lens], fun)
   end
 
   # =====

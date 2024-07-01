@@ -7,8 +7,9 @@ defmodule Tracing do
       case State.get_operations do
         nil ->
           State.put_operations(unquote(operations))
-          unquote(body)
+          result = unquote(body)
           State.delete_operations
+          result
         _ ->
           unquote body
       end

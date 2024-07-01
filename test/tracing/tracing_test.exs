@@ -7,9 +7,12 @@ defmodule Tracing.Test do
 
   describe "wrapping a lens operation" do
     test "wrapper" do
-      Tracing.wrap [:get, :update] do
-        assert State.get_operations == [:get, :update]
-      end
+      result =
+        Tracing.wrap [:get, :update] do
+          assert State.get_operations == [:get, :update]
+          :result
+        end
+      assert result == :result
       assert State.get_operations == nil
     end
 
@@ -24,7 +27,6 @@ defmodule Tracing.Test do
       assert State.get_operations == nil
     end
 
-    @tag :skip
     test "the Deeply operations announce themselves to tracing" do
       # This is wasted if the there are no tracing_ operations, but that's insignificant.
       actual =

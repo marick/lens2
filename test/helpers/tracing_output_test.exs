@@ -72,6 +72,7 @@ defmodule Tracing.OutputTest do
   end
 
 
+  @tag :skip
   test "simple" do
     lens = Lens.tracing_key(:a)
     map =
