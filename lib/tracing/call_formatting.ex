@@ -8,7 +8,7 @@ defmodule Tracing.Call do
     field :direction,     :> | :<
     field :name,          :atom
     field :args,          [any]
-    field :output,        String.t,   default: ""
+    field :output,        String.t,   default: ""  #builds over time
   end
 
   def new(direction, name, args \\ []),
