@@ -8,9 +8,7 @@ defmodule Tracing.Call do
     field :direction,     :> | :<
     field :name,          :atom
     field :args,          [any]
-    field :call_string,   String.t,   default: ""
-    field :indent_before, integer,    default: 0
-    field :padding_after, integer,    default: 0
+    field :output,        String.t,   default: ""
   end
 
   def new(direction, name, args \\ []),
@@ -30,9 +28,12 @@ defmodule Tracing.Call do
     "#{to_string call.direction}#{to_string call.name}#{args_string(call)}"
   end
 
-  def output_name(atom) do
-    to_string(atom)
+  def formatted_name(%{name: name}) do
+    to_string(name)
   end
+
+  def indented_width(call),
+      do: call.indent_before + String.length(call.call_string)
 end
 
 defmodule Tracing.Calls do
@@ -43,23 +44,27 @@ defmodule Tracing.Calls do
     |> Enum.map(& Call.new(&1.direction, &1.name, &1.args))
   end
 
-  def add_call_strings(log) do
+  def format_calls(log) do
     for call <- log do
-      %{call | call_string: Call.call_string(call)}
+      %{call | output: Call.call_string(call)}
     end
   end
 
   def add_indents(log) do
+    update = fn call, indent_to_use ->
+      Map.update!(call, :output, & String.duplicate(" ", indent_to_use) <> &1)
+    end
+
     reducer = fn call, running_indent ->
-      output_name = Call.output_name(call.name)
-      name_len =  output_name |> String.length
+      name_len = Call.formatted_name(call) |> String.length
+
       case call.direction do
         :> ->
           next_indent = running_indent + name_len
-          { %{call | indent_before: running_indent}, next_indent }
+          { update.(call, running_indent), next_indent }
         :< ->
           next_indent = running_indent - name_len
-          { %{call | indent_before: next_indent},    next_indent }
+          { update.(call, next_indent), next_indent }
       end
     end
 
@@ -68,10 +73,25 @@ defmodule Tracing.Calls do
     |> elem(0)
   end
 
-  def indents(log) do
-    for call <- log, do: call.indent_before
+
+  def max_width(log) do
+    outputs(log)
+    |> Enum.map(&String.length/1)
+    |> Enum.max
   end
-  def call_strings(log) do
-    for call <- log, do: call.call_string
+
+  def pad_to_flush_right(log) do
+    max_width = max_width(log)
+
+    for call <- log do
+      padding_to_use = max_width - String.length(call.output)
+      Map.update!(call, :output, & &1 <> String.duplicate(" ", padding_to_use))
+    end
+  end
+
+  #-
+
+  def outputs(log) do
+    for call <- log, do: call.output
   end
 end

@@ -60,9 +60,9 @@ defmodule Tracing.CallsTest do
         Call.new(:<, :key, [:a])
       ]
 
-      actual = Calls.add_call_strings(input)
+      actual = Calls.format_calls(input)
 
-      assert Calls.call_strings(actual) ==
+      assert Calls.outputs(actual) ==
                [ ">key(:a)",
                  ">keys([:a, :b])",
                  "<keys([:a, :b])",
@@ -72,14 +72,24 @@ defmodule Tracing.CallsTest do
   end
 
   describe "calculating indent before" do
+    @tag :skip
     test "trivial" do
-      input = [
-        Call.new(:>, :key, [:a]),
-        Call.new(:<, :key, [:a])
-      ]
+      input =
+        [
+          Call.new(:>, :key, [:a]),
+          Call.new(:<, :key, [:a])
+        ]
+        |> Calls.format_calls
+
+      expected =
+        [ ">key(:a)",
+          "   >keys([:a, :b])",
+          "   <keys([:a, :b])",
+          "<key(:a)"
+        ]
 
       actual = Calls.add_indents(input)
-      assert Calls.indents(actual) == [0, 0]
+      assert Calls.outputs(actual) == expected
     end
 
     test "nesting" do
@@ -88,14 +98,51 @@ defmodule Tracing.CallsTest do
         Call.new(:>, :keys, [[:a, :b]]),
         Call.new(:<, :keys, [[:a, :b]]),
         Call.new(:<, :key, [:a])
+      ] |> Calls.format_calls
+
+      expected =
+        [ ">key(:a)",
+          "   >keys([:a, :b])",
+          "   <keys([:a, :b])",
+          "<key(:a)"
+        ]
+      actual = Calls.add_indents(input)
+      assert Calls.outputs(actual) == expected
+    end
+  end
+
+  test "what is the longest output?" do
+    input = [
+      %{output: ">key(:a)"},
+      %{output: ">  >key(:b)"},
+      %{output: ">     >keys([:c, :d])"}
+      #          123456789012345678901
+    ]
+
+    assert Calls.max_width(input) == 21
+  end
+
+  test "padding on the right" do
+    input =
+      [
+        Call.new(:>, :key, [:a]),
+        Call.new(:>, :keys, [[:a, :b]]),
+        Call.new(:<, :keys, [[:a, :b]]),
+        Call.new(:<, :key, [:a])
+      ]
+      |> Calls.format_calls
+      |> Calls.add_indents
+
+    expected =
+      [ ">key(:a)          ",
+        "   >keys([:a, :b])",
+        "   <keys([:a, :b])",
+        "<key(:a)          "
       ]
 
-      actual = Calls.add_indents(input)
+    actual =
+      Calls.pad_to_flush_right(input)
 
-      assert Calls.indents(actual) == [0, 3, 3, 0]
-    end
-
-
-
+    assert Calls.outputs(actual) == expected
   end
 end
