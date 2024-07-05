@@ -55,7 +55,7 @@ defmodule Tracing.Calls do
       Map.update!(call, :output, & String.duplicate(" ", indent_to_use) <> &1)
     end
 
-    reducer = fn call, running_indent ->
+    map_reducer = fn call, running_indent ->
       name_len = Call.formatted_name(call) |> String.length
 
       case call.direction do
@@ -69,7 +69,7 @@ defmodule Tracing.Calls do
     end
 
     log
-    |> Enum.map_reduce(0, reducer)
+    |> Enum.map_reduce(0, map_reducer)
     |> elem(0)
   end
 
