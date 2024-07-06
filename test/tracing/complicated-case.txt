@@ -1,0 +1,46 @@
+    test "a complicated case" do
+
+      map =
+        [
+          line(:>, %{a: %{b: %{c: [0, 1, 2], d: [0, 1, 2]}}}    ), # 0  key(:a)               0          extracted 1
+          line(   :>,   %{b: %{c: [0, 1, 2], d: [0, 1, 2]}}     ), # 1  key(:b)               0, 0       extracted 1
+          line(      :>,     %{c: [0, 1, 2], d: [0, 1, 2]}      ), # 2  keys(:c, :d) - :c     0, 0, 0    extracted 1
+          line(         :>,       [0, 1, 2]                     ), # 3  at(1)                 0, 0, 0, 0
+          line(         :<,          [1]                        ), # 4                        0, 0, 0, 0
+          line(      :<,                                      ""), # 5                        0, 0  0
+          line(      :>,     %{c: [0, 1, 2], d: [0, 1, 2]}      ), # 6  keys(:c, :d) - :d     0, 0, 1    I'm going to use 0, 0, favoring indented match (but not there, so use first)
+          line(         :>,                     [0, 1, 2]       ), # 7                        0, 0, 1, 1      use 0, 0, 1, favoring indented match (found)
+          line(         :<,                        [1]          ), # 8                        0, 0, 1, 1
+          line(      :<,                                      ""), # 9                        0, 0, 1
+          line(   :<,                                         ""), # 10                       0  0
+          line(:<,                   [1,            1]          )  # 11                       0
+        ]
+        |> Indentation.step1_init()
+        |> Indentation.step2_note_indentation_source
+
+
+      # 0=>1
+      # 1=>1
+      # 2=>1
+
+      #  0: > [0] => %{a: %{b: %{c: [0, 1, 2], d: [0, 1, 2]}}},    next_match_indent = twoward end
+      #  1: > [0, 0] =>   %{b: %{c: [0, 1, 2], d: [0, 1, 2]}},     next_match_indent = toward end
+      #  2: > [0, 0, 0] =>     %{c: [0, 1, 2], d: [0, 1, 2]}       next_match_indent: d-part
+      #  3: > [0, 0, 0, 0] =>       [0, 1, 2]
+      #  4: < [0, 0, 0, 0] =>          [1] (indent to be centered under [0, 0, 0, 0]          [remember that 4 has a value]
+      #  5: < [0, 0, 0] =>    blank
+      #  6: > [0, 0, 1] => look at 00, oops no obvious match, so start from the beginning
+      #  7: > [0, 0, 1, 1] =>
+      #  8: <
+      #  9: <
+      # 10: <
+      # 11: <
+
+      #    LINE 1: >, >: examine [0], note characters consumed back there. path_to = [0, 0]
+      #    LINE 2: >, >: examine [0, 0], note characters consumedback there, path_to = [0, 0, 0]
+      #    LINE 3: >, >: examine [0, 0, 0], note characters consumed back there (up to D), path_to = [0, 0, 0, 0]
+      #    Line 4: >, <: center [value] under [0, 0, 0, 0], going_in would be [0, 0, 0, 1]; going_out [0, 0, 0]     narrowing/expanding
+      #    LINE 5: <, <: empty output, going out [0, 0], going in [0, 0, 1]
+      #    LINE 6: <, >: label this [0, 0, 1], it takes values from [0, 0]. That one is used up, so the same thing happens,
+      #    LINE 7: >, >: label this 0, 0, 1, 1. it takes values from [0, 0, 0] - it will get the "d" value.
+      #    LINE 8: >, <: center in the above. In would be 0, 0, 1, 1, 0, out would be
