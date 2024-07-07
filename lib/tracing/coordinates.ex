@@ -45,6 +45,7 @@ defmodule Tracing.Coordinate.Maker do
       case pair do
         {:>, :>} -> continue_deeper(state)
         {:>, :<} -> begin_retreat(state)
+        {:<, :<} -> continue_retreat(state)
         {:<, :>} -> turn_deeper(state)
       end
     [ coordinate | consume(rest, next_state) ]
@@ -52,14 +53,18 @@ defmodule Tracing.Coordinate.Maker do
 
   def continue_deeper(%{last_nesting: last_nesting, use_counts: use_counts}) do
     this_level = length(last_nesting)
-    IO.puts "Need a test to make this fail if reoccupying a level"
-    this_nesting = [ 0 | last_nesting]
-    use_counts_now = Map.put(use_counts, this_level, 1)
+    this_nesting = [ Map.get(use_counts, this_level, 0) | last_nesting]
+    use_counts_now = Map.update(use_counts, this_level, 1, & &1 + 1)
     {Coordinate.new(:>, this_nesting), new(this_nesting, use_counts_now)}
   end
 
   def begin_retreat(state) do
     {Coordinate.new(:<, state.last_nesting), state}
+  end
+
+  def continue_retreat(state) do
+    this_nesting = tl(state.last_nesting)
+    { Coordinate.new(:<, this_nesting), %{state | last_nesting: this_nesting} }
   end
 
   def turn_deeper(%{last_nesting: last_nesting, use_counts: use_counts}) do

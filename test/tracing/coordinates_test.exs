@@ -71,6 +71,26 @@ defmodule Tracing.CoordinatesTest do
              ]
     end
 
+    test "continuing downward" do
+      input = [:>,
+                 :>,
+                   :>,
+                   :<,
+                 :<,
+               :<,
+      ]
+
+      actual = Maker.from(flabby(input))
+      assert actual === [
+               Coordinate.new(:>,           [0]),
+               Coordinate.new(  :>,      [0, 0]),
+               Coordinate.new(    :>, [0, 0, 0]),
+               Coordinate.new(    :<, [0, 0, 0]),
+               Coordinate.new(  :<,      [0, 0]),
+               Coordinate.new(:<,           [0]),
+             ]
+    end
+
     test "turning back upward, and continuing that way" do
       input = [:>,
                  :>,
@@ -84,14 +104,72 @@ defmodule Tracing.CoordinatesTest do
 
       actual = Maker.from(flabby(input))
       assert actual === [
-               Coordinate.new(:>,           [0]),
-               Coordinate.new(  :>,      [0, 0]),
-               Coordinate.new(    :>, [0, 0, 0]),
-               Coordinate.new(    :<, [0, 0, 0]),
-               Coordinate.new(    :>, [1, 0, 0]),
+               Coordinate.new(:>,                      [0]),
+               Coordinate.new(  :>,                 [0, 0]),
+               Coordinate.new(    :>,            [0, 0, 0]),
+               Coordinate.new(    :<,            [0, 0, 0]),
+               Coordinate.new(    :>,            [1, 0, 0]),
 
-               Coordinate.new(    :>, [0, 1, 0, 0]),
-               Coordinate.new(    :>, [0, 0, 1, 0, 0]),
+               Coordinate.new(      :>,       [0, 1, 0, 0]),
+               Coordinate.new(         :>, [0, 0, 1, 0, 0]),
+             ]
+    end
+
+    test "multiple excursions upward through a level" do
+      input = [:>,
+                 :>,
+                   :>,
+                     :>,
+                     :<,
+                   :<,
+
+                   :>,
+                     :>,
+                     :<,
+                   :<,
+                 :<,
+
+                 :>,
+                   :>,
+                     :>,
+                     :<,
+                   :<,
+
+                   :>,
+                     :>,
+                     :<,
+                   :<,
+                 :<,
+               :<
+      ]
+
+      actual = Maker.from(flabby(input))
+      assert actual === [
+               Coordinate.new(:>,                   [0]),    # 0 => 1
+               Coordinate.new(  :>,              [0, 0]),    # +  1 => 1
+               Coordinate.new(    :>,         [0, 0, 0]),    # +     2 => 1
+               Coordinate.new(      :>,    [0, 0, 0, 0]),    # +       3 => 1
+               Coordinate.new(      :<,    [0, 0, 0, 0]),    #
+               Coordinate.new(    :<,         [0, 0, 0]),    #
+
+               Coordinate.new(    :>,         [1, 0, 0]),    #       2 => 2
+               Coordinate.new(      :>,    [1, 1, 0, 0]),    #         3 => 2
+               Coordinate.new(      :<,    [1, 1, 0, 0]),    #
+               Coordinate.new(    :<,         [1, 0, 0]),    #
+               Coordinate.new(  :<,              [0, 0]),    #
+
+               Coordinate.new(  :>,              [1, 0]),    #    1 => 2
+               Coordinate.new(    :>,         [2, 1, 0]),    #       2 => 3
+               Coordinate.new(      :>,    [2, 2, 1, 0]),    #         3 => 3
+               Coordinate.new(      :<,    [2, 2, 1, 0]),    #
+               Coordinate.new(    :<,         [2, 1, 0]),    #
+
+               Coordinate.new(    :>,         [3, 1, 0]),    #      2 => 4
+               Coordinate.new(      :>,    [3, 3, 1, 0]),    #        3 => 4
+               Coordinate.new(      :<,    [3, 3, 1, 0]),    #
+               Coordinate.new(    :<,         [3, 1, 0]),
+               Coordinate.new(  :<,              [1, 0]),
+               Coordinate.new(:<,                   [0]),
              ]
     end
 
