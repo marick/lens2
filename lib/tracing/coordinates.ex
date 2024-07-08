@@ -9,6 +9,13 @@ defmodule Tracing.Coordinate do
 
   def new(direction, nesting),
       do: struct(__MODULE__, direction: direction, nesting: nesting)
+
+  # The actions a coordinate may represent.
+  def continue_deeper, do: :continue_deeper
+  def begin_retreat, do: :begin_retreat
+  def continue_retreat, do: :continue_retreat
+  def turn_deeper, do: :turn_deeper
+
 end
 
 defmodule Tracing.Coordinate.Maker do
@@ -51,6 +58,7 @@ defmodule Tracing.Coordinate.Maker do
     [ coordinate | consume(rest, next_state) ]
   end
 
+
   def continue_deeper(%{last_nesting: last_nesting, use_counts: use_counts}) do
     this_level = length(last_nesting)
     this_nesting = [ Map.get(use_counts, this_level, 0) | last_nesting]
@@ -75,7 +83,16 @@ defmodule Tracing.Coordinate.Maker do
     {Coordinate.new(:>, this_nesting), new(this_nesting, use_counts_now)}
   end
 
+  def classify_actions(pairs) do
+    for pair <- pairs do
+      case pair do
+        {:>, :>} -> Coordinate.continue_deeper
+        {:>, :<} -> Coordinate.begin_retreat
+        {:<, :<} -> Coordinate.continue_retreat
+        {:<, :>} -> Coordinate.turn_deeper
+      end
+    end
+  end
 
-#    field :action, :continue_deeper | :begin_retreat | :continue_retreat | :turn_deeper
 
 end

@@ -44,3 +44,31 @@
       #    LINE 6: <, >: label this [0, 0, 1], it takes values from [0, 0]. That one is used up, so the same thing happens,
       #    LINE 7: >, >: label this 0, 0, 1, 1. it takes values from [0, 0, 0] - it will get the "d" value.
       #    LINE 8: >, <: center in the above. In would be 0, 0, 1, 1, 0, out would be
+
+
+      input = [:>,           
+                 :>,         
+                   :>,             %{aa: %{a: 1, b: 2}}
+                     :>,                 %{a: 1}
+                     :<,                    [1]
+                   :<,
+
+                   :>,              %{aa: %{a: 1, b: 2}}
+                     :>,                       %{b: 2}
+                     :<,                         [2]
+                   :<,
+                 :<,
+
+                 :>,
+                   :>,
+                     :>,                            
+                     :<,                            
+                   :<,
+
+                   :>,    
+                     :>,    
+                     :<,    
+                   :<,
+                 :<,
+               :<
+      ]
