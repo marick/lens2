@@ -21,21 +21,31 @@ defmodule Adjustable.GottenLine do
 end
 
 defmodule Adjustable.Maker do
-  alias Adjustable.{ContainerLine, GottenLine}
+#  alias Adjustable.{ContainerLine, GottenLine}
 
   def make_map_values(retreat_key, log) do
-    coordinates = Coordinate.Maker.from(log)
+    {coordinates, actions} = coordinates_and_actions(log)
     strings = for line <- log, do: value(line, retreat_key) |> Common.stringify
 
-    for {coordinate, string} <- Enum.zip([coordinates, strings]) do
+    data = Enum.zip([0..length(log)-1, coordinates, strings, actions])
+    for {index, coordinate, string, action} <- data do
       %{coordinate: coordinate,
-        string: string}
+        string: string,
+        index: index,
+        action: action}
     end
   end
 
   defp value(%{container: value}, _), do: value
   defp value(%{gotten: value}, :gotten), do: value
   defp value(%{updated: value}, :updated), do: value
+
+  defp coordinates_and_actions(log) do
+    refined = Coordinate.Maker.refine(log)
+    coordinates = Coordinate.Maker.from(refined)
+    actions = [:no_previous_direction | Coordinate.Maker.classify_actions(refined)]
+    {coordinates, actions}
+  end
 
 
   def make_map(_result_key, [_log_hd | _log_tl]) do

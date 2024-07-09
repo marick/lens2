@@ -47,19 +47,28 @@ defmodule Adjustable.ActionsTest do
 
       line0
       |> assert_fields(coordinate: Coordinate.new(:>, [0]),
-                       string: "[%{a: 1}]")
+                       string: "[%{a: 1}]",
+                       index: 0,
+                       action: :no_previous_direction)
 
       line1
       |> assert_fields(coordinate: Coordinate.new(:>, [0, 0]),
-                       string: "%{a: 1}")
+                       string: "%{a: 1}",
+                       index: 1,
+                       action: Coordinate.continue_deeper)
+
 
       line2
       |> assert_fields(coordinate: Coordinate.new(:<, [0, 0]),
-                       string: "[1]")
+                       string: "[1]",
+                       index: 2,
+                       action: Coordinate.begin_retreat)
 
       line3
       |> assert_fields(coordinate: Coordinate.new(:<, [0]),
-                       string: "[[1]]")
+                       string: "[[1]]",
+                       index: 3,
+                       action: Coordinate.continue_retreat)
     end
 
   end
