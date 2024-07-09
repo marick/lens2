@@ -37,20 +37,34 @@ defmodule Adjustable.ActionsTest do
 
 
 
-  describe "building the indentation structure for Deeply.get_all" do
-    test "make_map_values: trivial" do
-      input = [deeper(%{a: 1}), retreat([1])]
-      [line0, line1] = Adjustable.Maker.make_map_values(input)
+  describe "getting the various kinds of information together" do
+    test "make_map_values: various lines" do
+      input = [deeper([%{a: 1}]),
+                 deeper(%{a: 1}),
+                 retreat([1]),
+               retreat([[1]])]
+      [line0, line1, line2, line3] = Adjustable.Maker.make_map_values(:gotten, input)
 
       line0
       |> assert_fields(coordinate: Coordinate.new(:>, [0]),
-                       string: "%{a: 1}")
+                       string: "[%{a: 1}]")
+
       line1
-      |> assert_fields(coordinate: Coordinate.new(:<, [0]),
+      |> assert_fields(coordinate: Coordinate.new(:>, [0, 0]),
+                       string: "%{a: 1}")
+
+      line2
+      |> assert_fields(coordinate: Coordinate.new(:<, [0, 0]),
                        string: "[1]")
+
+      line3
+      |> assert_fields(coordinate: Coordinate.new(:<, [0]),
+                       string: "[[1]]")
     end
 
+  end
 
+  describe "building the Maker map" do
     @tag :skip
     test "little example" do
       input = [deeper(%{a: 1}), retreat([1])]

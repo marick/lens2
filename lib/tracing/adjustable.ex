@@ -9,36 +9,34 @@ defmodule Adjustable.ContainerLine do
     field :coordinate, Coordinate.t
     field :action, atom
   end
-  def label(pairs) do
-    struct(__MODULE__, pairs)
-  end
 end
 
 defmodule Adjustable.GottenLine do
-  def new({_log_line, _index, _coordinate, _action}) do
+  typedstruct enforce: true do
+    field :string, String.t
+    field :index, non_neg_integer
+    field :coordinate, Coordinate.t
+    field :action, atom
   end
 end
-
-defmodule Adjustable.UpdatedLine do
-  def new({_log_line, _index, _coordinate, _action}) do
-  end
-end
-
 
 defmodule Adjustable.Maker do
-  # alias Adjustable.{ContainerLine}
+  alias Adjustable.{ContainerLine, GottenLine}
 
-  def make_map_values([log_head | log_tail] = _log) do
-    head = %{coordinate: Coordinate.new(:>, [0]),
-             string: Common.stringify(log_head.container)}
-    tail =
-      for map <- log_tail do
-        %{coordinate: Coordinate.new(:<, [0]),
-          string: Common.stringify(map.gotten)}
-      end
+  def make_map_values(retreat_key, log) do
+    coordinates = Coordinate.Maker.from(log)
+    strings = for line <- log, do: value(line, retreat_key) |> Common.stringify
 
-    [head | tail]
+    for {coordinate, string} <- Enum.zip([coordinates, strings]) do
+      %{coordinate: coordinate,
+        string: string}
+    end
   end
+
+  defp value(%{container: value}, _), do: value
+  defp value(%{gotten: value}, :gotten), do: value
+  defp value(%{updated: value}, :updated), do: value
+
 
   def make_map(_result_key, [_log_hd | _log_tl]) do
     # entry_line = Adjustable.ContainerLine.new({log_hd, 0, Coordinate.new(:>, [0]),
