@@ -77,15 +77,20 @@ defmodule Adjustable.ActionsTest do
 
   end
 
-  @tag :skip
   test "construction of 'get map'" do
-    coordinate_to_data = Adjustable.Maker.coordinate_map(:gotten, typical_get_log())
-    coordinate_to_data[Coordinate.new(:>, [0])]
+    {in_order, coordinate_to_data} =
+      Adjustable.Maker.condense(:gotten, typical_get_log())
+
+    assert Enum.at(in_order, 0) == Coordinate.new(:>, [0])
+
+    coordinate_to_data[Enum.at(in_order, 0)]
     |> assert_fields(indent: 0,
                      string:
-                       %{zzz: [%{aa: %{a: 1}, bb: %{a: 2}},   %{aa: %{a: 3}, bb: %{a: 4}}]},
+                       "%{zzz: [%{aa: %{a: 1}, bb: %{a: 2}}, %{aa: %{a: 3}, bb: %{a: 4}}]}",
                      coordinate: Coordinate.new(:>, [0]),
                      index: 0,
                      start_search_at: 0)
   end
+
+  IO.puts "add a few more tests to the above"
 end

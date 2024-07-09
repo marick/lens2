@@ -29,10 +29,12 @@ end
 
 defmodule Adjustable.Maker do
 
-  def coordinate_map(result_key, log) do
-    for value <- make_map_values(result_key, log), into: %{} do
-      {value.coordinate, value}
-    end
+  def condense(retreat_key, log) do
+    values = make_map_values(retreat_key, log)
+    map = for value <- values, into: %{}, do: {value.coordinate, value}
+    in_order = for value <- values, do: value.coordinate
+
+    {in_order, map}
   end
 
   def make_map_values(retreat_key, log) do
