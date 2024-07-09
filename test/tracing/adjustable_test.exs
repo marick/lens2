@@ -46,26 +46,30 @@ defmodule Adjustable.ActionsTest do
       [line0, line1, line2, line3] = Adjustable.Maker.make_map_values(:gotten, input)
 
       line0
-      |> assert_fields(coordinate: Coordinate.new(:>, [0]),
+      |> assert_fields(type: Adjustable.ContainerLine,
+                       coordinate: Coordinate.new(:>, [0]),
                        string: "[%{a: 1}]",
                        index: 0,
                        action: :no_previous_direction)
 
       line1
-      |> assert_fields(coordinate: Coordinate.new(:>, [0, 0]),
+      |> assert_fields(type: Adjustable.ContainerLine,
+                       coordinate: Coordinate.new(:>, [0, 0]),
                        string: "%{a: 1}",
                        index: 1,
                        action: Coordinate.continue_deeper)
 
 
       line2
-      |> assert_fields(coordinate: Coordinate.new(:<, [0, 0]),
+      |> assert_fields(type: Adjustable.GottenLine,
+                       coordinate: Coordinate.new(:<, [0, 0]),
                        string: "[1]",
                        index: 2,
                        action: Coordinate.begin_retreat)
 
       line3
-      |> assert_fields(coordinate: Coordinate.new(:<, [0]),
+      |> assert_fields(type: Adjustable.GottenLine,
+                       coordinate: Coordinate.new(:<, [0]),
                        string: "[[1]]",
                        index: 3,
                        action: Coordinate.continue_retreat)
@@ -73,29 +77,15 @@ defmodule Adjustable.ActionsTest do
 
   end
 
-  describe "building the Maker map" do
-    @tag :skip
-    test "little example" do
-      input = [deeper(%{a: 1}), retreat([1])]
-      [line0, _line1] = Adjustable.Maker.make_map(:gotten, input)
-
-      line0
-      |> assert_fields(string: "%{a: 1}",
-                       index: 0,
-                       coordinate: Coordinate.new(:>, [0]),
-                       action: Coordinate.continue_deeper)
-    end
-
-    @tag :skip
-    test "construction of 'get map'" do
-      get_map = Adjustable.Maker.make_map(:gotten, typical_get_log())
-      get_map[Coordinate.new(:>, [0])]
-      |> assert_fields(indent: 0,
-                       string:
-                         %{zzz: [%{aa: %{a: 1}, bb: %{a: 2}},   %{aa: %{a: 3}, bb: %{a: 4}}]},
-                       coordinate: Coordinate.new(:>, [0]),
-                       index: 0,
-                       start_search_at: 0)
-    end
+  @tag :skip
+  test "construction of 'get map'" do
+    coordinate_to_data = Adjustable.Maker.coordinate_map(:gotten, typical_get_log())
+    coordinate_to_data[Coordinate.new(:>, [0])]
+    |> assert_fields(indent: 0,
+                     string:
+                       %{zzz: [%{aa: %{a: 1}, bb: %{a: 2}},   %{aa: %{a: 3}, bb: %{a: 4}}]},
+                     coordinate: Coordinate.new(:>, [0]),
+                     index: 0,
+                     start_search_at: 0)
   end
 end

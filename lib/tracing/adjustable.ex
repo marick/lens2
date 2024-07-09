@@ -1,27 +1,39 @@
 alias Lens2.Tracing
 alias Tracing.{Adjustable,Coordinate,Common}
-import TypedStruct
 
-defmodule Adjustable.ContainerLine do
+
+# The Data type is essentially a Protocol, but I didn't want to cons up
+# three identical structures, so the dispatch will be done manually.
+defmodule Adjustable.Data do
+  import TypedStruct
+
   typedstruct enforce: true do
-    field :string, String.t
+    field :type, :atom
     field :index, non_neg_integer
     field :coordinate, Coordinate.t
     field :action, atom
+    field :string, String.t
+    field :indent, non_neg_integer, default: 0
+    field :start_search_at, non_neg_integer, default: 0
   end
+
+  def dispatch(name, data), do: apply(data.type, name, [data])
 end
 
+defmodule Adjustable.ContainerLine do
+end
 defmodule Adjustable.GottenLine do
-  typedstruct enforce: true do
-    field :string, String.t
-    field :index, non_neg_integer
-    field :coordinate, Coordinate.t
-    field :action, atom
-  end
+end
+defmodule Adjustable.UpdatedLine do
 end
 
 defmodule Adjustable.Maker do
-#  alias Adjustable.{ContainerLine, GottenLine}
+
+  def coordinate_map(result_key, log) do
+    for value <- make_map_values(result_key, log), into: %{} do
+      {value.coordinate, value}
+    end
+  end
 
   def make_map_values(retreat_key, log) do
     {coordinates, actions} = coordinates_and_actions(log)
@@ -29,10 +41,11 @@ defmodule Adjustable.Maker do
 
     data = Enum.zip([0..length(log)-1, coordinates, strings, actions])
     for {index, coordinate, string, action} <- data do
-      %{coordinate: coordinate,
-        string: string,
-        index: index,
-        action: action}
+      %Adjustable.Data{type: type(coordinate.direction, retreat_key),
+                       index: index,
+                       coordinate: coordinate,
+                       string: string,
+                       action: action}
     end
   end
 
@@ -40,34 +53,14 @@ defmodule Adjustable.Maker do
   defp value(%{gotten: value}, :gotten), do: value
   defp value(%{updated: value}, :updated), do: value
 
+  defp type(:>, _),        do: Adjustable.ContainerLine
+  defp type(:<, :gotten),  do: Adjustable.GottenLine
+  defp type(:<, :updated), do: Adjustable.UpdatedLine
+
   defp coordinates_and_actions(log) do
     refined = Coordinate.Maker.refine(log)
     coordinates = Coordinate.Maker.from(refined)
     actions = [:no_previous_direction | Coordinate.Maker.classify_actions(refined)]
     {coordinates, actions}
   end
-
-
-  def make_map(_result_key, [_log_hd | _log_tl]) do
-    # entry_line = Adjustable.ContainerLine.new({log_hd, 0, Coordinate.new(:>, [0]),
-    #                                            Coordinate.continue_deeper})
-    # [entry_line, 1]
-    # {coordinates, actions} =
-  end
-
-  def make_lines(_result_key, _log_tail) do
-    # indices = 1..length(log_tail)
-    # just_directions = Maker.refine(raw_log) |> dbg
-    # coordinates = Maker.from(just_directions) |> dbg
-    # actions = Maker.classify_actions(just_directions) |> dbg
-
-    # for {log_line, _, _, _} = tuple <- Enum.zip([raw_log, indices, coordinates, actions]) do
-    #   case {Map.has_key?(log_line, :container), result_key} do
-    #     {true, _} -> Adjustable.ContainerLine.new(tuple)
-    #     {false, :gotten} -> Adjustable.GottenLine.new(tuple)
-    #   end
-    # end
-  end
-
-
 end
