@@ -15,7 +15,14 @@ defmodule Tracing.CoordinateTest do
 
     coordinate = Coordinate.new(:<, [1, 0])
     assert Coordinate.reverse_direction(coordinate) == Coordinate.new(:>, [1, 0])
+  end
 
+  test "previous" do
+    coordinate = Coordinate.new(:>, [1, 0])
+    assert Coordinate.previous(coordinate) == Coordinate.new(:>, [0, 0])
+
+    coordinate = Coordinate.new(:>, [3, 1, 0])
+    assert Coordinate.previous(coordinate) == Coordinate.new(:>, [2, 1, 0])
   end
 end
 

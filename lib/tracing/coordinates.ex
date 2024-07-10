@@ -25,6 +25,10 @@ defmodule Tracing.Coordinate do
       :< -> new(:>, nesting)
     end
   end
+
+  def previous(%{direction: :>, nesting: [head | tail]}) do
+    new(:>, [head-1 | tail])
+  end
 end
 
 defmodule Tracing.Coordinate.Maker do

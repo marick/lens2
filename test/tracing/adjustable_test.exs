@@ -103,7 +103,7 @@ defmodule Adjustable.ActionsTest do
   end
 
 
-  describe "picking the coordinate to align yourself with" do
+  describe "how to align a line" do
     alias Adjustable.Data
     alias Adjustable.{ContainerLine,GottenLine}
 
@@ -122,19 +122,61 @@ defmodule Adjustable.ActionsTest do
     end
 
 
-    test "continuing deeper adjusts to the previous", %{s: s} do
+    test "continuing deeper finds match among previous", %{s: s} do
       data = s.data_at.(1);
       confirm(data, type: ContainerLine, action: Coordinate.continue_deeper)
 
-      assert Data.guiding_coordinate_for(data) == s.coordinate_at.(0)
+      actual = Data.describe_adjustment(data)
+      assert actual == [align_with_substring: s.coordinate_at.(0)]
     end
 
-    test "beginning retreat", %{s: s} do
+    test "beginning retreat centers under previous container", %{s: s} do
       data = s.data_at.(4);
       confirm(data, type: GottenLine, action: Coordinate.begin_retreat)
 
+      actual = Data.describe_adjustment(data)
+      assert actual == [center_under: s.coordinate_at.(3)]
+    end
 
-      assert Data.guiding_coordinate_for(data) == s.coordinate_at.(3)
+    test "continuing to retreat leaves a blank line", %{s: s} do
+      data = s.data_at.(5);
+      confirm(data, type: GottenLine, action: Coordinate.continue_retreat)
+
+      assert Data.describe_adjustment(data) == :erase
+    end
+
+    test "turning deeper", %{s: s} do
+      # Here are the lines that need adjusting
+      all_to_adjust = [6, 11, 16]
+      for i <- all_to_adjust do
+        s.data_at.(i)
+        |> confirm(type: ContainerLine, action: Coordinate.turn_deeper)
+      end
+
+      # Here are the controlling lines. Note that are always "continue"
+      all_controlling = [2, 1, 12]
+      for i <- all_controlling do
+        s.data_at.(i)
+        |> confirm(type: ContainerLine, action: Coordinate.continue_deeper)
+      end
+
+      # Here are the coordinates that need adjusting
+      assert s.coordinate_at.( 6) == Coordinate.new(:>, [1, 0, 0])
+      assert s.coordinate_at.(11) == Coordinate.new(:>,    [1, 0])
+      assert s.coordinate_at.(16) == Coordinate.new(:>, [3, 1, 0])
+
+      # Here are the coordinates whose position should be copied
+      assert s.coordinate_at.( 2) == Coordinate.new(:>, [0, 0, 0])
+      assert s.coordinate_at.( 1) == Coordinate.new(:>,    [0, 0])
+      assert s.coordinate_at.(12) == Coordinate.new(:>, [2, 1, 0])
+
+      # And here's showing the work done:
+      for {needy_index, guiding_index}
+          <- Enum.zip(all_to_adjust, all_controlling) do
+        data = s.data_at.(needy_index)
+        actual = Data.describe_adjustment(data)
+        assert actual == [copy: s.coordinate_at.(guiding_index)]
+      end
     end
 
   end

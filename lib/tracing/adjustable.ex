@@ -8,10 +8,11 @@ alias Tracing.{Adjustable,Coordinate,Common}
 #
 # defprotocol with a poor man's version of Haskell's  "phantom type" may be better.
 defmodule Adjustable.Data do
+  alias Adjustable.{ContainerLine, GottenLine}
   import TypedStruct
 
   typedstruct enforce: true do
-    field :type, :atom
+    field :type, atom
     field :index, non_neg_integer
     field :coordinate, Coordinate.t
     field :action, atom
@@ -20,21 +21,32 @@ defmodule Adjustable.Data do
     field :start_search_at, non_neg_integer, default: 0
   end
 
-  def dispatch(name, data), do: apply(data.type, name, [data])
+  def describe_adjustment(%{type: ContainerLine, action: :continue_deeper} = line) do
+    [align_with_substring: Coordinate.un_nest(line.coordinate)]
+  end
 
-  def guiding_coordinate_for(data), do: dispatch(:guiding_coordinate_for, data)
+  def describe_adjustment(%{type: ContainerLine, action: :turn_deeper} = line) do
+    [copy: Coordinate.previous(line.coordinate)]
+  end
+
+  def describe_adjustment(%{type: GottenLine, action: :begin_retreat} = line) do
+    [center_under: Coordinate.reverse_direction(line.coordinate)]
+  end
+
+  def describe_adjustment(%{type: GottenLine, action: :continue_retreat}) do
+    :erase
+  end
+
+
+
+
+
 end
 
 defmodule Adjustable.ContainerLine do
-  def guiding_coordinate_for(%{coordinate: coordinate}) do
-    Coordinate.un_nest(coordinate)
-  end
 end
 
 defmodule Adjustable.GottenLine do
-  def guiding_coordinate_for(%{coordinate: coordinate}) do
-    Coordinate.reverse_direction(coordinate)
-  end
 end
 
 defmodule Adjustable.UpdatedLine do
