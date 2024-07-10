@@ -1,5 +1,24 @@
 alias Lens2.Tracing
 
+defmodule Tracing.CoordinateTest do
+  use Lens2.Case
+  alias Tracing.Coordinate
+
+  test "pop_nesting" do
+    coordinate = Coordinate.new(:>, [1, 0])
+    assert Coordinate.un_nest(coordinate) == Coordinate.new(:>, [0])
+  end
+
+  test "reverse direction" do
+    coordinate = Coordinate.new(:>, [1, 0])
+    assert Coordinate.reverse_direction(coordinate) == Coordinate.new(:<, [1, 0])
+
+    coordinate = Coordinate.new(:<, [1, 0])
+    assert Coordinate.reverse_direction(coordinate) == Coordinate.new(:>, [1, 0])
+
+  end
+end
+
 defmodule Tracing.CoordinatesTest do
   use Lens2.Case
   alias Tracing.Coordinate

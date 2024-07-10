@@ -90,7 +90,54 @@ defmodule Adjustable.ActionsTest do
                      coordinate: Coordinate.new(:>, [0]),
                      index: 0,
                      start_search_at: 0)
+
+    assert Enum.at(in_order, 6) == Coordinate.new(:>, [1, 0, 0])
+
+    coordinate_to_data[Enum.at(in_order, 6)]
+    |> assert_fields(indent: 0,
+                     string:
+                       "%{aa: %{a: 1}, bb: %{a: 2}}",
+                     coordinate: Coordinate.new(:>, [1, 0, 0]),
+                     index: 6,
+                     start_search_at: 0)
   end
 
-  IO.puts "add a few more tests to the above"
+
+  describe "picking the coordinate to align yourself with" do
+    alias Adjustable.Data
+    alias Adjustable.{ContainerLine,GottenLine}
+
+    setup do
+      {in_order, coordinate_to_data} = Adjustable.Maker.condense(:gotten, typical_get_log())
+      coordinate_at = fn index -> Enum.at(in_order, index) end
+      data_at = fn index -> coordinate_to_data[coordinate_at.(index)] end
+
+      [s: %{coordinate_at: coordinate_at, data_at: data_at}]
+    end
+
+    # Check that the setup is as I expect
+    def confirm(data, type: type, action: action) do
+      assert data.action == action
+      assert data.type == type
+    end
+
+
+    test "continuing deeper adjusts to the previous", %{s: s} do
+      data = s.data_at.(1);
+      confirm(data, type: ContainerLine, action: Coordinate.continue_deeper)
+
+      assert Data.guiding_coordinate_for(data) == s.coordinate_at.(0)
+    end
+
+    test "beginning retreat", %{s: s} do
+      data = s.data_at.(4);
+      confirm(data, type: GottenLine, action: Coordinate.begin_retreat)
+
+
+      assert Data.guiding_coordinate_for(data) == s.coordinate_at.(3)
+    end
+
+  end
+
+
 end

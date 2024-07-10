@@ -16,6 +16,15 @@ defmodule Tracing.Coordinate do
   def continue_retreat, do: :continue_retreat
   def turn_deeper, do: :turn_deeper
 
+
+  def un_nest(%{direction: :>, nesting: [_ | tail]}), do: new(:>, tail)
+
+  def reverse_direction(%{direction: direction, nesting: nesting}) do
+    case direction do
+      :> -> new(:<, nesting)
+      :< -> new(:>, nesting)
+    end
+  end
 end
 
 defmodule Tracing.Coordinate.Maker do

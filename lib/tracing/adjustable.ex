@@ -4,6 +4,9 @@ alias Tracing.{Adjustable,Coordinate,Common}
 
 # The Data type is essentially a Protocol, but I didn't want to cons up
 # three identical structures, so the dispatch will be done manually.
+# Kind of like GenServer.
+#
+# defprotocol with a poor man's version of Haskell's  "phantom type" may be better.
 defmodule Adjustable.Data do
   import TypedStruct
 
@@ -18,12 +21,22 @@ defmodule Adjustable.Data do
   end
 
   def dispatch(name, data), do: apply(data.type, name, [data])
+
+  def guiding_coordinate_for(data), do: dispatch(:guiding_coordinate_for, data)
 end
 
 defmodule Adjustable.ContainerLine do
+  def guiding_coordinate_for(%{coordinate: coordinate}) do
+    Coordinate.un_nest(coordinate)
+  end
 end
+
 defmodule Adjustable.GottenLine do
+  def guiding_coordinate_for(%{coordinate: coordinate}) do
+    Coordinate.reverse_direction(coordinate)
+  end
 end
+
 defmodule Adjustable.UpdatedLine do
 end
 
@@ -65,4 +78,8 @@ defmodule Adjustable.Maker do
     actions = [:no_previous_direction | Coordinate.Maker.classify_actions(refined)]
     {coordinates, actions}
   end
+end
+
+defmodule Adjustable.Adjuster do
+
 end
