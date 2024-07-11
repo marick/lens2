@@ -62,6 +62,7 @@ defmodule Lens2.Lenses.Use do
         keys(keys),
         keys!(keys),
         keys?(keys),
+        key_path!(path),
         map_values(),
         map_keys(),
       ])

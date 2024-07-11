@@ -215,6 +215,52 @@ defmodule Lens2.Lenses.Keyed do
     keys |> Enum.map(&key?/1) |> Combine.multiple
   end
 
+
+
+  @doc ~S"""
+  Concise representation for following keys into a container.
+
+  It's pretty common to construct a lens with a pipeline like this:
+
+  ```
+      iex> lens = Lens.keys!([:a, :b]) |> Lens.key!(3)
+      iex> map = %{a: %{(4-1) => :a3},
+      ...>         b: %{(2+1) => :b3}}
+      iex> Deeply.get_all(map, lens)
+      [:a3, :b3]
+  ```
+
+  That's common enough that I provide a lens maker that takes a list
+  of key or key-lists to have the same effect:
+
+  ```
+      iex> lens = Lens.key_path!([[:a, :b], 3])
+      iex> map = %{a: %{(4-1) => :a3},
+      ...>         b: %{(2+1) => :b3}}
+      iex> Deeply.get_all(map, lens)
+      [:a3, :b3]
+  ```
+
+  This could be seen as a compromise between `Access`-style definition
+  and the normal lens pipeline style.
+
+  TODO: There should be a `key_path?` and a `key_path`.
+  """
+  def_composed_maker key_path!(path) do
+    reducer = fn key_or_keys, building_lens ->
+      next_lens =
+        case key_or_keys do
+          keys when is_list(key_or_keys) -> Lens.keys!(keys)
+          key ->                            Lens.key!(key)
+        end
+      Lens.seq(building_lens, next_lens)
+    end
+
+
+    Enum.reduce(path, Combine.root, reducer)
+  end
+
+
   @doc ~S"""
   Returns a lens that points to all values of a map or struct.
 
