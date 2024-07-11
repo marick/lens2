@@ -35,8 +35,6 @@ defmodule Adjustable.ActionsTest do
    retreat(                   [1, 2, 3, 4])   # not the result of the lens, rather Deeply.get_all
                    ]
 
-
-
   describe "getting the various kinds of information together" do
     test "make_map_values: various lines" do
       input = [deeper([%{a: 1}]),
@@ -127,7 +125,7 @@ defmodule Adjustable.ActionsTest do
       confirm(data, type: ContainerLine, action: Coordinate.continue_deeper)
 
       actual = Data.describe_adjustment(data)
-      assert actual == [align_with_substring: s.coordinate_at.(0)]
+      assert actual == [align_under_substring: s.coordinate_at.(0)]
     end
 
     test "beginning retreat centers under previous container", %{s: s} do
@@ -178,8 +176,48 @@ defmodule Adjustable.ActionsTest do
         assert actual == [copy: s.coordinate_at.(guiding_index)]
       end
     end
-
   end
 
+  @guidance_coordinate :guidance_coordinate # internals not used
+  @subject_coordinate :subject_coordinate
 
+  def make_map(guidance, subject) do
+    %{@guidance_coordinate => guidance, @subject_coordinate => subject}
+  end
+  alias Adjustable.Adjuster
+
+  describe "aligning ContainerLines under another one" do
+    test "align under substring" do
+      map =
+        make_map(
+          %{indent: 5, action: Coordinate.continue_deeper,
+            string:    "[%{a: 5}]"},
+          %{type: ContainerLine, indent: 0,
+            string:     "%{a: 5}"})
+
+      Adjuster.adjust(map, @subject_coordinate,
+                      align_under_substring: @guidance_coordinate)
+      |> Map.get(@subject_coordinate)
+      |> assert_field(indent: 6)
+    end
+
+  @tag :skip
+    test "one that shows a guidance that has two identical values" do
+      # something like [0, 0, 0, 0, 0]      applying Lens.indices([0, 4])
+      #                [0]
+      #                   [0]
+      # Even better would be
+      #
+      #                            [0]
+      # ... but I don't think that's generally possible.                          # Or maybe the confusion the first would cause
+      # makes this better:
+      #
+      #         >      [0, 0, 0, 0, 0]
+      #         <      [0]
+      #         >      [0, 0, 0, 0, 0]
+      #         <      [0]
+      #
+    end
+
+  end
 end

@@ -22,7 +22,7 @@ defmodule Adjustable.Data do
   end
 
   def describe_adjustment(%{type: ContainerLine, action: :continue_deeper} = line) do
-    [align_with_substring: Coordinate.un_nest(line.coordinate)]
+    [align_under_substring: Coordinate.un_nest(line.coordinate)]
   end
 
   def describe_adjustment(%{type: ContainerLine, action: :turn_deeper} = line) do
@@ -36,11 +36,6 @@ defmodule Adjustable.Data do
   def describe_adjustment(%{type: GottenLine, action: :continue_retreat}) do
     :erase
   end
-
-
-
-
-
 end
 
 defmodule Adjustable.ContainerLine do
@@ -93,5 +88,14 @@ defmodule Adjustable.Maker do
 end
 
 defmodule Adjustable.Adjuster do
+  def adjust(by_coordinate, subject_coordinate, align_under_substring: guidance_coordinate) do
+    {subject, guidance} =
+      {by_coordinate[subject_coordinate], by_coordinate[guidance_coordinate]}
+    [prefix, _] = String.split(guidance.string, subject.string, parts: 2)
 
+    # Note: Regex.split(return: :index) counts *bytes*, not characters.
+    new_subject = %{subject | indent: guidance.indent + String.length(prefix)}
+    Map.put(by_coordinate, subject_coordinate, new_subject)
+
+  end
 end
