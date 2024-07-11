@@ -88,14 +88,20 @@ defmodule Adjustable.Maker do
 end
 
 defmodule Adjustable.Adjuster do
+  use Lens2
+  import Lens2.Helpers.Assert
+
   def adjust(by_coordinate, subject_coordinate, align_under_substring: guidance_coordinate) do
     {subject, guidance} =
       {by_coordinate[subject_coordinate], by_coordinate[guidance_coordinate]}
+
+    assert(guidance.action == Coordinate.continue_deeper)
+
     [prefix, _] = String.split(guidance.string, subject.string, parts: 2)
 
     # Note: Regex.split(return: :index) counts *bytes*, not characters.
-    new_subject = %{subject | indent: guidance.indent + String.length(prefix)}
-    Map.put(by_coordinate, subject_coordinate, new_subject)
 
+    Deeply.put(by_coordinate, Lens.key_path!([subject_coordinate, :indent]),
+               guidance.indent + String.length(prefix))
   end
 end
