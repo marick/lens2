@@ -1,7 +1,6 @@
 alias Lens2.Tracing
 alias Tracing.{StringShift,Coordinate,Common}
 
-
 # The Value type is essentially a Protocol, but I didn't want to cons up
 # three identical structures, so the dispatch will be done manually.
 # Kind of like GenServer.
@@ -14,12 +13,11 @@ defmodule StringShift.Value do
     field :index, non_neg_integer
     field :coordinate, Coordinate.t
 
-    field :string, String.t
     field :source, :container | :gotten | :updated
-
     field :action, atom
+
+    field :string, String.t
     field :indent, non_neg_integer, default: 0
-    field :start_search_at, non_neg_integer, default: 0
   end
 
   def describe_adjustment(%{source: :container, action: :continue_deeper} = line) do

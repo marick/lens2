@@ -86,8 +86,7 @@ defmodule StringShift.ActionsTest do
                      string:
                        "%{zzz: [%{aa: %{a: 1}, bb: %{a: 2}}, %{aa: %{a: 3}, bb: %{a: 4}}]}",
                      coordinate: Coordinate.new(:>, [0]),
-                     index: 0,
-                     start_search_at: 0)
+                     index: 0)
 
     assert Enum.at(in_order, 6) == Coordinate.new(:>, [1, 0, 0])
 
@@ -96,8 +95,7 @@ defmodule StringShift.ActionsTest do
                      string:
                        "%{aa: %{a: 1}, bb: %{a: 2}}",
                      coordinate: Coordinate.new(:>, [1, 0, 0]),
-                     index: 6,
-                     start_search_at: 0)
+                     index: 6)
   end
 
 
