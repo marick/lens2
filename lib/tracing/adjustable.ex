@@ -101,7 +101,18 @@ defmodule Adjustable.Adjuster do
 
     # Note: Regex.split(return: :index) counts *bytes*, not characters.
 
-    Deeply.put(by_coordinate, Lens.key_path!([subject_coordinate, :indent]),
+    Deeply.put(by_coordinate,
+               Lens.key_path!([subject_coordinate, :indent]),
                guidance.indent + String.length(prefix))
   end
+
+  def adjust(by_coordinate, subject_coordinate, center_under: guidance_coordinate) do
+    guidance = by_coordinate[guidance_coordinate]
+    half = String.length(guidance.string) |> div(2)
+    Deeply.put(by_coordinate,
+               Lens.key_path!([subject_coordinate, :indent]),
+               guidance.indent + half)
+
+  end
+
 end

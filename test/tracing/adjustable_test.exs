@@ -220,4 +220,25 @@ defmodule Adjustable.ActionsTest do
     end
 
   end
+
+  describe "centering GottenLines under their source" do
+    test "center under substring" do
+      map =
+        make_map(
+          %{indent: 5, action: Coordinate.continue_deeper,
+            string:    "%{a: 5}"},
+          %{type: ContainerLine, indent: 0,
+            string:        "[5]"})
+
+      Adjuster.adjust(map, @subject_coordinate,
+                      center_under: @guidance_coordinate)
+      |> Map.get(@subject_coordinate)
+      |> assert_field(indent: 8)
+    end
+
+    @tag :skip
+    test "perhaps it should align under matching text in case where there is some" do
+    end
+  end
+
 end
