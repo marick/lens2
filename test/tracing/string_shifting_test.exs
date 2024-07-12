@@ -121,7 +121,7 @@ defmodule StringShifting.ActionsTest do
       data = s.data_at.(1);
       confirm(data, source: :container, action: Coordinate.continue_deeper)
 
-      actual = ShiftData.describe_adjustment(data)
+      actual = ShiftData.plan_for(data)
       assert actual == [align_under_substring: s.coordinate_at.(0)]
     end
 
@@ -129,7 +129,7 @@ defmodule StringShifting.ActionsTest do
       data = s.data_at.(4);
       confirm(data, source: :gotten, action: Coordinate.begin_retreat)
 
-      actual = ShiftData.describe_adjustment(data)
+      actual = ShiftData.plan_for(data)
       assert actual == [center_under: s.coordinate_at.(3)]
     end
 
@@ -137,7 +137,7 @@ defmodule StringShifting.ActionsTest do
       data = s.data_at.(5);
       confirm(data, source: :gotten, action: Coordinate.continue_retreat)
 
-      assert ShiftData.describe_adjustment(data) == :erase
+      assert ShiftData.plan_for(data) == :make_invisible
     end
 
     test "turning deeper", %{s: s} do
@@ -169,7 +169,7 @@ defmodule StringShifting.ActionsTest do
       for {needy_index, guiding_index}
           <- Enum.zip(all_to_adjust, all_controlling) do
         data = s.data_at.(needy_index)
-        actual = ShiftData.describe_adjustment(data)
+        actual = ShiftData.plan_for(data)
         assert actual == [copy: s.coordinate_at.(guiding_index)]
       end
     end

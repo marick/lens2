@@ -20,25 +20,21 @@ defmodule StringShifting.ShiftData do
     field :indent, non_neg_integer, default: 0
   end
 
-  def describe_adjustment(%{source: :container, action: :continue_deeper} = line) do
-    [align_under_substring: Coordinate.un_nest(line.coordinate)]
-  end
+  def plan_for(shift_data) do
+    coordinate = shift_data.coordinate
 
-  def describe_adjustment(%{source: :container, action: :turn_deeper} = line) do
-    [copy: Coordinate.previous(line.coordinate)]
-  end
-
-  def describe_adjustment(%{source: :gotten, action: :begin_retreat} = line) do
-    [center_under: Coordinate.reverse_direction(line.coordinate)]
-  end
-
-  def describe_adjustment(%{source: :gotten, action: :continue_retreat}) do
-    :erase
+    case {shift_data.source, shift_data.action} do
+      {:container, :continue_deeper} ->
+        [align_under_substring: Coordinate.un_nest(coordinate)]
+      {:container, :turn_deeper} ->
+        [copy: Coordinate.previous(coordinate)]
+      {:gotten, :begin_retreat} ->
+        [center_under: Coordinate.reverse_direction(coordinate)]
+      {:gotten, :continue_retreat} ->
+        :make_invisible
+    end
   end
 end
-
-
-
 
 
 defmodule StringShifting.Adjuster do
@@ -68,10 +64,9 @@ defmodule StringShifting.Adjuster do
                guidance.indent + half)
 
   end
-
-
-
 end
+
+
 defmodule StringShifting.LogLines do
   defmodule LogLine do
     def value_from(%{container: value}, _), do: value
@@ -117,6 +112,4 @@ defmodule StringShifting.LogLines do
   defp strings(log, source: source) do
     for line <- log, do: LogLine.value_from(line, source) |> Common.stringify
   end
-
-
 end
