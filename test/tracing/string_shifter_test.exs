@@ -1,7 +1,7 @@
 alias Lens2.Tracing
-alias Tracing.Adjustable
+alias Tracing.StringShift
 
-defmodule Adjustable.ActionsTest do
+defmodule StringShift.ActionsTest do
   use Lens2.Case
   alias Tracing.Coordinate
   # alias Tracing.Coordinate.Maker
@@ -41,17 +41,17 @@ defmodule Adjustable.ActionsTest do
                  deeper(%{a: 1}),
                  retreat([1]),
                retreat([[1]])]
-      [line0, line1, line2, line3] = Adjustable.Maker.make_map_values(:gotten, input)
+      [line0, line1, line2, line3] = StringShift.Maker.make_map_values(:gotten, input)
 
       line0
-      |> assert_fields(type: Adjustable.ContainerLine,
+      |> assert_fields(source: :container,
                        coordinate: Coordinate.new(:>, [0]),
                        string: "[%{a: 1}]",
                        index: 0,
                        action: :no_previous_direction)
 
       line1
-      |> assert_fields(type: Adjustable.ContainerLine,
+      |> assert_fields(source: :container,
                        coordinate: Coordinate.new(:>, [0, 0]),
                        string: "%{a: 1}",
                        index: 1,
@@ -59,14 +59,14 @@ defmodule Adjustable.ActionsTest do
 
 
       line2
-      |> assert_fields(type: Adjustable.GottenLine,
+      |> assert_fields(source: :gotten,
                        coordinate: Coordinate.new(:<, [0, 0]),
                        string: "[1]",
                        index: 2,
                        action: Coordinate.begin_retreat)
 
       line3
-      |> assert_fields(type: Adjustable.GottenLine,
+      |> assert_fields(source: :gotten,
                        coordinate: Coordinate.new(:<, [0]),
                        string: "[[1]]",
                        index: 3,
@@ -77,7 +77,7 @@ defmodule Adjustable.ActionsTest do
 
   test "construction of 'get map'" do
     {in_order, coordinate_to_data} =
-      Adjustable.Maker.condense(:gotten, typical_get_log())
+      StringShift.Maker.condense(:gotten, typical_get_log())
 
     assert Enum.at(in_order, 0) == Coordinate.new(:>, [0])
 
@@ -102,11 +102,10 @@ defmodule Adjustable.ActionsTest do
 
 
   describe "how to align a line" do
-    alias Adjustable.Data
-    alias Adjustable.{ContainerLine,GottenLine}
+    alias StringShift.Value
 
     setup do
-      {in_order, coordinate_to_data} = Adjustable.Maker.condense(:gotten, typical_get_log())
+      {in_order, coordinate_to_data} = StringShift.Maker.condense(:gotten, typical_get_log())
       coordinate_at = fn index -> Enum.at(in_order, index) end
       data_at = fn index -> coordinate_to_data[coordinate_at.(index)] end
 
@@ -114,33 +113,33 @@ defmodule Adjustable.ActionsTest do
     end
 
     # Check that the setup is as I expect
-    def confirm(data, type: type, action: action) do
+    def confirm(data, source: source, action: action) do
       assert data.action == action
-      assert data.type == type
+      assert data.source == source
     end
 
 
     test "continuing deeper finds match among previous", %{s: s} do
       data = s.data_at.(1);
-      confirm(data, type: ContainerLine, action: Coordinate.continue_deeper)
+      confirm(data, source: :container, action: Coordinate.continue_deeper)
 
-      actual = Data.describe_adjustment(data)
+      actual = Value.describe_adjustment(data)
       assert actual == [align_under_substring: s.coordinate_at.(0)]
     end
 
     test "beginning retreat centers under previous container", %{s: s} do
       data = s.data_at.(4);
-      confirm(data, type: GottenLine, action: Coordinate.begin_retreat)
+      confirm(data, source: :gotten, action: Coordinate.begin_retreat)
 
-      actual = Data.describe_adjustment(data)
+      actual = Value.describe_adjustment(data)
       assert actual == [center_under: s.coordinate_at.(3)]
     end
 
     test "continuing to retreat leaves a blank line", %{s: s} do
       data = s.data_at.(5);
-      confirm(data, type: GottenLine, action: Coordinate.continue_retreat)
+      confirm(data, source: :gotten, action: Coordinate.continue_retreat)
 
-      assert Data.describe_adjustment(data) == :erase
+      assert Value.describe_adjustment(data) == :erase
     end
 
     test "turning deeper", %{s: s} do
@@ -148,14 +147,14 @@ defmodule Adjustable.ActionsTest do
       all_to_adjust = [6, 11, 16]
       for i <- all_to_adjust do
         s.data_at.(i)
-        |> confirm(type: ContainerLine, action: Coordinate.turn_deeper)
+        |> confirm(source: :container, action: Coordinate.turn_deeper)
       end
 
       # Here are the controlling lines. Note that are always "continue"
       all_controlling = [2, 1, 12]
       for i <- all_controlling do
         s.data_at.(i)
-        |> confirm(type: ContainerLine, action: Coordinate.continue_deeper)
+        |> confirm(source: :container, action: Coordinate.continue_deeper)
       end
 
       # Here are the coordinates that need adjusting
@@ -172,7 +171,7 @@ defmodule Adjustable.ActionsTest do
       for {needy_index, guiding_index}
           <- Enum.zip(all_to_adjust, all_controlling) do
         data = s.data_at.(needy_index)
-        actual = Data.describe_adjustment(data)
+        actual = Value.describe_adjustment(data)
         assert actual == [copy: s.coordinate_at.(guiding_index)]
       end
     end
@@ -184,15 +183,15 @@ defmodule Adjustable.ActionsTest do
   def make_map(guidance, subject) do
     %{@guidance_coordinate => guidance, @subject_coordinate => subject}
   end
-  alias Adjustable.Adjuster
+  alias StringShift.Adjuster
 
-  describe "aligning ContainerLines under another one" do
+  describe "aligning :containers under another one" do
     test "align under substring" do
       map =
         make_map(
           %{indent: 5, action: Coordinate.continue_deeper,
             string:    "[%{a: 5}]"},
-          %{type: ContainerLine, indent: 0,
+          %{source: :container, indent: 0,
             string:     "%{a: 5}"})
 
       Adjuster.adjust(map, @subject_coordinate,
@@ -221,13 +220,13 @@ defmodule Adjustable.ActionsTest do
 
   end
 
-  describe "centering GottenLines under their source" do
+  describe "centering :gotten lines under their source" do
     test "center under substring" do
       map =
         make_map(
           %{indent: 5, action: Coordinate.continue_deeper,
             string:    "%{a: 5}"},
-          %{type: ContainerLine, indent: 0,
+          %{source: :container, indent: 0,
             string:        "[5]"})
 
       Adjuster.adjust(map, @subject_coordinate,
