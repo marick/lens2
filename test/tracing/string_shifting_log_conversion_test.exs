@@ -12,7 +12,8 @@ defmodule StringShifting.LogConversionTest do
                  deeper(%{a: 1}),
                  retreat([1]),
                retreat([[1]])]
-      [line0, line1, line2, line3] = StringShifting.LogLines.convert_to_shift_data(:gotten, input)
+      [line0, line1, line2, line3] =
+        StringShifting.LogLines.convert_to_shift_data(input, pick_result: :gotten)
 
       line0
       |> assert_fields(source: :container,
@@ -48,7 +49,7 @@ defmodule StringShifting.LogConversionTest do
 
   test "construction of 'get map'" do
     {in_order, coordinate_to_data} =
-      StringShifting.LogLines.condense(:gotten, typical_get_log())
+      StringShifting.LogLines.condense(typical_get_log(), pick_result: :gotten)
 
     assert Enum.at(in_order, 0) == Coordinate.new(:>, [0])
 

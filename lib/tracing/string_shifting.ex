@@ -1,11 +1,18 @@
 alias Lens2.Tracing
 alias Tracing.{StringShifting,Coordinate}
 
-# The Data type is essentially a Protocol, but I didn't want to cons up
-# three identical structures, so the dispatch will be done manually.
-# Kind of like GenServer.
-#
-# defprotocol with a poor man's version of Haskell's  "phantom type" may be better.
+defmodule StringShifting do
+  alias StringShifting.LogLines
+
+  def gotten_strings(log) do
+    {ordered_coordinates, shift_map} =
+      log
+      |> LogLines.condense(pick_result: :gotten)
+    dbg ordered_coordinates
+    dbg shift_map
+  end
+end
+
 defmodule StringShifting.ShiftData do
   import TypedStruct
 

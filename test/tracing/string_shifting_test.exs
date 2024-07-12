@@ -6,11 +6,24 @@ defmodule Tracing.StringShiftingTest do
   alias Tracing.Coordinate
   import Lens2.TestLogs
 
+  describe "shifting" do
+    @tag :skip
+    test "trivial case" do
+      input = [deeper(%{a: 1}),
+               retreat([1])]
+      actual = StringShifting.gotten_strings(input)
+      expected = ["%{a: 1}",
+                  "  [1]"]
+      assert actual == expected
+    end
+  end
+
   describe "how to align a line" do
     alias StringShifting.ShiftData
 
     setup do
-      {in_order, coordinate_to_data} = StringShifting.LogLines.condense(:gotten, typical_get_log())
+      {in_order, coordinate_to_data} =
+        StringShifting.LogLines.condense(typical_get_log(), pick_result: :gotten)
       coordinate_at = fn index -> Enum.at(in_order, index) end
       data_at = fn index -> coordinate_to_data[coordinate_at.(index)] end
 

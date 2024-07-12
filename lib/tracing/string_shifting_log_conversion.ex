@@ -14,21 +14,21 @@ defmodule StringShifting.LogLines do
 
   alias StringShifting.ShiftData
 
-  def condense(displaying, log) do
-    values = convert_to_shift_data(displaying, log)
+  def condense(log, pick_result: result_type) do
+    values = convert_to_shift_data(log, pick_result: result_type)
     map = for value <- values, into: %{}, do: {value.coordinate, value}
     in_order = for value <- values, do: value.coordinate
 
     {in_order, map}
   end
 
-  def convert_to_shift_data(displaying, log) do
+  def convert_to_shift_data(log, pick_result: result_type) do
     {coordinates, actions} = coordinates_and_actions(log)
-    strings = strings(log, source: displaying)
+    strings = strings(log, source: result_type)
 
     data = Enum.zip([0..length(log)-1, coordinates, strings, actions])
     for {index, coordinate, string, action} <- data do
-      %ShiftData{source: LogLine.source(coordinate.direction, displaying),
+      %ShiftData{source: LogLine.source(coordinate.direction, result_type),
                  index: index,
                  coordinate: coordinate,
                  string: string,
