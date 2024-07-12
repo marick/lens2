@@ -41,7 +41,7 @@ defmodule StringShift.ActionsTest do
                  deeper(%{a: 1}),
                  retreat([1]),
                retreat([[1]])]
-      [line0, line1, line2, line3] = StringShift.Maker.make_map_values(:gotten, input)
+      [line0, line1, line2, line3] = StringShift.LogLines.convert_to_shift_data(:gotten, input)
 
       line0
       |> assert_fields(source: :container,
@@ -77,7 +77,7 @@ defmodule StringShift.ActionsTest do
 
   test "construction of 'get map'" do
     {in_order, coordinate_to_data} =
-      StringShift.Maker.condense(:gotten, typical_get_log())
+      StringShift.LogLines.condense(:gotten, typical_get_log())
 
     assert Enum.at(in_order, 0) == Coordinate.new(:>, [0])
 
@@ -100,10 +100,10 @@ defmodule StringShift.ActionsTest do
 
 
   describe "how to align a line" do
-    alias StringShift.Value
+    alias StringShift.ShiftData
 
     setup do
-      {in_order, coordinate_to_data} = StringShift.Maker.condense(:gotten, typical_get_log())
+      {in_order, coordinate_to_data} = StringShift.LogLines.condense(:gotten, typical_get_log())
       coordinate_at = fn index -> Enum.at(in_order, index) end
       data_at = fn index -> coordinate_to_data[coordinate_at.(index)] end
 
@@ -121,7 +121,7 @@ defmodule StringShift.ActionsTest do
       data = s.data_at.(1);
       confirm(data, source: :container, action: Coordinate.continue_deeper)
 
-      actual = Value.describe_adjustment(data)
+      actual = ShiftData.describe_adjustment(data)
       assert actual == [align_under_substring: s.coordinate_at.(0)]
     end
 
@@ -129,7 +129,7 @@ defmodule StringShift.ActionsTest do
       data = s.data_at.(4);
       confirm(data, source: :gotten, action: Coordinate.begin_retreat)
 
-      actual = Value.describe_adjustment(data)
+      actual = ShiftData.describe_adjustment(data)
       assert actual == [center_under: s.coordinate_at.(3)]
     end
 
@@ -137,7 +137,7 @@ defmodule StringShift.ActionsTest do
       data = s.data_at.(5);
       confirm(data, source: :gotten, action: Coordinate.continue_retreat)
 
-      assert Value.describe_adjustment(data) == :erase
+      assert ShiftData.describe_adjustment(data) == :erase
     end
 
     test "turning deeper", %{s: s} do
@@ -169,7 +169,7 @@ defmodule StringShift.ActionsTest do
       for {needy_index, guiding_index}
           <- Enum.zip(all_to_adjust, all_controlling) do
         data = s.data_at.(needy_index)
-        actual = Value.describe_adjustment(data)
+        actual = ShiftData.describe_adjustment(data)
         assert actual == [copy: s.coordinate_at.(guiding_index)]
       end
     end
