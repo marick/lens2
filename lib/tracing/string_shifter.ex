@@ -1,12 +1,12 @@
 alias Lens2.Tracing
-alias Tracing.{StringShift,Coordinate,Common}
+alias Tracing.{StringShifting,Coordinate,Common}
 
 # The Data type is essentially a Protocol, but I didn't want to cons up
 # three identical structures, so the dispatch will be done manually.
 # Kind of like GenServer.
 #
 # defprotocol with a poor man's version of Haskell's  "phantom type" may be better.
-defmodule StringShift.ShiftData do
+defmodule StringShifting.ShiftData do
   import TypedStruct
 
   typedstruct enforce: true do
@@ -41,7 +41,7 @@ end
 
 
 
-defmodule StringShift.Adjuster do
+defmodule StringShifting.Adjuster do
   use Lens2
   import Lens2.Helpers.Assert
 
@@ -72,7 +72,7 @@ defmodule StringShift.Adjuster do
 
 
 end
-defmodule StringShift.LogLines do
+defmodule StringShifting.LogLines do
   defmodule LogLine do
     def value_from(%{container: value}, _), do: value
     def value_from(%{gotten: value}, :gotten), do: value
@@ -83,7 +83,7 @@ defmodule StringShift.LogLines do
     def source(:<, :updated), do: :updated
   end
 
-  alias StringShift.ShiftData
+  alias StringShifting.ShiftData
 
   def condense(displaying, log) do
     values = convert_to_shift_data(displaying, log)

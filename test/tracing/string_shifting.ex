@@ -1,7 +1,7 @@
 alias Lens2.Tracing
-alias Tracing.StringShift
+alias Tracing.StringShifting
 
-defmodule StringShift.ActionsTest do
+defmodule StringShifting.ActionsTest do
   use Lens2.Case
   alias Tracing.Coordinate
   # alias Tracing.Coordinate.Maker
@@ -41,7 +41,7 @@ defmodule StringShift.ActionsTest do
                  deeper(%{a: 1}),
                  retreat([1]),
                retreat([[1]])]
-      [line0, line1, line2, line3] = StringShift.LogLines.convert_to_shift_data(:gotten, input)
+      [line0, line1, line2, line3] = StringShifting.LogLines.convert_to_shift_data(:gotten, input)
 
       line0
       |> assert_fields(source: :container,
@@ -77,7 +77,7 @@ defmodule StringShift.ActionsTest do
 
   test "construction of 'get map'" do
     {in_order, coordinate_to_data} =
-      StringShift.LogLines.condense(:gotten, typical_get_log())
+      StringShifting.LogLines.condense(:gotten, typical_get_log())
 
     assert Enum.at(in_order, 0) == Coordinate.new(:>, [0])
 
@@ -100,10 +100,10 @@ defmodule StringShift.ActionsTest do
 
 
   describe "how to align a line" do
-    alias StringShift.ShiftData
+    alias StringShifting.ShiftData
 
     setup do
-      {in_order, coordinate_to_data} = StringShift.LogLines.condense(:gotten, typical_get_log())
+      {in_order, coordinate_to_data} = StringShifting.LogLines.condense(:gotten, typical_get_log())
       coordinate_at = fn index -> Enum.at(in_order, index) end
       data_at = fn index -> coordinate_to_data[coordinate_at.(index)] end
 
@@ -181,7 +181,7 @@ defmodule StringShift.ActionsTest do
   def make_map(guidance, subject) do
     %{@guidance_coordinate => guidance, @subject_coordinate => subject}
   end
-  alias StringShift.Adjuster
+  alias StringShifting.Adjuster
 
   describe "aligning :containers under another one" do
     test "align under substring" do
