@@ -39,7 +39,7 @@ defmodule StringShifting.LogLines do
   defp coordinates_and_actions(log) do
     refined = Coordinate.Maker.refine(log)
     coordinates = Coordinate.Maker.from(refined)
-    actions = [:no_previous_direction | Coordinate.Maker.classify_actions(refined)]
+    actions = [:continue_deeper | Coordinate.Maker.classify_actions(refined)]
     {coordinates, actions}
   end
 

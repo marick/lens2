@@ -20,7 +20,7 @@ defmodule StringShifting.LogConversionTest do
                        coordinate: Coordinate.new(:>, [0]),
                        string: "[%{a: 1}]",
                        index: 0,
-                       action: :no_previous_direction)
+                       action: :continue_deeper)
 
       line1
       |> assert_fields(source: :container,
