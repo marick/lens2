@@ -1,5 +1,5 @@
 alias Lens2.Tracing
-alias Tracing.{Adjust, Coordinate,Common}
+alias Tracing.{Adjust, Common}
 alias Adjust.Preparation
 
 
@@ -15,6 +15,7 @@ end
 
 defmodule Preparation do
   alias Preparation.{LogLine}
+  alias Tracing.CoordinateList
 
   def prepare_aggregates(log, pick_result: result_type) do
     values = prepare_lines(log, pick_result: result_type)
@@ -39,9 +40,9 @@ defmodule Preparation do
   end
 
   defp coordinates_and_actions(log) do
-    refined = Coordinate.Maker.refine(log)
-    coordinates = Coordinate.Maker.from(refined)
-    actions = [:continue_deeper | Coordinate.Maker.classify_actions(refined)]
+    direction_pairs = CoordinateList.direction_pairs(log)
+    coordinates = CoordinateList.from_direction_pairs(direction_pairs)
+    actions = [:continue_deeper | Adjust.Data.classify_actions(direction_pairs)]
     {coordinates, actions}
   end
 

@@ -29,10 +29,10 @@ end
 defmodule Tracing.CoordinatesTest do
   use Lens2.Case
   alias Tracing.Coordinate
-  alias Tracing.Coordinate.Maker
+  alias Tracing.CoordinateList
 
   test "construction of input from maps" do
-    flabby = [
+    loglike = [
       %{direction: :>},        # 0
       %{direction:   :>},      # 1
       %{direction:     :>},    # 2
@@ -47,7 +47,7 @@ defmodule Tracing.CoordinatesTest do
       %{direction: :<},        # 11
     ]
 
-    actual = Maker.refine(flabby)
+    actual = CoordinateList.direction_pairs(loglike)
 
     assert actual == [
              {:>, :>},              # 0, 1
@@ -64,10 +64,7 @@ defmodule Tracing.CoordinatesTest do
          ]
   end
 
-  test "classifying the action a pair represents" do
-  end
-
-  def flabby(directions), do: Enum.map(directions, & %{direction: &1})
+  def loglike(directions), do: Enum.map(directions, & %{direction: &1})
 
   describe "calculating coordinates" do
     test "moving deeper" do
@@ -76,7 +73,7 @@ defmodule Tracing.CoordinatesTest do
                    :>,
       ]
 
-      actual = Maker.from(flabby(input))
+      actual = CoordinateList.from_log(loglike(input))
       assert actual === [
                Coordinate.new(:>,           [0]),
                Coordinate.new(  :>,      [0, 0]),
@@ -91,7 +88,7 @@ defmodule Tracing.CoordinatesTest do
                    :<,
       ]
 
-      actual = Maker.from(flabby(input))
+      actual = CoordinateList.from_log(loglike(input))
       assert actual === [
                Coordinate.new(:>,           [0]),
                Coordinate.new(  :>,      [0, 0]),
@@ -109,7 +106,7 @@ defmodule Tracing.CoordinatesTest do
                :<,
       ]
 
-      actual = Maker.from(flabby(input))
+      actual = CoordinateList.from_log(loglike(input))
       assert actual === [
                Coordinate.new(:>,           [0]),
                Coordinate.new(  :>,      [0, 0]),
@@ -131,7 +128,7 @@ defmodule Tracing.CoordinatesTest do
                      :>,
       ]
 
-      actual = Maker.from(flabby(input))
+      actual = CoordinateList.from_log(loglike(input))
       assert actual === [
                Coordinate.new(:>,                      [0]),
                Coordinate.new(  :>,                 [0, 0]),
@@ -173,7 +170,7 @@ defmodule Tracing.CoordinatesTest do
       ]
 
     test "multiple excursions upward through a level" do
-      actual = Maker.from(flabby(@multiple_turns))
+      actual = CoordinateList.from_log(loglike(@multiple_turns))
       assert actual === [
                Coordinate.new(:>,                   [0]),    # 0 => 1
                Coordinate.new(  :>,              [0, 0]),    # +  1 => 1
@@ -202,65 +199,5 @@ defmodule Tracing.CoordinatesTest do
                Coordinate.new(:<,                   [0]),
              ]
     end
-
-    test "classifying actions" do
-      alias Tracing.Adjust.Data, as: D
-      actual =
-        flabby(@multiple_turns)
-        |> Maker.refine
-        |> Maker.classify_actions
-
-      assert actual == [
-               # :>,        not represented
-               #   :>,
-                   D.continue_deeper,
-               #     :>,
-                     D.continue_deeper,
-               #       :>,
-                       D.continue_deeper,
-               #       :<,
-                       D.begin_retreat,
-               #     :<,
-                     D.continue_retreat,
-
-               #     :>,
-                     D.turn_deeper,
-               #       :>,
-                       D.continue_deeper,
-               #       :<,
-                       D.begin_retreat,
-               #     :<,
-                     D.continue_retreat,
-               #   :<,
-                   D.continue_retreat,
-
-               #   :>,
-                   D.turn_deeper,
-               #     :>,
-                     D.continue_deeper,
-               #       :>,
-                       D.continue_deeper,
-               #       :<,
-                       D.begin_retreat,
-               #     :<,
-                     D.continue_retreat,
-
-               #     :>,
-                     D.turn_deeper,
-               #       :>,
-                     D.continue_deeper,
-               #       :<,
-                       D.begin_retreat,
-               #     :<,
-                     D.continue_retreat,
-               #   :<,
-                   D.continue_retreat,
-               # :<,
-                 D.continue_retreat,
-         ]
-
-    end
-
-
   end
 end

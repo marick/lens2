@@ -16,9 +16,23 @@ defmodule Adjust.Data do
     field :indent, non_neg_integer, default: 0
   end
 
-  # The actions a coordinate may represent.
+  # The actions a datum may represent.
   def continue_deeper, do: :continue_deeper
   def begin_retreat, do: :begin_retreat
   def continue_retreat, do: :continue_retreat
   def turn_deeper, do: :turn_deeper
+
+  def classify_actions(pairs) do
+    alias Tracing.Adjust.Data
+    for pair <- pairs do
+      case pair do
+        {:>, :>} -> Data.continue_deeper
+        {:>, :<} -> Data.begin_retreat
+        {:<, :<} -> Data.continue_retreat
+        {:<, :>} -> Data.turn_deeper
+      end
+    end
+  end
+
+
 end

@@ -28,36 +28,44 @@ defmodule Tracing.Coordinate do
   end
 end
 
-defmodule Tracing.Coordinate.Maker do
+
+
+
+defmodule Tracing.CoordinateList do
   alias Tracing.Coordinate
+  alias Tracing.CoordinateList.State
 
-  typedstruct enforce: true do
-    field :last_nesting, [non_neg_integer], default: [0]
-    field :use_counts, %{non_neg_integer => non_neg_integer}, default: %{0 => 1}
+  def from_log([head | _rest] = log) when is_map(head),
+      do: from_direction_pairs(direction_pairs(log))
+
+  def from_direction_pairs(direction_pairs) do
+    state = State.initial()
+    [ Coordinate.new(:>, state.last_nesting) | produce_coordinates(direction_pairs, state) ]
   end
 
-  def new, do: %__MODULE__{}
-
-  def new(last_nesting, use_counts) do
-    %__MODULE__{last_nesting: last_nesting, use_counts: use_counts}
-  end
-
-  def refine(raw_material) do
-    directions = Enum.map(raw_material, & &1.direction)
+  def direction_pairs(log) do
+    directions = Enum.map(log, & &1.direction)
     Enum.zip(directions, tl(directions))
   end
 
-  def from([head | _rest] = raw_material) when is_map(head),
-      do: from(refine(raw_material))
+  # Private
 
-  def from(pairs) do
-    state = new()
-    [ Coordinate.new(:>, state.last_nesting) | consume(pairs, state) ]
+  defmodule State do
+    typedstruct enforce: true do
+      field :last_nesting, [non_neg_integer], default: [0]
+      field :use_counts, %{non_neg_integer => non_neg_integer}, default: %{0 => 1}
+    end
+
+    def initial, do: %__MODULE__{}
+
+    def next(last_nesting, use_counts) do
+      %__MODULE__{last_nesting: last_nesting, use_counts: use_counts}
+    end
   end
 
-  def consume([], _state), do: []
+  defp produce_coordinates([], _state), do: []
 
-  def consume([pair | rest], state) do
+  defp produce_coordinates([pair | rest], state) do
     {coordinate, next_state} =
       case pair do
         {:>, :>} -> continue_deeper(state)
@@ -65,45 +73,32 @@ defmodule Tracing.Coordinate.Maker do
         {:<, :<} -> continue_retreat(state)
         {:<, :>} -> turn_deeper(state)
       end
-    [ coordinate | consume(rest, next_state) ]
+    [ coordinate | produce_coordinates(rest, next_state) ]
   end
 
 
-  def continue_deeper(%{last_nesting: last_nesting, use_counts: use_counts}) do
+  defp continue_deeper(%{last_nesting: last_nesting, use_counts: use_counts}) do
     this_level = length(last_nesting)
     this_nesting = [ Map.get(use_counts, this_level, 0) | last_nesting]
     use_counts_now = Map.update(use_counts, this_level, 1, & &1 + 1)
-    {Coordinate.new(:>, this_nesting), new(this_nesting, use_counts_now)}
+    {Coordinate.new(:>, this_nesting), State.next(this_nesting, use_counts_now)}
   end
 
-  def begin_retreat(state) do
+  defp begin_retreat(state) do
     {Coordinate.new(:<, state.last_nesting), state}
   end
 
-  def continue_retreat(state) do
+  defp continue_retreat(state) do
     this_nesting = tl(state.last_nesting)
     { Coordinate.new(:<, this_nesting), %{state | last_nesting: this_nesting} }
   end
 
-  def turn_deeper(%{last_nesting: last_nesting, use_counts: use_counts}) do
+  defp turn_deeper(%{last_nesting: last_nesting, use_counts: use_counts}) do
     this_level = length(last_nesting)-1
     this_nesting = [ use_counts[this_level] | tl(last_nesting) ]
     use_counts_now = Map.update!(use_counts, this_level, & &1+1)
 
-    {Coordinate.new(:>, this_nesting), new(this_nesting, use_counts_now)}
+    {Coordinate.new(:>, this_nesting), State.next(this_nesting, use_counts_now)}
   end
-
-  def classify_actions(pairs) do
-    alias Tracing.Adjust.Data
-    for pair <- pairs do
-      case pair do
-        {:>, :>} -> Data.continue_deeper
-        {:>, :<} -> Data.begin_retreat
-        {:<, :<} -> Data.continue_retreat
-        {:<, :>} -> Data.turn_deeper
-      end
-    end
-  end
-
 
 end
