@@ -3,7 +3,7 @@ alias Tracing.{StringShifting,Coordinate}
 
 defmodule StringShifting do
   alias StringShifting.{ShiftData,Adjuster}
-  alias Tracing.Adjust.Preparation
+  alias Tracing.Adjust.{Preparation,Data}
   use Lens2
 
 
@@ -36,7 +36,7 @@ defmodule StringShifting do
     result_in_order =
       by_coordinate
       |> Map.values
-      |> Enum.filter(& &1.action == Coordinate.begin_retreat)
+      |> Enum.filter(& &1.action == Data.begin_retreat)
       |> Enum.reject(& &1.coordinate == Coordinate.final_retreat)
 
     case result_in_order do
@@ -60,18 +60,6 @@ defmodule StringShifting do
 end
 
 defmodule StringShifting.ShiftData do
-  import TypedStruct
-
-  typedstruct enforce: true do
-    field :index, non_neg_integer
-    field :coordinate, Coordinate.t
-
-    field :source, :container | :gotten | :updated
-    field :action, atom
-
-    field :string, String.t
-    field :indent, non_neg_integer, default: 0
-  end
 
   def plan_for(shift_data) do
     coordinate = shift_data.coordinate
@@ -93,12 +81,13 @@ end
 defmodule StringShifting.Adjuster do
   use Lens2
   import Lens2.Helpers.Assert
+  alias Tracing.Adjust.Data
 
   def adjust(by_coordinate, subject_coordinate, align_under_substring: guidance_coordinate) do
     {subject, guidance} =
       {by_coordinate[subject_coordinate], by_coordinate[guidance_coordinate]}
 
-    assert(guidance.action == Coordinate.continue_deeper)
+    assert(guidance.action == Data.continue_deeper)
 
     [prefix, _] = String.split(guidance.string, subject.string, parts: 2)
 

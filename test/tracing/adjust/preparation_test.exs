@@ -5,7 +5,7 @@ defmodule Adjust.PreparationTest do
   use Lens2.Case
   alias Tracing.Coordinate
   import Lens2.TestLogs
-  alias Adjust.Preparation
+  alias Adjust.{Preparation,Data}
 
   test "how log lines are processed into adjustment-supporting data" do
       input = [deeper([%{a: 1}]),
@@ -27,7 +27,7 @@ defmodule Adjust.PreparationTest do
                        coordinate: Coordinate.new(:>, [0, 0]),
                        string: "%{a: 1}",
                        index: 1,
-                       action: Coordinate.continue_deeper)
+                       action: Data.continue_deeper)
 
 
       line2
@@ -35,14 +35,14 @@ defmodule Adjust.PreparationTest do
                        coordinate: Coordinate.new(:<, [0, 0]),
                        string: "[1]",
                        index: 2,
-                       action: Coordinate.begin_retreat)
+                       action: Data.begin_retreat)
 
       line3
       |> assert_fields(source: :gotten,
                        coordinate: Coordinate.final_retreat,
                        string: "[[1]]",
                        index: 3,
-                       action: Coordinate.continue_retreat)
+                       action: Data.continue_retreat)
     end
 
   test "construction of aggregates" do

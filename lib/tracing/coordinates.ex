@@ -13,12 +13,6 @@ defmodule Tracing.Coordinate do
   def first_descent, do: new(:>, [0])
   def final_retreat, do: new(:<, [0])
 
-  # The actions a coordinate may represent.
-  def continue_deeper, do: :continue_deeper
-  def begin_retreat, do: :begin_retreat
-  def continue_retreat, do: :continue_retreat
-  def turn_deeper, do: :turn_deeper
-
 
   def un_nest(%{direction: :>, nesting: [_ | tail]}), do: new(:>, tail)
 
@@ -100,12 +94,13 @@ defmodule Tracing.Coordinate.Maker do
   end
 
   def classify_actions(pairs) do
+    alias Tracing.Adjust.Data
     for pair <- pairs do
       case pair do
-        {:>, :>} -> Coordinate.continue_deeper
-        {:>, :<} -> Coordinate.begin_retreat
-        {:<, :<} -> Coordinate.continue_retreat
-        {:<, :>} -> Coordinate.turn_deeper
+        {:>, :>} -> Data.continue_deeper
+        {:>, :<} -> Data.begin_retreat
+        {:<, :<} -> Data.continue_retreat
+        {:<, :>} -> Data.turn_deeper
       end
     end
   end

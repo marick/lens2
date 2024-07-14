@@ -204,7 +204,7 @@ defmodule Tracing.CoordinatesTest do
     end
 
     test "classifying actions" do
-      alias Coordinate, as: C
+      alias Tracing.Adjust.Data, as: D
       actual =
         flabby(@multiple_turns)
         |> Maker.refine
@@ -213,50 +213,50 @@ defmodule Tracing.CoordinatesTest do
       assert actual == [
                # :>,        not represented
                #   :>,
-                   C.continue_deeper,
+                   D.continue_deeper,
                #     :>,
-                     C.continue_deeper,
+                     D.continue_deeper,
                #       :>,
-                       C.continue_deeper,
+                       D.continue_deeper,
                #       :<,
-                       C.begin_retreat,
+                       D.begin_retreat,
                #     :<,
-                     C.continue_retreat,
+                     D.continue_retreat,
 
                #     :>,
-                     C.turn_deeper,
+                     D.turn_deeper,
                #       :>,
-                       C.continue_deeper,
+                       D.continue_deeper,
                #       :<,
-                       C.begin_retreat,
+                       D.begin_retreat,
                #     :<,
-                     C.continue_retreat,
+                     D.continue_retreat,
                #   :<,
-                   C.continue_retreat,
+                   D.continue_retreat,
 
                #   :>,
-                   C.turn_deeper,
+                   D.turn_deeper,
                #     :>,
-                     C.continue_deeper,
+                     D.continue_deeper,
                #       :>,
-                       C.continue_deeper,
+                       D.continue_deeper,
                #       :<,
-                       C.begin_retreat,
+                       D.begin_retreat,
                #     :<,
-                     C.continue_retreat,
+                     D.continue_retreat,
 
                #     :>,
-                     C.turn_deeper,
+                     D.turn_deeper,
                #       :>,
-                     C.continue_deeper,
+                     D.continue_deeper,
                #       :<,
-                       C.begin_retreat,
+                       D.begin_retreat,
                #     :<,
-                     C.continue_retreat,
+                     D.continue_retreat,
                #   :<,
-                   C.continue_retreat,
+                   D.continue_retreat,
                # :<,
-                 C.continue_retreat,
+                 D.continue_retreat,
          ]
 
     end

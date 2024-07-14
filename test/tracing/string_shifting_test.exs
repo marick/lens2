@@ -35,7 +35,7 @@ defmodule Tracing.StringShiftingTest do
 
   describe "how to align a line" do
     alias StringShifting.ShiftData
-    alias Tracing.Adjust.Preparation
+    alias Tracing.Adjust.{Preparation,Data}
 
     setup do
       {in_order, coordinate_to_data} =
@@ -55,7 +55,7 @@ defmodule Tracing.StringShiftingTest do
 
     test "continuing deeper finds match among previous", %{s: s} do
       data = s.data_at.(1);
-      confirm(data, source: :container, action: Coordinate.continue_deeper)
+      confirm(data, source: :container, action: Data.continue_deeper)
 
       actual = ShiftData.plan_for(data)
       assert actual == [align_under_substring: s.coordinate_at.(0)]
@@ -63,7 +63,7 @@ defmodule Tracing.StringShiftingTest do
 
     test "beginning retreat centers under previous container", %{s: s} do
       data = s.data_at.(4);
-      confirm(data, source: :gotten, action: Coordinate.begin_retreat)
+      confirm(data, source: :gotten, action: Data.begin_retreat)
 
       actual = ShiftData.plan_for(data)
       assert actual == [center_under: s.coordinate_at.(3)]
@@ -71,7 +71,7 @@ defmodule Tracing.StringShiftingTest do
 
     test "continuing to retreat leaves a blank line", %{s: s} do
       data = s.data_at.(5);
-      confirm(data, source: :gotten, action: Coordinate.continue_retreat)
+      confirm(data, source: :gotten, action: Data.continue_retreat)
 
       assert ShiftData.plan_for(data) == :make_invisible
     end
@@ -81,14 +81,14 @@ defmodule Tracing.StringShiftingTest do
       all_to_adjust = [6, 11, 16]
       for i <- all_to_adjust do
         s.data_at.(i)
-        |> confirm(source: :container, action: Coordinate.turn_deeper)
+        |> confirm(source: :container, action: Data.turn_deeper)
       end
 
       # Here are the controlling lines. Note that are always "continue"
       all_controlling = [2, 1, 12]
       for i <- all_controlling do
         s.data_at.(i)
-        |> confirm(source: :container, action: Coordinate.continue_deeper)
+        |> confirm(source: :container, action: Data.continue_deeper)
       end
 
       # Here are the coordinates that need adjusting
@@ -119,12 +119,13 @@ defmodule Tracing.StringShiftingTest do
     %{@guidance_coordinate => guidance, @subject_coordinate => subject}
   end
   alias StringShifting.Adjuster
+  alias Tracing.Adjust.Data
 
   describe "aligning :containers under another one" do
     test "align under substring" do
       map =
         make_map(
-          %{indent: 5, action: Coordinate.continue_deeper,
+          %{indent: 5, action: Data.continue_deeper,
             string:    "[%{a: 5}]"},
           %{source: :container, indent: 0,
             string:     "%{a: 5}"})
@@ -159,7 +160,7 @@ defmodule Tracing.StringShiftingTest do
     test "center under substring" do
       map =
         make_map(
-          %{indent: 5, action: Coordinate.continue_deeper,
+          %{indent: 5, action: Data.continue_deeper,
             string:    "%{a: 5}"},
           %{source: :container, indent: 0,
             string:        "[5]"})

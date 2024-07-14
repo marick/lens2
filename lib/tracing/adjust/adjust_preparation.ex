@@ -14,8 +14,7 @@ defmodule Preparation.LogLine do
 end
 
 defmodule Preparation do
-  alias Tracing.StringShifting.ShiftData
-  alias Preparation.LogLine
+  alias Preparation.{LogLine}
 
   def prepare_aggregates(log, pick_result: result_type) do
     values = prepare_lines(log, pick_result: result_type)
@@ -31,11 +30,11 @@ defmodule Preparation do
 
     data = Enum.zip([0..length(log)-1, coordinates, strings, actions])
     for {index, coordinate, string, action} <- data do
-      %ShiftData{source: LogLine.source(coordinate.direction, result_type),
-                 index: index,
-                 coordinate: coordinate,
-                 string: string,
-                 action: action}
+      %Adjust.Data{source: LogLine.source(coordinate.direction, result_type),
+                   index: index,
+                   coordinate: coordinate,
+                   string: string,
+                   action: action}
     end
   end
 
