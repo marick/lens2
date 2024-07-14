@@ -2,15 +2,61 @@ alias Lens2.Tracing
 alias Tracing.{StringShifting,Coordinate}
 
 defmodule StringShifting do
-  alias StringShifting.LogLines
+  alias StringShifting.{ShiftData,Adjuster}
+  alias Tracing.Adjust.Preparation
+  use Lens2
 
+
+  # The two-element case is special
   def gotten_strings(log) do
-    {ordered_coordinates, shift_map} =
-      log
-      |> LogLines.condense(pick_result: :gotten)
-    dbg ordered_coordinates
-    dbg shift_map
+    {coordinate_list, coordinate_map} = Preparation.prepare_aggregates(log, pick_result: :gotten)
+    line_count = length(coordinate_list)
+
+    new_coordinate_map =
+      if line_count == 2 do
+        plan = ShiftData.plan_for(coordinate_map[Coordinate.final_retreat])
+        Adjuster.adjust(coordinate_map, Coordinate.final_retreat, plan)
+      else
+        Enum.slice(coordinate_list, 1..line_count-2)
+        |> shift_interior(coordinate_map)
+        |> align_final_retreat()
+      end
+    extract_strings(coordinate_list, new_coordinate_map)
+
   end
+
+  def shift_interior(shiftable, coordinate_map) do
+    Enum.reduce(shiftable, coordinate_map, fn subject_coordinate, shifting_coordinate_map ->
+      plan = ShiftData.plan_for(shifting_coordinate_map[subject_coordinate])
+      Adjuster.adjust(shifting_coordinate_map, subject_coordinate, plan)
+    end)
+  end
+
+  def align_final_retreat(by_coordinate) do
+    result_in_order =
+      by_coordinate
+      |> Map.values
+      |> Enum.filter(& &1.action == Coordinate.begin_retreat)
+      |> Enum.reject(& &1.coordinate == Coordinate.final_retreat)
+
+    case result_in_order do
+      [only] ->
+        Deeply.put(by_coordinate,
+                   Lens.key_path!([Coordinate.final_retreat, :indent]),
+                   only.indent)
+    end
+  end
+
+  def extract_strings(coordinate_list, coordinate_map) do
+    for coord <- coordinate_list do
+      shift_data = coordinate_map[coord]
+      padding(shift_data.indent) <> shift_data.string
+    end
+  end
+
+  def padding(n), do: String.duplicate(" ", n)
+
+
 end
 
 defmodule StringShifting.ShiftData do

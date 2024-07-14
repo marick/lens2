@@ -7,23 +7,39 @@ defmodule Tracing.StringShiftingTest do
   import Lens2.TestLogs
 
   describe "shifting" do
-    @tag :skip
     test "trivial case" do
       input = [deeper(%{a: 1}),
                retreat([1])]
       actual = StringShifting.gotten_strings(input)
       expected = ["%{a: 1}",
-                  "  [1]"]
+                  "   [1]"]
       assert actual == expected
     end
+
+    test "just in and out" do
+      input = [deeper([%{a: 1}]),
+               deeper( %{a: 1}),
+               retreat(   [1]),
+               retreat([1])]
+      actual = StringShifting.gotten_strings(input)
+      expected = ["[%{a: 1}]",
+                  " %{a: 1}",
+                   "    [1]",
+                   "    [1]"
+
+      ]
+      assert actual == expected
+    end
+
   end
 
   describe "how to align a line" do
     alias StringShifting.ShiftData
+    alias Tracing.Adjust.Preparation
 
     setup do
       {in_order, coordinate_to_data} =
-        StringShifting.LogLines.condense(typical_get_log(), pick_result: :gotten)
+        Preparation.prepare_aggregates(typical_get_log(), pick_result: :gotten)
       coordinate_at = fn index -> Enum.at(in_order, index) end
       data_at = fn index -> coordinate_to_data[coordinate_at.(index)] end
 
@@ -95,6 +111,7 @@ defmodule Tracing.StringShiftingTest do
     end
   end
 
+
   @guidance_coordinate :guidance_coordinate # internals not used
   @subject_coordinate :subject_coordinate
 
@@ -158,4 +175,30 @@ defmodule Tracing.StringShiftingTest do
     end
   end
 
+  def final_alignment_map(descriptors) do
+    for [coordinate | opts] <- descriptors, into: %{} do
+      {coordinate, Map.new([{:coordinate, coordinate} | opts])}
+    end
+  end
+
+
+
+  describe "aligning the last line" do
+    test "a single result" do
+      [c1, c2, c3] = [
+        Coordinate.new(:<, [0, 0, 0]),
+        Coordinate.new(:<,    [0, 0]),
+        Coordinate.new(:<,       [0])
+      ]
+      shift_data = [
+        [c1, action: :begin_retreat,    string: "[1]", indent: 3, index: 6],
+        [c2, action: :continue_retreat, string: "",    indent: 0],
+        [c3, action: :continue_retreat, string: "[1]", indent: 0]
+      ]
+      shift_map = final_alignment_map(shift_data)
+      actual = StringShifting.align_final_retreat(shift_map)
+      assert actual[c3].indent == actual[c1].indent
+      assert actual[c3].string == "[1]"
+    end
+  end
 end

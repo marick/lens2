@@ -10,6 +10,9 @@ defmodule Tracing.Coordinate do
   def new(direction, nesting),
       do: struct(__MODULE__, direction: direction, nesting: nesting)
 
+  def first_descent, do: new(:>, [0])
+  def final_retreat, do: new(:<, [0])
+
   # The actions a coordinate may represent.
   def continue_deeper, do: :continue_deeper
   def begin_retreat, do: :begin_retreat
