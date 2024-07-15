@@ -1,9 +1,9 @@
 alias Lens2.Tracing
+alias Tracing.Adjust
 
 defmodule Adjust.DataTest do
   use Lens2.Case
   alias Tracing.CoordinateList
-  alias Tracing.Adjust
 
   @multiple_turns [
                :>,       # %{zzz: [%{aa: %{a: 1}, bb: %{a: 2}},   %{aa: %{a: 3}, bb: %{a: 4}}]}  key(:zzz)

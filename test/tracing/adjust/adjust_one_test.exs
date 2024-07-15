@@ -1,42 +1,13 @@
 alias Lens2.Tracing
-alias Tracing.StringShifting
+alias Tracing.Adjust
 
-defmodule Tracing.StringShiftingTest do
+defmodule Adjust.OneTest do
   use Lens2.Case
-  alias Tracing.Coordinate
   import Lens2.TestLogs
+  alias Tracing.Coordinate
+  alias Adjust.{Preparation,Data,One}
 
-  describe "shifting" do
-    test "trivial case" do
-      input = [deeper(%{a: 1}),
-               retreat([1])]
-      actual = StringShifting.gotten_strings(input)
-      expected = ["%{a: 1}",
-                  "   [1]"]
-      assert actual == expected
-    end
-
-    test "just in and out" do
-      input = [deeper([%{a: 1}]),
-               deeper( %{a: 1}),
-               retreat(   [1]),
-               retreat([1])]
-      actual = StringShifting.gotten_strings(input)
-      expected = ["[%{a: 1}]",
-                  " %{a: 1}",
-                   "    [1]",
-                   "    [1]"
-
-      ]
-      assert actual == expected
-    end
-
-  end
-
-  describe "how to align a line" do
-    alias StringShifting.ShiftData
-    alias Tracing.Adjust.{Preparation,Data}
-
+  describe "the plan for adjusting a line" do
     setup do
       {in_order, coordinate_to_data} =
         Preparation.prepare_aggregates(typical_get_log(), pick_result: :gotten)
@@ -52,12 +23,11 @@ defmodule Tracing.StringShiftingTest do
       assert data.source == source
     end
 
-
     test "continuing deeper finds match among previous", %{s: s} do
       data = s.data_at.(1);
       confirm(data, source: :container, action: Data.continue_deeper)
 
-      actual = ShiftData.plan_for(data)
+      actual = One.plan_for(data)
       assert actual == [align_under_substring: s.coordinate_at.(0)]
     end
 
@@ -65,7 +35,7 @@ defmodule Tracing.StringShiftingTest do
       data = s.data_at.(4);
       confirm(data, source: :gotten, action: Data.begin_retreat)
 
-      actual = ShiftData.plan_for(data)
+      actual = One.plan_for(data)
       assert actual == [center_under: s.coordinate_at.(3)]
     end
 
@@ -73,7 +43,7 @@ defmodule Tracing.StringShiftingTest do
       data = s.data_at.(5);
       confirm(data, source: :gotten, action: Data.continue_retreat)
 
-      assert ShiftData.plan_for(data) == :make_invisible
+      assert One.plan_for(data) == :make_invisible
     end
 
     test "turning deeper", %{s: s} do
@@ -105,24 +75,21 @@ defmodule Tracing.StringShiftingTest do
       for {needy_index, guiding_index}
           <- Enum.zip(all_to_adjust, all_controlling) do
         data = s.data_at.(needy_index)
-        actual = ShiftData.plan_for(data)
+        actual = One.plan_for(data)
         assert actual == [copy: s.coordinate_at.(guiding_index)]
       end
     end
   end
 
+  describe "the actual adjustment according to the plan" do
+    @guidance_coordinate :guidance_coordinate # internal values not used: an opaque token.
+    @subject_coordinate :subject_coordinate
 
-  @guidance_coordinate :guidance_coordinate # internals not used
-  @subject_coordinate :subject_coordinate
+    def make_map(guidance, subject) do
+      %{@guidance_coordinate => guidance, @subject_coordinate => subject}
+    end
 
-  def make_map(guidance, subject) do
-    %{@guidance_coordinate => guidance, @subject_coordinate => subject}
-  end
-  alias StringShifting.Adjuster
-  alias Tracing.Adjust.Data
-
-  describe "aligning :containers under another one" do
-    test "align under substring" do
+    test "align a :container under its source container" do
       map =
         make_map(
           %{indent: 5, action: Data.continue_deeper,
@@ -130,13 +97,13 @@ defmodule Tracing.StringShiftingTest do
           %{source: :container, indent: 0,
             string:     "%{a: 5}"})
 
-      Adjuster.adjust(map, @subject_coordinate,
-                      align_under_substring: @guidance_coordinate)
+      One.adjust(map, @subject_coordinate,
+                 align_under_substring: @guidance_coordinate)
       |> Map.get(@subject_coordinate)
       |> assert_field(indent: 6)
     end
 
-  @tag :skip
+    @tag :skip
     test "one that shows a guidance that has two identical values" do
       # something like [0, 0, 0, 0, 0]      applying Lens.indices([0, 4])
       #                [0]
@@ -154,10 +121,7 @@ defmodule Tracing.StringShiftingTest do
       #
     end
 
-  end
-
-  describe "centering :gotten lines under their source" do
-    test "center under substring" do
+    test "center a :gotten line under what it was gotten from" do
       map =
         make_map(
           %{indent: 5, action: Data.continue_deeper,
@@ -165,8 +129,8 @@ defmodule Tracing.StringShiftingTest do
           %{source: :container, indent: 0,
             string:        "[5]"})
 
-      Adjuster.adjust(map, @subject_coordinate,
-                      center_under: @guidance_coordinate)
+      One.adjust(map, @subject_coordinate,
+                 center_under: @guidance_coordinate)
       |> Map.get(@subject_coordinate)
       |> assert_field(indent: 8)
     end
@@ -176,15 +140,13 @@ defmodule Tracing.StringShiftingTest do
     end
   end
 
-  def final_alignment_map(descriptors) do
-    for [coordinate | opts] <- descriptors, into: %{} do
-      {coordinate, Map.new([{:coordinate, coordinate} | opts])}
-    end
-  end
-
-
-
   describe "aligning the last line" do
+    def final_alignment_map(descriptors) do
+      for [coordinate | opts] <- descriptors, into: %{} do
+        {coordinate, Map.new([{:coordinate, coordinate} | opts])}
+      end
+    end
+
     test "a single result" do
       [c1, c2, c3] = [
         Coordinate.new(:<, [0, 0, 0]),
@@ -197,7 +159,7 @@ defmodule Tracing.StringShiftingTest do
         [c3, action: :continue_retreat, string: "[1]", indent: 0]
       ]
       shift_map = final_alignment_map(shift_data)
-      actual = StringShifting.align_final_retreat(shift_map)
+      actual = One.align_final_retreat(shift_map)
       assert actual[c3].indent == actual[c1].indent
       assert actual[c3].string == "[1]"
     end
