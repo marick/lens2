@@ -47,20 +47,25 @@ defmodule Adjust.One do
   def adjust(coordinate_map, subject_coordinate, :make_invisible),
       do: Data.put_string(coordinate_map, subject_coordinate, "")
 
+  def adjust(coordinate_map, subject_coordinate, copy: guidance_coordinate) do
+    guidance = coordinate_map[guidance_coordinate]
+    Data.put_indent(coordinate_map, subject_coordinate,
+                    guidance.indent)
+  end
   #-
 
-  def align_final_retreat(by_coordinate) do
+  def align_final_retreat(coordinate_map) do
     result_in_order =
-      by_coordinate
+      coordinate_map
       |> Map.values
       |> Enum.filter(& &1.action == Adjust.Data.begin_retreat)
       |> Enum.reject(& &1.coordinate == Coordinate.final_retreat)
 
     case result_in_order do
       [only] ->
-        Deeply.put(by_coordinate,
-                   Lens.key_path!([Coordinate.final_retreat, :indent]),
-                   only.indent)
+        Data.put_indent(coordinate_map, Coordinate.final_retreat, only.indent)
+      _ ->
+        coordinate_map
     end
   end
 end

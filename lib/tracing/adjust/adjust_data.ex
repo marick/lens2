@@ -46,5 +46,4 @@ defmodule Adjust.Data do
 
   def put_string(coordinate_map, subject_coordinate, value),
       do: put_key(coordinate_map, subject_coordinate, :string, value)
-
 end

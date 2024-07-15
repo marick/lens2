@@ -147,6 +147,22 @@ defmodule Adjust.OneTest do
       |> Map.get(@subject_coordinate)
       |> assert_fields(indent: 0, string: "")
     end
+
+    test "copying the indentation of a previous version" do
+      map =
+        make_map(
+          %{indent: 5, source: :container, action: Data.continue_deeper,
+            string:    "%{a: 5, b: 6}"},
+          %{indent: 0, source: :container, action: Data.turn_deeper,
+            string:    "%{a: 5, b: 6}"})
+
+      One.adjust(map, @subject_coordinate,
+                 copy: @guidance_coordinate)
+      |> Map.get(@subject_coordinate)
+      |> assert_field(indent: 5)
+    end
+
+
   end
 
   describe "aligning the last line" do
