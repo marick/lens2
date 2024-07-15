@@ -18,27 +18,13 @@ end
 
 defmodule Tracing.State do
   import State.Macros
-  import Lens2.Helpers.Section
   import TypedStruct
 
-  section "getters and setters" do
-    # @operations :_lens_tracing_operations
-    # crud(:operations, @operations)
+  @log :_lens_tracing_log
+  crud(:log, @log)
+  def add_to_log(log_entry), do: update_log(& [log_entry | &1])
 
-    @log :_lens_tracing_log
-    crud(:log, @log)
-    def add_to_log(log_entry), do: update_log(& [log_entry | &1])
-
-    def tracing_already_in_progress?, do: get_log() != nil
-
-
-    # @depth :_lens_tracing_depth
-    # crud(:depth, @depth)
-    # def depth_increases, do: update_depth(& &1+1)
-    # def depth_decreases, do: update_depth(& &1-1)
-    # def ready_for_first_descent, do: put_depth(-1)
-  end
-
+  def tracing_already_in_progress?, do: get_log() != nil
 
   typedstruct module: DescentItem, enforce: true do
     field :direction, atom, default: :>
