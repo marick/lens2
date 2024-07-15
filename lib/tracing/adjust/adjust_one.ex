@@ -5,6 +5,7 @@ defmodule Adjust.One do
   use Lens2
   import Lens2.Helpers.Assert
   alias Tracing.Coordinate
+  alias Adjust.Data
 
   def plan_for(shift_data) do
     coordinate = shift_data.coordinate
@@ -29,27 +30,22 @@ defmodule Adjust.One do
 
     assert(guidance.action == Adjust.Data.continue_deeper)
 
+    # Note: Regex.split(return: :index) counts *bytes*, not characters.
     [prefix, _] = String.split(guidance.string, subject.string, parts: 2)
 
-    # Note: Regex.split(return: :index) counts *bytes*, not characters.
-    Deeply.put(coordinate_map,
-               Lens.key_path!([subject_coordinate, :indent]),
-               guidance.indent + String.length(prefix))
+    Data.put_indent(coordinate_map, subject_coordinate,
+                    guidance.indent + String.length(prefix))
   end
 
   def adjust(coordinate_map, subject_coordinate, center_under: guidance_coordinate) do
     guidance = coordinate_map[guidance_coordinate]
     half = String.length(guidance.string) |> div(2)
-    Deeply.put(coordinate_map,
-               Lens.key_path!([subject_coordinate, :indent]),
-               guidance.indent + half)
+    Data.put_indent(coordinate_map, subject_coordinate,
+                    guidance.indent + half)
   end
 
-  def adjust(coordinate_map, subject_coordinate, :make_invisible) do
-    Deeply.put(coordinate_map,
-               Lens.key_path!([subject_coordinate, :string]),
-               "")
-  end
+  def adjust(coordinate_map, subject_coordinate, :make_invisible),
+      do: Data.put_string(coordinate_map, subject_coordinate, "")
 
   #-
 
