@@ -4,14 +4,13 @@ defmodule Tracing do
   alias Tracing.State
   defmacro wrap(operations, do: body) do
     quote do
-      case State.get_operations do
-        nil ->
-          State.put_operations(unquote(operations))
-          result = unquote(body)
-          State.delete_operations
-          result
-        _ ->
-          unquote body
+      if State.tracing_already_in_progress? do
+        unquote body
+      else
+        State.put_operations(unquote(operations))
+        result = unquote(body)
+        State.delete_operations
+        result
       end
     end
   end

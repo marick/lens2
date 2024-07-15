@@ -18,4 +18,6 @@ defmodule Tracing.State do
   @operations :_tracing_operations
 
   crud(:operations, @operations)
+
+  def tracing_already_in_progress?, do: get_operations() != nil
 end

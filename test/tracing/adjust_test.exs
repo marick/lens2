@@ -49,5 +49,29 @@ defmodule Tracing.AdjustTest do
       assert actual == expected
     end
 
+    @tag :skip
+    test "two descents" do
+      input = [deeper(%{b: [%{a: 1, b: 2}]}),
+               deeper(     [%{a: 1, b: 2}]),
+               deeper(      %{a: 1, b: 2}),
+               retreat(        [1]),
+               deeper(      %{a: 1, b: 2}),
+               retreat(              [2]),
+               retreat(        [1,    2]),
+      ]
+      actual = Adjust.gotten_strings(input)
+      expected = ["%{b: [%{a: 1, b: 2}]}",
+                  "     [%{a: 1, b: 2}]",
+                  "      %{a: 1, b: 2}",
+                  "         [1]",
+                  "      %{a: 1, b: 2}",
+                  "",
+                  "               [2]",
+                  "         [1,    2]"
+
+      ]
+      assert actual == expected
+    end
+
   end
 end
