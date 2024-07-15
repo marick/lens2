@@ -30,5 +30,24 @@ defmodule Tracing.AdjustTest do
       assert actual == expected
     end
 
+    test "intermediate levels in retreat" do
+      input = [deeper(%{b: [%{a: 1}]}),
+               deeper(     [%{a: 1}]),
+               deeper(      %{a: 1}),
+               retreat(        [1]),
+               retreat(       [[1]]),
+               retreat(        [1])]
+      actual = Adjust.gotten_strings(input)
+      expected = ["%{b: [%{a: 1}]}",
+                  "     [%{a: 1}]",
+                  "      %{a: 1}",
+                  "         [1]",
+                  "",
+                  "         [1]"
+
+      ]
+      assert actual == expected
+    end
+
   end
 end

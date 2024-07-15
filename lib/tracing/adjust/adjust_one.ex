@@ -45,6 +45,12 @@ defmodule Adjust.One do
                guidance.indent + half)
   end
 
+  def adjust(coordinate_map, subject_coordinate, :make_invisible) do
+    Deeply.put(coordinate_map,
+               Lens.key_path!([subject_coordinate, :string]),
+               "")
+  end
+
   #-
 
   def align_final_retreat(by_coordinate) do

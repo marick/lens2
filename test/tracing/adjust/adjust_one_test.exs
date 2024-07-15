@@ -138,6 +138,15 @@ defmodule Adjust.OneTest do
     @tag :skip
     test "perhaps it should align under matching text in case where there is some" do
     end
+
+    test "a continued-retreat line is turned into an empty string" do
+      map = %{@subject_coordinate => %{source: :gotten, indent: 0,
+                                       string:        "[[5]]"}}
+
+      One.adjust(map, @subject_coordinate, :make_invisible)
+      |> Map.get(@subject_coordinate)
+      |> assert_fields(indent: 0, string: "")
+    end
   end
 
   describe "aligning the last line" do
