@@ -8,7 +8,7 @@ defmodule Tracing.Call do
     field :direction,     :> | :<
     field :name,          :atom
     field :args,          [any]
-    field :output,        String.t,   default: ""  #builds over time
+    field :string,        String.t,   default: ""  #builds over time
   end
 
   def new(direction, name, args \\ []),
@@ -46,13 +46,13 @@ defmodule Tracing.Calls do
 
   def format_calls(log) do
     for call <- log do
-      %{call | output: Call.call_string(call)}
+      %{call | string: Call.call_string(call)}
     end
   end
 
   def add_indents(log) do
     update = fn call, indent_to_use ->
-      Map.update!(call, :output, & String.duplicate(" ", indent_to_use) <> &1)
+      Map.update!(call, :string, & String.duplicate(" ", indent_to_use) <> &1)
     end
 
     map_reducer = fn call, running_indent ->
@@ -75,7 +75,7 @@ defmodule Tracing.Calls do
 
 
   def max_width(log) do
-    outputs(log)
+    strings(log)
     |> Enum.map(&String.length/1)
     |> Enum.max
   end
@@ -84,14 +84,14 @@ defmodule Tracing.Calls do
     max_width = max_width(log)
 
     for call <- log do
-      padding_to_use = max_width - String.length(call.output)
-      Map.update!(call, :output, & &1 <> String.duplicate(" ", padding_to_use))
+      padding_to_use = max_width - String.length(call.string)
+      Map.update!(call, :string, & &1 <> String.duplicate(" ", padding_to_use))
     end
   end
 
   #-
 
-  def outputs(log) do
-    for call <- log, do: call.output
+  def strings(log) do
+    for call <- log, do: call.string
   end
 end

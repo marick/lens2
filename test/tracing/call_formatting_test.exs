@@ -62,7 +62,7 @@ defmodule Tracing.CallsTest do
 
       actual = Calls.format_calls(input)
 
-      assert Calls.outputs(actual) ==
+      assert Calls.strings(actual) ==
                [ ">key(:a)",
                  ">keys([:a, :b])",
                  "<keys([:a, :b])",
@@ -89,7 +89,7 @@ defmodule Tracing.CallsTest do
         ]
 
       actual = Calls.add_indents(input)
-      assert Calls.outputs(actual) == expected
+      assert Calls.strings(actual) == expected
     end
 
     test "nesting" do
@@ -107,15 +107,15 @@ defmodule Tracing.CallsTest do
           "<key(:a)"
         ]
       actual = Calls.add_indents(input)
-      assert Calls.outputs(actual) == expected
+      assert Calls.strings(actual) == expected
     end
   end
 
-  test "what is the longest output?" do
+  test "what is the longest string?" do
     input = [
-      %{output: ">key(:a)"},
-      %{output: ">  >key(:b)"},
-      %{output: ">     >keys([:c, :d])"}
+      %{string: ">key(:a)"},
+      %{string: ">  >key(:b)"},
+      %{string: ">     >keys([:c, :d])"}
       #          123456789012345678901
     ]
 
@@ -143,6 +143,6 @@ defmodule Tracing.CallsTest do
     actual =
       Calls.pad_to_flush_right(input)
 
-    assert Calls.outputs(actual) == expected
+    assert Calls.strings(actual) == expected
   end
 end
