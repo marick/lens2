@@ -49,7 +49,7 @@ defmodule Tracing.State do
     add_to_log(%DescentItem{name: name, args: args, container: container})
   end
 
-  def log_retreat(name, args, gotten, updated) do
+  def log_retreat(name, args, {gotten, updated}) do
     add_to_log(%RetreatItem{name: name, args: args, gotten: gotten, updated: updated})
   end
 

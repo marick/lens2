@@ -18,6 +18,10 @@ defmodule Tracing do
     end
   end
 
+  def function_name(original_name) do
+    String.to_atom("tracing_#{original_name}")
+  end
+
   def spill(_operations) do
     dbg State.peek_at_log
     # calls =

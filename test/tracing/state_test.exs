@@ -29,7 +29,7 @@ defmodule Tracing.StateTest do
            ]
 
     # A retreat also produces a log item:
-    State.log_retreat(:key, [:b], [1], %{b: "1"})
+    State.log_retreat(:key, [:b], {[1], %{b: "1"}})
     assert State.get_log == [
              %R{name: :key, args: [:b], direction: :<, gotten: [1], updated: %{b: "1"}},
              %D{name: :key, args: [:b], direction: :>, container:      %{b: 1}},
@@ -48,7 +48,7 @@ defmodule Tracing.StateTest do
     # progress and do nothing. (See the Tracing.wrap macro.)
 
     # Here, the final retreat:
-    State.log_retreat(:key, [:a], [[1]], %{a: %{b: "1"}})
+    State.log_retreat(:key, [:a], {[[1]], %{a: %{b: "1"}}})
 
     # The `Deeply` function (which knows it was the outermost one) now finishes up.
     # It must first replace the final retreat value with the value it itself received.

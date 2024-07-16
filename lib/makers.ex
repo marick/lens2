@@ -132,7 +132,8 @@ defmodule Lens2.Makers do
   end
 
   alias Lens2.Lenses.Combine
-  alias Lens2.Helpers.Tracing
+  alias Lens2.Tracing
+
 
   # The AST that comes from the `do:` block of the macro is named
   # `anonymous_function` because the typical usage is:
@@ -232,9 +233,9 @@ defmodule Lens2.Makers do
     quote do
       fn container, descender ->
         lens_action = unquote(anonymous_function)
-        Tracing.log_entry(unquote(name), unquote(args), container)
+        Tracing.State.log_descent(unquote(name), unquote(args), container)
         result = lens_action.(container, descender)
-        Tracing.log_exit(unquote(name), unquote(args), result)
+        Tracing.State.log_retreat(unquote(name), unquote(args), result)
         result
       end
     end
@@ -247,9 +248,9 @@ defmodule Lens2.Makers do
         # We must support the `Access.access_fun` interface
         selector, container, access_function_arg ->
           lens_action = unquote(plain_code)
-          Tracing.log_entry(unquote(name), unquote(args), container)
+          Tracing.State.log_descent(unquote(name), unquote(args), container)
           result = lens_action.(selector, container, access_function_arg)
-          Tracing.log_exit(unquote(name), unquote(args), result)
+          Tracing.State.log_retreat(unquote(name), unquote(args), result)
           result
       end
     end

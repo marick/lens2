@@ -14,7 +14,7 @@ defmodule Tracing.OutputTest do
     Deeply.get_all(map, lens)
   end
 
-  @tag :skip
+  # @tag :skip
   test "two-level pipeline" do
     # alias Lens2.Lenses.Combine
     lens = Lens.tracing_key(:a) |> Lens.tracing_key(:aa)
