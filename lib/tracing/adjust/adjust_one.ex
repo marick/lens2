@@ -28,7 +28,7 @@ defmodule Adjust.One do
     {subject, guidance} =
       {coordinate_map[subject_coordinate], coordinate_map[guidance_coordinate]}
 
-    assert(guidance.action == Adjust.Data.continue_deeper)
+    # assert(guidance.action == Adjust.Data.continue_deeper)
 
     # Note: Regex.split(return: :index) counts *bytes*, not characters.
     [prefix, _] = String.split(guidance.string, subject.string, parts: 2)

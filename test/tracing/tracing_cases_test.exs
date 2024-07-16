@@ -1,6 +1,7 @@
 alias Lens2.Tracing
 
-defmodule Tracing.OutputTest do
+defmodule Tracing.CasesTest do
+  @moduledoc "Different kinds of odd lenses for tracing"
   use Lens2.Case
 
   @tag :skip
@@ -14,7 +15,7 @@ defmodule Tracing.OutputTest do
     Deeply.get_all(map, lens)
   end
 
-  # @tag :skip
+  @tag :skip
   test "two-level pipeline" do
     # alias Lens2.Lenses.Combine
     lens = Lens.tracing_key(:a) |> Lens.tracing_key(:aa)
@@ -37,7 +38,7 @@ defmodule Tracing.OutputTest do
     Deeply.get_all(map, lens) |> dbg
   end
 
-  @tag :skip
+  # @tag :skip
   test "branching" do
     lens = Lens.tracing_keys([:a, :b]) |> Lens.tracing_keys([:aa, :bb]) |> Lens.tracing_keys([:aaa, :bbb])
     map =
@@ -54,7 +55,7 @@ defmodule Tracing.OutputTest do
   def i(value), do: {value, inspect(value)}
 
 
-  @tag :skip
+  # @tag :skip
   test "three-level pipeline" do
     # alias Lens2.Lenses.Combine
     lens = Lens.tracing_key(:a) |> Lens.tracing_key(:aa) |> Lens.tracing_key(:aaa)
@@ -62,7 +63,8 @@ defmodule Tracing.OutputTest do
       %{a: %{aa: %{aaa: 1}},
         b: %{aa: %{aaa: 2}}
       }
-    Deeply.get_and_update(map, lens, &i/1) |> dbg
+    # Deeply.get_and_update(map, lens, &i/1) |> dbg
+    Deeply.get_all(map, lens) |> dbg
   end
 
   @tag :skip

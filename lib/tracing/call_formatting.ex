@@ -73,6 +73,8 @@ defmodule Tracing.Calls do
     |> elem(0)
   end
 
+  def strings(calls),
+      do: (for call <- calls, do: call.string)
 
   def max_width(log) do
     strings(log)
@@ -91,7 +93,13 @@ defmodule Tracing.Calls do
 
   #-
 
-  def strings(log) do
-    for call <- log, do: call.string
+  def log_to_call_strings(log) do
+    finished =
+      from(log)
+      |> format_calls
+      |> add_indents
+      |> pad_to_flush_right
+
+    for call <- finished, do: call.string
   end
 end

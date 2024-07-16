@@ -24,10 +24,10 @@ defmodule Tracing.Test do
         assert [%{container: 1}] = State.peek_at_log
         Tracing.wrap [:different] do
           assert State.tracing_already_in_progress?
-          State.log_descent(:key, [:zzz], 100)
-          assert [%{container: 1}, %{container: 100}] = State.peek_at_log
+          State.log_retreat(:key, [:zzz], {[1], "1"})
+          assert [%{container: 1}, %{gotten: [1]}] = State.peek_at_log
         end
-          assert [%{container: 1}, %{container: 100}] = State.peek_at_log
+          assert [%{container: 1}, %{gotten: [1]}] = State.peek_at_log
       end
       refute State.tracing_already_in_progress?
     end

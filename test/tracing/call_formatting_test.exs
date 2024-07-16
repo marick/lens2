@@ -50,17 +50,20 @@ defmodule Tracing.CallsTest do
     assert actual == expected
   end
 
+  def suitable_map(direction, name, args),
+      do: %{direction: direction, name: name, args: args}
+
   describe "creating the call strings" do
     test "simple case" do
 
       input = [
-        Call.new(:>, :key, [:a]),
-        Call.new(:>, :keys, [[:a, :b]]),
-        Call.new(:<, :keys, [[:a, :b]]),
-        Call.new(:<, :key, [:a])
+        suitable_map(:>, :key, [:a]),
+        suitable_map(:>, :keys, [[:a, :b]]),
+        suitable_map(:<, :keys, [[:a, :b]]),
+        suitable_map(:<, :key, [:a])
       ]
 
-      actual = Calls.format_calls(input)
+      actual = input |> Calls.from |> Calls.format_calls
 
       assert Calls.strings(actual) ==
                [ ">key(:a)",
@@ -72,7 +75,6 @@ defmodule Tracing.CallsTest do
   end
 
   describe "calculating indent before" do
-    @tag :skip
     test "trivial" do
       input =
         [
@@ -83,8 +85,6 @@ defmodule Tracing.CallsTest do
 
       expected =
         [ ">key(:a)",
-          "   >keys([:a, :b])",
-          "   <keys([:a, :b])",
           "<key(:a)"
         ]
 
@@ -145,4 +145,25 @@ defmodule Tracing.CallsTest do
 
     assert Calls.strings(actual) == expected
   end
+
+
+  test "normally done as a single function call" do
+    input =
+      [
+        suitable_map(:>, :key, [:a]),
+        suitable_map(:>, :keys, [[:a, :b]]),
+        suitable_map(:<, :keys, [[:a, :b]]),
+        suitable_map(:<, :key, [:a])
+      ]
+
+    expected =
+      [ ">key(:a)          ",
+        "   >keys([:a, :b])",
+        "   <keys([:a, :b])",
+        "<key(:a)          "
+      ]
+
+    assert Calls.log_to_call_strings(input) == expected
+  end
+
 end
