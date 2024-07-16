@@ -9,8 +9,11 @@ defmodule Tracing do
       else
         State.start_log
         result = unquote(body)
-#        State.patch_final_gotten(result)
-        State.destructive_read
+        if State.has_accumulated_a_log? do
+          #State.patch_final_gotten(result)
+          #State.destructive_read
+        end
+        State.reset
         result
       end
     end

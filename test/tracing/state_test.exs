@@ -57,14 +57,22 @@ defmodule Tracing.StateTest do
 
     State.patch_final_gotten(:PATCH)
 
-    assert State.destructive_read == [
+    assert State.peek_at_log == [
              %State.DescentItem{container: %{a: %{b: 1}}, direction: :>},
              %State.DescentItem{container: %{b: 1}, direction: :>},
              %State.RetreatItem{gotten: [1], updated: %{b: "1"}, direction: :<},
              %State.RetreatItem{gotten: :PATCH, updated: %{a: %{b: "1"}}, direction: :<}
            ]
 
+    State.reset
     refute State.tracing_already_in_progress?
+  end
+
+  # The Deeply operation can't actually know if there are any `tracing_*` lenses in
+  # its argument, so it needs to check:
+  test "is_any_log?" do
+    State.start_log
+    refute State.has_accumulated_a_log?
   end
 
 

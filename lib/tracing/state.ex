@@ -39,6 +39,8 @@ defmodule Tracing.State do
 
   def start_log(), do: put_log([])
 
+  def has_accumulated_a_log?, do: get_log() != []
+
   def log_descent(container) do
     add_to_log(%DescentItem{container: container})
   end
@@ -50,13 +52,11 @@ defmodule Tracing.State do
   def peek_at_log, do: get_log() |> Enum.reverse
 
   def patch_final_gotten(new_gotten) do
-    [final | rest] = get_log()
+    [final | rest] = get_log() |> dbg
     [%{final | gotten: new_gotten} | rest] |> put_log()
   end
 
-  def destructive_read do
-    retval = peek_at_log()
+  def reset do
     delete_log()
-    retval
   end
 end
