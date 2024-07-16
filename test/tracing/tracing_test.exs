@@ -20,11 +20,11 @@ defmodule Tracing.Test do
     test "Only outermost operation counts" do
       Tracing.wrap [:get] do
         assert State.tracing_already_in_progress?
-        State.log_descent(1)
+        State.log_descent(:key, [:a], 1)
         assert [%{container: 1}] = State.peek_at_log
         Tracing.wrap [:different] do
           assert State.tracing_already_in_progress?
-          State.log_descent(100)
+          State.log_descent(:key, [:zzz], 100)
           assert [%{container: 1}, %{container: 100}] = State.peek_at_log
         end
           assert [%{container: 1}, %{container: 100}] = State.peek_at_log

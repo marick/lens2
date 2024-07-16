@@ -27,12 +27,16 @@ defmodule Tracing.State do
   def tracing_already_in_progress?, do: get_log() != nil
 
   typedstruct module: DescentItem, enforce: true do
-    field :direction, atom, default: :>
+    field :name, :atom
+    field :args, [any]
+    field :direction, :> | :<, default: :>
     field :container, any
   end
 
   typedstruct module: RetreatItem, enforce: true do
-    field :direction, atom, default: :<
+    field :name, :atom
+    field :args, [any]
+    field :direction, :> | :<, default: :<
     field :gotten, any
     field :updated, any
   end
@@ -41,18 +45,18 @@ defmodule Tracing.State do
 
   def has_accumulated_a_log?, do: get_log() != []
 
-  def log_descent(container) do
-    add_to_log(%DescentItem{container: container})
+  def log_descent(name, args, container) do
+    add_to_log(%DescentItem{name: name, args: args, container: container})
   end
 
-  def log_retreat(gotten, updated) do
-    add_to_log(%RetreatItem{gotten: gotten, updated: updated})
+  def log_retreat(name, args, gotten, updated) do
+    add_to_log(%RetreatItem{name: name, args: args, gotten: gotten, updated: updated})
   end
 
   def peek_at_log, do: get_log() |> Enum.reverse
 
   def patch_final_gotten(new_gotten) do
-    [final | rest] = get_log() |> dbg
+    [final | rest] = get_log()
     [%{final | gotten: new_gotten} | rest] |> put_log()
   end
 

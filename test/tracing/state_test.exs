@@ -3,6 +3,8 @@ alias Lens2.Tracing
 defmodule Tracing.StateTest do
   use Lens2.Case
   alias Tracing.State
+  alias State.DescentItem, as: D
+  alias State.RetreatItem, as: R
 
   test "the normal progression of events" do
 
@@ -15,29 +17,30 @@ defmodule Tracing.StateTest do
     assert State.get_log == []
 
     # A first descent produces this:
-    State.log_descent(%{a: %{b: 1}})
-    assert State.get_log == [%State.DescentItem{container: %{a: %{b: 1}}, direction: :>}]
+    State.log_descent(:key, [:a], %{a: %{b: 1}})
+    assert State.get_log == [%D{name: :key, args: [:a], direction: :>,
+                                container: %{a: %{b: 1}}}]
 
     # A second pushed into the state (which is handled like a LIFO stack)
-    State.log_descent(%{b: 1})
+    State.log_descent(:key, [:b], %{b: 1})
     assert State.get_log == [
-             %State.DescentItem{container: %{b: 1}, direction: :>},
-             %State.DescentItem{container: %{a: %{b: 1}}, direction: :>}
+             %D{name: :key, args: [:b], direction: :>, container:      %{b: 1}},
+             %D{name: :key, args: [:a], direction: :>, container: %{a: %{b: 1}}}
            ]
 
     # A retreat also produces a log item:
-    State.log_retreat([1], %{b: "1"})
+    State.log_retreat(:key, [:b], [1], %{b: "1"})
     assert State.get_log == [
-             %State.RetreatItem{gotten: [1], updated: %{b: "1"}, direction: :<},
-             %State.DescentItem{container: %{b: 1}, direction: :>},
-             %State.DescentItem{container: %{a: %{b: 1}}, direction: :>}
+             %R{name: :key, args: [:b], direction: :<, gotten: [1], updated: %{b: "1"}},
+             %D{name: :key, args: [:b], direction: :>, container:      %{b: 1}},
+             %D{name: :key, args: [:a], direction: :>, container: %{a: %{b: 1}}}
            ]
 
-    # For testing purposes, you can peek at the log, which reverses it:
+    # You can peek at the log, which returns a reversed version:
     assert State.peek_at_log == [
-             %State.DescentItem{container: %{a: %{b: 1}}, direction: :>},
-             %State.DescentItem{container: %{b: 1}, direction: :>},
-             %State.RetreatItem{gotten: [1], updated: %{b: "1"}, direction: :<},
+             %D{name: :key, args: [:a], direction: :>, container: %{a: %{b: 1}}},
+             %D{name: :key, args: [:b], direction: :>, container:      %{b: 1}},
+             %R{name: :key, args: [:b], direction: :<, gotten: [1], updated: %{b: "1"}},
            ]
 
     # Now, it may be that a lens uses one of the Depth
@@ -45,7 +48,7 @@ defmodule Tracing.StateTest do
     # progress and do nothing. (See the Tracing.wrap macro.)
 
     # Here, the final retreat:
-    State.log_retreat([[1]], %{a: %{b: "1"}})
+    State.log_retreat(:key, [:a], [[1]], %{a: %{b: "1"}})
 
     # The `Deeply` function (which knows it was the outermost one) now finishes up.
     # It must first replace the final retreat value with the value it itself received.
@@ -58,10 +61,10 @@ defmodule Tracing.StateTest do
     State.patch_final_gotten(:PATCH)
 
     assert State.peek_at_log == [
-             %State.DescentItem{container: %{a: %{b: 1}}, direction: :>},
-             %State.DescentItem{container: %{b: 1}, direction: :>},
-             %State.RetreatItem{gotten: [1], updated: %{b: "1"}, direction: :<},
-             %State.RetreatItem{gotten: :PATCH, updated: %{a: %{b: "1"}}, direction: :<}
+             %D{name: :key, args: [:a], direction: :>, container: %{a: %{b: 1}}},
+             %D{name: :key, args: [:b], direction: :>, container:      %{b: 1}},
+             %R{name: :key, args: [:b], direction: :<, gotten: [1], updated: %{b: "1"}},
+             %R{name: :key, args: [:a], direction: :<, gotten: :PATCH, updated: %{a: %{b: "1"}}}
            ]
 
     State.reset
@@ -73,6 +76,8 @@ defmodule Tracing.StateTest do
   test "is_any_log?" do
     State.start_log
     refute State.has_accumulated_a_log?
+    State.log_descent(:key, [:b], %{b: 1})
+    assert State.has_accumulated_a_log?
   end
 
 
