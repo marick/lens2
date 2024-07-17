@@ -8,24 +8,25 @@ going to call such structures *containers*. We're interested in nested
 containers.
 
 Here's a simple example. We have `Network` structure. It has various
-fields, one of which is named `:name_to_cluster`. A `Cluster`
-structure has various fields, one of which, `:downstream`, holds a
-`MapSet` of atoms (cluster names). Like this:
+fields, one of which is named `:name_to_cluster`. That points to a `Map`
+whose keys are atoms (cluster names) and whose values are `Cluster` structs. A
+`Cluster` has various fields, one of which, `:downstream`, holds a
+`MapSet` of atoms (also cluster names). Like this:
 
-![here is some text](pics/tidy.png)
+![alt text coming](pics/tidy.png)
 
-We want to add the value `:c` to
-a single mapset. This code works:
+We want to add the value `:c` to the `MapSet` associated with the cluster named `:a`. 
+This code works:
 
 
 ```elixir
     new_cluster =
-      network.name_to_cluster[:gate]
-      |> Map.update!(:downstream, & MapSet.put(&1, :some_name))
+      network.name_to_cluster[:a]
+      |> Map.update!(:downstream, & MapSet.put(&1, :c))
 
     new_map =
       network.name_to_cluster
-      |> Map.put(:gate, new_cluster)
+      |> Map.put(:a, new_cluster)
 
     %{network | name_to_cluster: new_map}
 ```
@@ -40,9 +41,11 @@ bookkeeping code that does the work of constructing each level of the
 new nested container. What really matters are highlighted below: the
 path and the `MapSet.put` use.
 
+![alt text coming](pics/tidy-scribbled.png)
 
-We want the compiler to write the bookkeeping code for us, inserting
-the path and update function.
+
+I want to describe the path and the update function, then sit back while the
+compiler writes the bookkeeping code for me.
 
 You probably know that Elixir offers the `Access` behaviour that does
 just that. Here's a better implementation of the above:
@@ -53,7 +56,7 @@ just that. Here's a better implementation of the above:
 ```
 
 Looks pretty clear: every word is about either the path or the
-operation to be done on what's at the end. Alternately, we can use
+update to be done on whatever's at its end. Alternately, we can use
 syntax that's a little longer but not as reliant on macro magic to
 describe the path:
 
@@ -81,7 +84,7 @@ But no joy:
 ** (RuntimeError) Access.all/0 expected a list, got: %{gate: %Cluster{downstream: MapSet.new([:big_edit, :has_fragments]), name: :gate}, watcher: %Cluster{downstream: MapSet.new([]), name: :watcher}}
 ```
 
-(I don't know why `Access.all` is restricted to lists.)
+(I don't know why `Access.all/0` is restricted to lists.)
 
 To handle multiple clusters, you need some kind of a loop, perhaps
 using `for`. `for` does what I expected `Access.all` to do, and
@@ -103,7 +106,7 @@ solution than, say, four that are long enough you actually have to
 think to write them or, sometimes, read them.)
 
 
-In this `Lens2` package (and others like it), updating multiple
+In this lens package (and others like it), updating multiple
 clusters in the network doesn't require a loop:
 
 ```elixir
@@ -112,7 +115,7 @@ clusters in the network doesn't require a loop:
    Deeply.update(network, lens, & MapSet.update(&1, :some_name))
 ```
 
-As it should, it looks almost the same to update a *subset* of the clusters:
+As you'd hope, it looks almost the same to update a *subset* of the clusters:
 
 ```elixir
    lens = Lens.key(:name_to_cluster) |> Lens.keys([:gate, :watcher]) |> Lens.key(:downstream)
@@ -120,7 +123,7 @@ As it should, it looks almost the same to update a *subset* of the clusters:
    Deeply.update(network, lens, & MapSet.update(&1, :some_name))
 ```
 
-Or, if you prefer, you can use `update_in`, because lenses are
+Or, if you prefer, you can use `update_in/3`, because lenses are
 functions that implement the behavior that `Access` requires;
 
 
