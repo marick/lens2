@@ -26,7 +26,7 @@ defmodule Tracing do
   def spill(operations) do
     alias Tracing.Calls
     log = State.peek_at_log
-    call_strings = Calls.log_to_call_strings(log) |> dbg
+    call_strings = Calls.log_to_call_strings(log)
     colors = for log_item <- log, do: colorizer(log_item.direction)
 
     if :get in operations do

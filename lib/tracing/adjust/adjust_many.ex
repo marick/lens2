@@ -8,7 +8,6 @@ defmodule Adjust.Many do
   def shift_interior(interior_coordinates, coordinate_map) do
     reducer = fn subject_coordinate, changing_coordinate_map ->
       plan = One.plan_for(changing_coordinate_map[subject_coordinate])
-      dbg {changing_coordinate_map[subject_coordinate], plan}
       One.adjust(changing_coordinate_map, subject_coordinate, plan)
     end
     Enum.reduce(interior_coordinates, coordinate_map, reducer)

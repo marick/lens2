@@ -19,7 +19,6 @@ defmodule Preparation do
 
   def prepare_aggregates(log, pick_result: result_type) do
     values = prepare_lines(log, pick_result: result_type)
-    dbg values
     map = for value <- values, into: %{}, do: {value.coordinate, value}
     in_order = for value <- values, do: value.coordinate
 

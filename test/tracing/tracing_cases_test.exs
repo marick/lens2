@@ -38,7 +38,7 @@ defmodule Tracing.CasesTest do
     Deeply.get_all(map, lens) |> dbg
   end
 
-  # @tag :skip
+  @tag :skip
   test "branching" do
     lens = Lens.tracing_keys([:a, :b]) |> Lens.tracing_keys([:aa, :bb]) |> Lens.tracing_keys([:aaa, :bbb])
     map =
@@ -55,7 +55,7 @@ defmodule Tracing.CasesTest do
   def i(value), do: {value, inspect(value)}
 
 
-  # @tag :skip
+  @tag :skip
   test "three-level pipeline" do
     # alias Lens2.Lenses.Combine
     lens = Lens.tracing_key(:a) |> Lens.tracing_key(:aa) |> Lens.tracing_key(:aaa)

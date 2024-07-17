@@ -4,6 +4,8 @@ defmodule Tracing.Test do
   use Lens2.Case
   alias Tracing.{State}
   require Tracing
+  import ExUnit.CaptureIO
+
 
   describe "wrapping a Deeply operation" do
     test "wrapper" do
@@ -18,17 +20,21 @@ defmodule Tracing.Test do
     end
 
     test "Only outermost operation counts" do
-      Tracing.wrap [:get] do
-        assert State.tracing_already_in_progress?
-        State.log_descent(:key, [:a], 1)
-        assert [%{container: 1}] = State.peek_at_log
-        Tracing.wrap [:different] do
+      f = fn ->
+        Tracing.wrap [:get] do
           assert State.tracing_already_in_progress?
-          State.log_retreat(:key, [:zzz], {[1], "1"})
+          State.log_descent(:key, [:a], 1)
+          assert [%{container: 1}] = State.peek_at_log
+          Tracing.wrap [:different] do
+            assert State.tracing_already_in_progress?
+            State.log_retreat(:key, [:zzz], {[1], "1"})
+            assert [%{container: 1}, %{gotten: [1]}] = State.peek_at_log
+          end
           assert [%{container: 1}, %{gotten: [1]}] = State.peek_at_log
         end
-          assert [%{container: 1}, %{gotten: [1]}] = State.peek_at_log
       end
+
+      capture_io(f)
       refute State.tracing_already_in_progress?
     end
 
