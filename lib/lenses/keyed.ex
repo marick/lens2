@@ -250,10 +250,10 @@ defmodule Lens2.Lenses.Keyed do
     reducer = fn key_or_keys, building_lens ->
       next_lens =
         case key_or_keys do
-          keys when is_list(key_or_keys) -> Lens.keys!(keys)
-          key ->                            Lens.key!(key)
+          keys when is_list(key_or_keys) -> keys!(keys)
+          key ->                            key!(key)
         end
-      Lens.seq(building_lens, next_lens)
+      Combine.seq(building_lens, next_lens)
     end
 
 
