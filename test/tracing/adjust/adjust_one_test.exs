@@ -54,29 +54,24 @@ defmodule Adjust.OneTest do
         |> confirm(source: :container, action: Data.turn_deeper)
       end
 
-      # Here are the controlling lines. Note that are always "continue"
-      all_controlling = [2, 1, 12]
-      for i <- all_controlling do
-        s.data_at.(i)
-        |> confirm(source: :container, action: Data.continue_deeper)
-      end
-
       # Here are the coordinates that need adjusting
       assert s.coordinate_at.( 6) == Coordinate.new(:>, [1, 0, 0])
       assert s.coordinate_at.(11) == Coordinate.new(:>,    [1, 0])
       assert s.coordinate_at.(16) == Coordinate.new(:>, [3, 1, 0])
 
-      # Here are the coordinates whose position should be copied
-      assert s.coordinate_at.( 2) == Coordinate.new(:>, [0, 0, 0])
-      assert s.coordinate_at.( 1) == Coordinate.new(:>,    [0, 0])
-      assert s.coordinate_at.(12) == Coordinate.new(:>, [2, 1, 0])
+      # Here are the guiding lines (to be indented to match)
+      all_controlling = [1, 0, 11]
+      # Here are the coordinates
+      assert s.coordinate_at.( 1) == Coordinate.new(:>, [0, 0])
+      assert s.coordinate_at.( 0) == Coordinate.new(:>,    [0])
+      assert s.coordinate_at.(11) == Coordinate.new(:>, [1, 0])
 
       # And here's showing the work done:
       for {needy_index, guiding_index}
           <- Enum.zip(all_to_adjust, all_controlling) do
         data = s.data_at.(needy_index)
         actual = One.plan_for(data)
-        assert actual == [copy: s.coordinate_at.(guiding_index)]
+        assert actual == [align_under_substring: s.coordinate_at.(guiding_index)]
       end
     end
   end
@@ -147,22 +142,6 @@ defmodule Adjust.OneTest do
       |> Map.get(@subject_coordinate)
       |> assert_fields(indent: 0, string: "")
     end
-
-    test "copying the indentation of a previous version" do
-      map =
-        make_map(
-          %{indent: 5, source: :container, action: Data.continue_deeper,
-            string:    "%{a: 5, b: 6}"},
-          %{indent: 0, source: :container, action: Data.turn_deeper,
-            string:    "%{a: 5, b: 6}"})
-
-      One.adjust(map, @subject_coordinate,
-                 copy: @guidance_coordinate)
-      |> Map.get(@subject_coordinate)
-      |> assert_field(indent: 5)
-    end
-
-
   end
 
   describe "aligning the last line" do

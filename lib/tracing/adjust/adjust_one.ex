@@ -3,7 +3,6 @@ alias Tracing.Adjust
 
 defmodule Adjust.One do
   use Lens2
-  import Lens2.Helpers.Assert
   alias Tracing.Coordinate
   alias Adjust.Data
 
@@ -14,7 +13,7 @@ defmodule Adjust.One do
       {:container, :continue_deeper} ->
         [align_under_substring: Coordinate.un_nest(coordinate)]
       {:container, :turn_deeper} ->
-        [copy: Coordinate.previous(coordinate)]
+        [align_under_substring: Coordinate.un_nest(coordinate)]
       {:gotten, :begin_retreat} ->
         [center_under: Coordinate.reverse_direction(coordinate)]
       {:gotten, :continue_retreat} ->
@@ -46,13 +45,6 @@ defmodule Adjust.One do
 
   def adjust(coordinate_map, subject_coordinate, :make_invisible),
       do: Data.put_string(coordinate_map, subject_coordinate, "")
-
-  def adjust(coordinate_map, subject_coordinate, copy: guidance_coordinate) do
-    guidance = coordinate_map[guidance_coordinate]
-    Data.put_indent(coordinate_map, subject_coordinate,
-                    guidance.indent)
-  end
-  #-
 
   def align_final_retreat(coordinate_map) do
     result_in_order =
