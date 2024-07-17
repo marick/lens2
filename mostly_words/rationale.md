@@ -1,9 +1,10 @@
 # Rationale
 
 I've written this rationale for people who are already familiar with
-Elixir's built-in `Access` module and its related
-functions(`get_in/2`, `put_in/3`, `update_in/3`, etc. If you're not
-familiar with that, you might want to read "For `Access` novices", then skip to [Part 2](#part-2-why-a-new-package) on this page.
+Elixir's built-in `Access` module and its related functions
+(`get_in/2`, `put_in/3`, `update_in/3`, etc.) If you're not familiar
+with `Access`, you might want to read ["For Access novices"](for_access_novices.html), then
+skip to [Part 2](#part-2-why-a-new-package) on this page.
 
 ## Part 1: Why not `Access`?
 
@@ -16,14 +17,15 @@ call *containers*. Elixir already comes with a tool for that:
 
 Lenses provide an alternative:
 
-     iex> container = %{a: [%{b: 3}, %{b: 4}]}
-     iex> lens = Lens.key(:top_level_1) |> Lens.all |> Lens.], :NEW)
-     %{a: [%{b: :NEW}, %{b: :NEW}]}
+     iex> container = %{top_level: [%{lower: 3}, %{lower: 4}]}  # same as above
+     iex> lens = Lens.key(:top_level) |> Lens.all |> Lens.key(:lower)
+     iex> Deeply.put(container, lens, :NEW)
+     %{top_level: [%{lower: :NEW}, %{lower: :NEW}]}             # same as above
 
 That looks like a lot of extra characters to achieve the same result. So: why lenses?
 
-1. Lenses have more power. That is, there are more functions like
-   `Access.all`. Things that are awkward or impossible with just `Access`
+1. Lenses have more power. That is, there are more specialized functions like
+   `Access.all/0`. Things that are awkward or impossible with just `Access`
    are built in:
    
        # Increment all map values:
@@ -31,7 +33,14 @@ That looks like a lot of extra characters to achieve the same result. So: why le
        %{c: 4, a: 2, b: 3}
 
 2. Lenses can work with types that don't implement the `Access` behaviour. For example,
-   `MapSets` don't have keys, so the `MapSet` module doesn't implement `fetch`. 
+   `MapSets` don't have keys, so the `MapSet` module doesn't implement `Access.fetch/2`, so you can't
+   use `put_in/3`. But you can use `Deeply.put` when part of your nested container is a `MapSet`:
+   
+       iex> container = %{a: MapSet.new([%{aa: 1, bb: 2}])}
+       %{a: MapSet.new([%{bb: 2, aa: 1}])}
+       iex> lens = Lens.key(:a) |> Lens.MapSet.all |> Lens.map_values
+       iex> Deeply.put(container, lens, :NEW)
+       %{a: MapSet.new([%{bb: :NEW, aa: :NEW}])}
    
 In a way, what you just read is a lie. The list given to a function
 like `get_in` is a description of how to navigate into a nested data
@@ -44,17 +53,17 @@ structure. An element in the list can be any function that has this interface:
            ...
       end
 
-So you could write functions that obey that interface and descend just fine into MapSets. 
+So you could write functions that obey that interface and descend just
+fine into MapSets. One way to look at lenses is to save you the
+trouble of writing such functions:
 
-One way to look at lenses is to save you the trouble of writing such functions. 
-
-1. You can just use `Lens.MapSet.all_values` instead of writing it yourself.
+1. You can just use `Lens.MapSet.all` instead of writing it yourself.
 
 2. If you write a lot of such functions, you'll find that you're
-   repeating yourself. The traditional function language approach to
+   repeating yourself. The traditional functional language approach to
    repetition is to factor it out into smaller functions that you
-   compose together in different ways. But `Lens.multiple` and `Lens.repeatedly`
-   have already been written.
+   compose together in different ways. But those functions have already been writte;
+   They have names like `Lens.multiple` and `Lens.repeatedly`.
 
 
 ## Part 2: Why a new package?
@@ -66,18 +75,19 @@ intended to add a few small things to it, but got carried away to the
 point where a few pull requests wouldn't do it. Rather, a
 fork-and-extensive-reworking seemed justified. So I dubbed the
 previous package "Lens 1" and have called this one "Lens 2". Here are the
-highlights:
+highlights of the new package:
 
 1. Lens 2 is largely backwards compatible. All of the functions that
    make lenses still exist and are used the same way:
    
    
    ```elixir
-   lens = Lens.key(:clusters) |> Lens.map_values |> Lens.key!(:age)
+   iex> use Lens2
+   iex> lens = Lens.key(:clusters) |> Lens.map_values |> Lens.key!(:age)
    ```
 
 3. However, in Lens 1, the functions that *make* lenses and the functions that
-   *use* them were in the same module. I've separated the latter out into
+   *use* them were in the same module, `Lens`. I've separated the latter out into
    the `Deeply` module and changed some names to ones I think are
    usefully closer to Elixir conventions. (So the lens version of
    `update_in/3` is `Deeply.update` rather than `Lens.map`.)
@@ -129,9 +139,9 @@ highlights:
         
    Often, that code could be simpler. `Network.downstream_from/1`
    makes a lens that refers to a particular `cluster`. However,
-   lens-making functions often don't. For example, `Lens.map_values/0`
+   lens-making functions often don't take parameters. For example, `Lens.map_values/0`
    always refers to all the values of a map (or struct), and
-   `Network.linear_clusters/0` refers to all the linear clusters. In this case, and
+   `Network.linear_clusters/0` refers to all the "linear clusters." In such a case, and
    because `Network` is a struct, client code can fetch all the linear clusters with:
    
         Deeply.get_all(network, :linear_clusters)
@@ -140,10 +150,12 @@ highlights:
    client code having to care if the field is at the top level, is buried within the
    network, or is computed on the fly. 
    
-   Information hiding still rules, though it's less emphasized in functional programming than object-oriented programming. Joe Bergin used to say of object-oriented
-   code that "I should be able to ask you what you had for breakfast
-   without knowing how to reach into your stomach to find out", and I
-   think Lens 2 supports the functional programming equivalent.
+   Although it's less emphasized in
+   functional programming than object-oriented programming, information hiding still rules. Joe Bergin
+   used to say of object-oriented code that "I should be able to ask
+   you what you had for breakfast without knowing how to reach into
+   your stomach to find out", and I think Lens 2 supports the
+   functional programming equivalent.
    
    
 4. It would be a tragic waste of human life for multiple people to
