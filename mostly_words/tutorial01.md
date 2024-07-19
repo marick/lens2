@@ -8,12 +8,12 @@ I never found the metaphor helpful when learning lenses. And since lenses
 have the reputation of being hard to learn, I'm happy to abandon
 it (while keeping the name everyone uses). To me, a more helpful metaphor is the *pointer*. In the picture below,
 you see someone using a slim wooden stick to point to something on a
-blackboard. You also see an arrow – a pointer – pointing at a blob
+blackboard. The other picture shows an arrow – a pointer – pointing at a blob
 with smaller blobs within it. These are – metaphorically – the same action.
 
 ![Alt-text is coming](pics/tutorial01-pointer-comparison.png)[^1]
 
-The right-hand image is of a data structure (a blob) with smaller data
+The right-hand image is of a data structure with smaller data
 structures within it. I'm going to call the bigger structure a
 *container*. The contained structures may also be containers that have
 their own internal structure. Or they may be "atomic" values like integers or atoms.
@@ -97,7 +97,7 @@ a different internal structure, but the values within a map are always
 presented to the outside world as a tuple. Like this:
 
 ```elixir
-iex(1)> for elt <- %{a: 1, b: 2}, do: IO.inspect(elt)
+iex> for elt <- %{a: 1, b: 2}, do: IO.inspect(elt)
 {:a, 1}
 {:b, 2}
 ```
@@ -110,7 +110,7 @@ iex> lens = Lens.map_values
 
 (All my examples implicitly `use Lens2`, which provides the `Lens`
 alias so that I don't have to write the function's real name,
-`Lens2.Keyed.map_values/0`.)
+`Lens2.Lenses.Keyed.map_values/0`.)
 
 When it's used, the lens will produce these pointers for the container I showed above: 
 
@@ -138,7 +138,7 @@ iex> update_in(map, [lens], & &1 * 1111)
 ```
 
 (I'll note here that `Access.all/0` can only be used on lists, so you
-can't use out-of-the-box Elixir to do what we just did – except by coding manually the function that `Lens2.Keyed.map_values/0` gives you for free. 
+can't use out-of-the-box Elixir to do what we just did – except by coding manually the function that `Lens2.Lenses.Keyed.map_values/0` gives you for free. 
 
 Having to wrap the lens in a list is a little annoying, so you can use
 functions from `Lens2.Deeply` instead. (There are other reasons to use
@@ -214,12 +214,12 @@ If you're sure that there's a single value, you can use `Lens2.Deeply.get_only/2
 
 
 ```elixir
-iex(62)> Deeply.get_only(map, lens)
+iex> Deeply.get_only(map, lens)
 3
 ```
 
 `get_only` will raise
-an error for cases where there isn't exactly one value.
+an error for cases where there isn't exactly one value. Otherwise, it unwraps the singleton value and returns it.
 
 -----
 

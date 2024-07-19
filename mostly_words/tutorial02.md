@@ -8,7 +8,7 @@ page is about how that's done.
 ## Composing lens makers
 
 Lens-creating functions can be combined using the pipe (`|>`)
-function.
+macro.
 
 Suppose I've `use`d `Lens2` and so can refer to lens-maker functions
 with `Lens`. Here, again, are pictures showing the pointed-at values
@@ -75,30 +75,31 @@ We can use `Lens.filter` to make a lens that retains only pointers to three-char
 
 ## How pipelining works
 
-The function we call as `Lens.map_values` takes no arguments. How,
-then, does this pipeline work?
+
+Normally, we think of a maker like `Lens.keys` as taking a single argument:
+
+   iex> Lens.keys[:a, :b]
+   
+However, each lens maker has a two-argument version whose first
+argument is a *lens* (not a lens *maker*). Therefore this pipeline:
 
     iex> lens = Lens.map_values() |> Lens.keys([:a, :b])
     
-... given that's just syntactic sugar for the following?
+is just syntactic sugar for this:
 
     iex> lens = Lens.keys(Lens.map_values(), [:a, :b])
     
-What's happening is that every predefined lens maker comes in two versions:
+The second variant doesn't explicitly appear in API documentation
+because the documentation for dozens of lens makers would just say
+"This works the same as every other lens maker that takes a first
+`lens` argument."
 
-    @spec keys(any) :: Lens2.lens
-    def keys(key_list), do: ...
-    
-    @spec keys(Lens2.lens, any) :: Lens2.lens
-    def keys(previous_lens, key_list), do: ...
-    
-The second just doesn't appear in documentation.
+----
 
-If you're like me, that can trip you up. A few times I've had a lens defined for a particular
+If you're like me, pipelining can trip you up. A few times I've had a lens defined for a particular
 data structure, like this one for a two-level map:
 
     iex> two_level_lens = Lens.key(:a) |> Lens.key(:aa)
-    ...
     
 ... and then I have a list of such maps and want a lens that will pick
 out all the `:aa` values of all the maps in the list:
@@ -107,26 +108,29 @@ out all the `:aa` values of all the maps in the list:
     [1, 2]
     
 The question is: how to easily make `a_bigger_lens`? Because I know
-that `Lens2.Lenses.Enum.all` will give me all elements of a list, a simple
+that `Lens2.Lenses.Enum.all/0` will give me all elements of a list, a simple
 composition should do it:
 
     iex> a_bigger_lens = Lens.all |> two_level_lens.()
+    
+But oops:
+
     ** (BadArityError) #Function<19.51288540/3 in Lens2.Lenses.Combine.seq/2>
     with arity 3 called with 1 argument
     (#Function<1.73076862/3 in Lens2.Lenses.Enum.all/0>)
 
 Here I'm passing a lens (constructed by the lens maker `Lens.all`) to
-another *lens*, not to a lens maker.
+another *lens*, not to a lens maker. That is, I'm passing the new lens to the *result* of `Lens.key(:a) |> Lens.key(:aa)`, not – as I sometimes sloppily assume – to `Lens.key/1`. 
 
-You have been warned. 
 
-The way to compose with an existing lens is to use `Lens2.Lenses.Combine.seq/2`:
+The way to compose a new lens with an existing lens is to use `Lens2.Lenses.Combine.seq/2`:
 
     iex> a_bigger_lens = Lens.all |> Lens.seq(two_level_lens)
     # or, without the pipeline:
     iex> a_bigger_lens = Lens.seq(Lens.all, two_level_lens)
 
-In fact, the definition of the hidden version of, for example, `Lens.keys` uses `Lens.seq/2`:
+In fact, the definition of the hidden two-argument version of, for
+example, `Lens2.Lenses.Keyed.keys/1` uses `Lens.seq/2`:
 
     def keys(previous_lens, key_list) do
       Lens.seq(previous_lens, keys(key_list))
@@ -135,148 +139,48 @@ In fact, the definition of the hidden version of, for example, `Lens.keys` uses 
 
 ## Defining a lens maker
 
+There are two ways to define a lens maker: coding one up from scratch,
+or composing existing functions. The first way is rare and more
+complicated, so I'll put that off and talk only about composition.
 
+Suppose I frequently want to descend two levels into a nested map. Rather than write code like:
 
-
-
-
+    Lens.key(:level1_key) |> Lens.key(:level2_key)
     
+... all over the place, I prefer to write a function that does the busywork for me:
 
+    MyLens.nested(:level1_key, :level2_key)
+    
+I could use a simple `def`:
 
-It's easy to forget that we've been talking about two types of
-functions: lenses (which are functions) and lens *makers* (which are
-functions that make lenses). It's not often necessary to be careful
-about the distinction, but sometimes it is.
+    def nested(level1, level2),
+        do: Lens.key(level1) |> Lens.key(level2)
+    
+That works for making an isolated lens, but it doesn't work for composition:
 
-Suppose you're comfortable with composed lenses like this one:
+    Lens.at(0) |> MyLens.nested(:a, :b)
+    
+The problem is that I haven't defined the extra-argument version. I could do that easily enough:
 
-   
+    def nested(lens, level1, level2),
+        do: Lens.seq(lens, nested(level1, level2)
+        
+However, that code will always always look the same, so there's a macro that defines both versions with a single definition:
 
+    def_composed_maker nested(level1, level2),
+        do: Lens.key(level1) |> Lens.key(level2)
 
+(That's not the most gracious name, I admit. In the Lens 1 package,
+it's called `deflens` and you can still use that name if you
+prefer. But I'm hoping that the more cumbersome name will help you
+keep in mind that you're not defining a *lens* but rather a lens
+*maker*, thus saving you from some mistakes. Also: in Lens 1, you
+define a lens maker from scratch with `deflens_raw`. I prefer
+`def_maker/2`, despite the annoyance of having the more common case
+having the longer name.)
 
-lens |> lens2 
-
-Lens.key(:a) |> Lens.keys([:a, :b])
-
-
-Lens.keys(Lens.key(:a), [:a, :b])
-
-lens2.(lens1)
-
-
-
-
-
-feeding the lens function into another lens function, when that function expects a container.
-
-
-## Naming composed lens makers
-
-
-
-BREAK
-
-
-
-I lied by omission about the example map. I didn't mention that it's
-more accurate to consider the map a container of *tuples*, each of
-which contains two values: the first element (key) and the second
-(value).
-
-To see this, you can use `Lens.all` to get the tuples:
-
-```elixir
-iex>    map = %{a: 1, b: 2, c: 3, d: 4, e: 5}
-iex>    Deeply.get_all(map, Lens.all)
-[c: 3, a: 1, d: 4, e: 5, b: 2]
-```
-
-We've gotten back a list of tuples, which is the definition of a
-`Keyword` list, so IEX (via the `Inspect` protocol) doesn't show the
-tuples. To make the output clearer, let's use a map with non-atom
-keys:
-
-```elixir
-iex>  map = %{[:a] => 1, [:b] => 2}
-%{[:a] => 1, [:b] => 2}
-```
-
-Now the `Inspect` protocol highlights the tuples:
-
-```elixir
-iex>  Deeply.get_all(map, Lens.all)
-[{[:a], 1}, {[:b], 2}]
-```
-
-As containers, tuples have lenses that apply to them. For example,
-`Lens2.Lenses.Indexed.at/1` (aliased to `Len2.at`) will take the nth element of a `Tuple` (as well
-as of any `Enumerable`):
-
-```elixir
-iex>  Deeply.get_only({:key, :value}, Lens.at(1))
-:value
-```
-
-What this means is that it seems like `Lens2.Keyed.map_values/0` be defined by the
-composition of lenses:
-
-```elixir
-iex(9)>  Deeply.get_all(map, Lens.all |> Lens.at(1))
-[1, 2]
-```
-
-But not quite, because `Deeply.put` (or `put_in/3`) produces an odd result:
-
-```elixir
-iex>  put_in(map, [Lens.all |> Lens.at(1)], :NEW)
-[{[:a], :NEW}, {[:b], :NEW}]
-```
-
-Where's the map? What's happening here? 
-
-Consider how you might write your own code to `put` all the values of a map. 
-First, you'd iterate over the elements of the map. I'll use `for/1`:
-
-```elixir
-for {key, value} <- map do
-  # ...
-end
-```
-
-Within the body of the `for`, you'd set the value of the tuple's second element:
-
-```elixir
-for {key, _overwritten} <- map do
-  {key, :NEW}
-end
-```
-
-That produces this:
-
-```
-[{[:a], :NEW}, {[:b], :NEW}]
-```
-
-The problem is there's no code to reconstitute from the list of...........
-tuples. `for/1` has a way to handle that, the `:into` clause, which builds on `Enum.into/2`:
-
-```elixir
-for {key, _overwritten} <- map, into: %{} do
-  {key, :NEW}                   ^^^^^^^^^
-end
-
-# returns:
-%{[:a] => :NEW, [:b] => :NEW}
-```
-
-Reconstituting the expected map requires a similar step. The lens version of `Enum.into` is `Lens2.Lenses.Enum.into/2`, and the 
-
-
-
-Working with nested containers is inherently a recursive
-operation. `Lens.all` is the first level of recursion. When applied to
-a `Map`, it produces tuples. These it passes to the second level,
-which deals with individual tuples. But what is the `Lens.all` code to
-do with the second level's return values? 
-
+You'll probably write a lot of lens makers, so there will be more
+examples later. But first, it'll be worth taking a little time to walk
+through what happens at runtime when you use a lens operation like
+`Lens.get_all`.
 
