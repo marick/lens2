@@ -62,11 +62,11 @@ defmodule Lens2.MixProject do
                "mostly_words/rationale.md",
                "mostly_words/for_access_novices.md",
                "mostly_words/are_lenses_for_you.md",
-               "mostly_words/tutorial01.md",
-               "mostly_words/tutorial02.md",
+               "mostly_words/tutorial01-pointers.md",
+               "mostly_words/tutorial02-nested.md",
       ],
       groups_for_extras: [
-        "Tutorial": Path.wildcard("mostly_words/tutorial??.md"),
+        "Tutorial": Path.wildcard("mostly_words/tutorial??-*.md"),
       ],
 
       groups_for_modules: [
