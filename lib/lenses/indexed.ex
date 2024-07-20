@@ -47,11 +47,12 @@ defmodule Lens2.Lenses.Indexed do
   """
   @spec at(non_neg_integer) :: Lens2.lens
   def_maker at(index) do
-    fn data, fun ->
-      {res, updated} = fun.(DefOps.at(data, index))
-      {[res], DefOps.put_at(data, index, updated)}
+    fn container, descender ->
+      {res, updated} = descender.(DefOps.at(container, index))
+      {[res], DefOps.put_at(container, index, updated)}
     end
   end
+
 
   @doc ~S"""
   An alias for `at`.
@@ -96,9 +97,9 @@ defmodule Lens2.Lenses.Indexed do
   """
   @spec back :: Lens2.lens
   def_maker back do
-    fn data, fun ->
-      lens = behind(Enum.count(data))
-      Deeply.get_and_update(data, lens, fun)
+    fn container, descender ->
+      lens = behind(Enum.count(container))
+      Deeply.get_and_update(container, lens, descender)
     end
   end
 
@@ -119,9 +120,9 @@ defmodule Lens2.Lenses.Indexed do
   """
   @spec before(non_neg_integer) :: Lens2.lens
   def_maker before(index) do
-    fn data, fun ->
-      {res, item} = fun.(nil)
-      {init, tail} = Enum.split(data, index)
+    fn container, descender ->
+      {res, item} = descender.(nil)
+      {init, tail} = Enum.split(container, index)
       {[res], init ++ [item] ++ tail}
     end
   end
@@ -143,9 +144,9 @@ defmodule Lens2.Lenses.Indexed do
   """
   @spec behind(non_neg_integer) :: Lens2.lens
   def_maker behind(index) do
-    fn data, fun ->
-      {res, item} = fun.(nil)
-      {init, tail} = Enum.split(data, index + 1)
+    fn container, descender ->
+      {res, item} = descender.(nil)
+      {init, tail} = Enum.split(container, index + 1)
       {[res], init ++ [item] ++ tail}
     end
   end
