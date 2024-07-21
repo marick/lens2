@@ -9,5 +9,4 @@ defmodule Lens2.Lenses.IndexedTest do
 
     assert Deeply.put([0, 1, 2], lens, :NEW) == [0, 1, 2]
   end
-
 end

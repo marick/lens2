@@ -64,6 +64,7 @@ defmodule Lens2.MixProject do
                "mostly_words/are_lenses_for_you.md",
                "mostly_words/tutorial01-pointers.md",
                "mostly_words/tutorial02-nested.md",
+               "mostly_words/tutorial03-paths.md",
       ],
       groups_for_extras: [
         "Tutorial": Path.wildcard("mostly_words/tutorial??-*.md"),
