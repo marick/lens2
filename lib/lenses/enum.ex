@@ -60,15 +60,15 @@ defmodule Lens2.Lenses.Enum do
 
   """
   @spec all :: Lens2.lens
-  deflens_raw all do
-    fn data, fun ->
-      {res, updated} =
-        Enum.reduce(data, {[], []}, fn item, {res, updated} ->
-          {res_item, updated_item} = fun.(item)
-          {[res_item | res], [updated_item | updated]}
+  def_maker all do
+    fn container, descender ->
+      {gotten, updated} =
+        Enum.reduce(container, {[], []}, fn item, {gotten, updated} ->
+          {gotten_item, updated_item} = descender.(item)
+          {[gotten_item | gotten], [updated_item | updated]}
         end)
 
-      {Enum.reverse(res), Enum.reverse(updated)}
+      {Enum.reverse(gotten), Enum.reverse(updated)}
     end
   end
 
@@ -138,10 +138,10 @@ defmodule Lens2.Lenses.Enum do
         b: MapSet.new(["3", "4"])}
   """
   @spec into(Lens2.lens, Collectable.t()) :: Lens2.lens
-  deflens_raw into(lens, collectable) do
-    fn data, fun ->
-      {res, updated} = Deeply.get_and_update(data, lens, fun)
-      {res, Enum.into(updated, collectable)}
+  def_maker into(lens, collectable) do
+    fn container, descender ->
+      {gotten, updated} = Deeply.get_and_update(container, lens, descender)
+      {gotten, Enum.into(updated, collectable)}
     end
   end
 
