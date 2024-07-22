@@ -14,7 +14,7 @@ defmodule Lens2.MostlyText.ByHandGetTest do
   end
 
   def get_all(container, lens) do
-    getter = fn value -> value end
+    getter = & &1    # Just return the leaf value
     lens.(container, getter)
   end
 
@@ -25,17 +25,21 @@ defmodule Lens2.MostlyText.ByHandGetTest do
 
       gotten =
         lens1.(lens1_container, lens1_descender)
-
+      dbg gotten
       Enum.concat(gotten)
     end
   end
 
-
+  def all do
+    fn container, descender ->
+      for item <- container, do: descender.(item)
+    end
+  end
 
   test "all" do
-    nested = [ [0, 1, 2], [00, 11, 22]]
-    lens = Lens.all |> Lens.at(1)
-    Deeply.get_all(nested, lens)
+    nested = [ [0, 1, 2], [0, 1111, 2222]]
+    lens = seq(all(), at(1))
+    assert get_all(nested, lens) == [1, 1111]
   end
 
 
