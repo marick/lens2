@@ -232,12 +232,14 @@ defmodule Lens2.Lenses.Combine do
       Lens.seq(Lens.key(:a), Lens.key(:b))
   """
   @spec seq(Lens2.lens, Lens2.lens) :: Lens2.lens
-  def_maker seq(lens1, lens2) do
-    fn container, descender ->
+  def_maker seq(outer_lens, inner_lens) do
+    fn outer_container, inner_descender ->
+      outer_descender = fn inner_container ->
+        Deeply.get_and_update(inner_container, inner_lens, inner_descender)
+      end
+
       {gotten, updated} =
-        Deeply.get_and_update(container, lens1, fn value ->
-          Deeply.get_and_update(value, lens2, descender)
-        end)
+        Deeply.get_and_update(outer_container, outer_lens, outer_descender)
 
       {Enum.concat(gotten), updated}
     end
