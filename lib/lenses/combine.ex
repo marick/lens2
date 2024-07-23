@@ -27,8 +27,8 @@ defmodule Lens2.Lenses.Combine do
   """
   @spec root :: Lens2.lens
   def_maker root do
-    fn data, fun ->
-      {res, updated} = fun.(data)
+    fn container, descender ->
+      {res, updated} = descender.(container)
       {[res], updated}
     end
   end
@@ -51,12 +51,12 @@ defmodule Lens2.Lenses.Combine do
 
   """
   @spec empty :: Lens2.lens
-  def_maker empty, do: fn data, _fun -> {[], data} end
+  def_maker empty, do: fn container, _descender -> {[], container} end
 
 
   @doc deprecated: "Too confusing."
   @doc ~S"""
-  Returns a lens that replaces any incoming pointers with a pointer to the given data.
+  Returns a lens that replaces any incoming pointers with a pointer to the given container.
 
   You can use this to produce a sort of a default value. For example, recall that
   `Lens2.Lenses.Keyed.key?/1` will return nothing for a missing key:
@@ -113,8 +113,8 @@ defmodule Lens2.Lenses.Combine do
 
   @spec const(any) :: Lens.lens
   def_maker const(value) do
-    fn _data, fun ->
-      {res, updated} = fun.(value)
+    fn _container, descender ->
+      {res, updated} = descender.(value)
       {[res], updated}
     end
   end
@@ -151,8 +151,8 @@ defmodule Lens2.Lenses.Combine do
   """
   @spec match((any -> Lens2.lens)) :: Lens2.lens
   def_maker match(matcher_fun) do
-    fn data, fun ->
-      Deeply.get_and_update(data, matcher_fun.(data), fun)
+    fn container, descender ->
+      Deeply.get_and_update(container, matcher_fun.(container), descender)
     end
   end
 
@@ -212,9 +212,9 @@ defmodule Lens2.Lenses.Combine do
   """
   @spec both(Lens2.lens, Lens2.lens) :: Lens2.lens
   def_maker both(lens1, lens2) do
-    fn data, fun ->
-      {res1, changed1} = Deeply.get_and_update(data, lens1, fun)
-      {res2, changed2} = Deeply.get_and_update(changed1, lens2, fun)
+    fn container, descender ->
+      {res1, changed1} = Deeply.get_and_update(container, lens1, descender)
+      {res2, changed2} = Deeply.get_and_update(changed1, lens2, descender)
       {res1 ++ res2, changed2}
     end
   end
@@ -407,11 +407,11 @@ defmodule Lens2.Lenses.Combine do
   @spec recur_root(Lens2.lens) :: Lens2.lens
   def_composed_maker recur_root(descender), do: and_repeatedly(descender)
 
-  defp do_recur(lens, data, fun) do
+  defp do_recur(lens, container, descender) do
     {res, changed} =
-      Deeply.get_and_update(data, lens, fn item ->
-        {results, changed1} = do_recur(lens, item, fun)
-        {res_parent, changed2} = fun.(changed1)
+      Deeply.get_and_update(container, lens, fn item ->
+        {results, changed1} = do_recur(lens, item, descender)
+        {res_parent, changed2} = descender.(changed1)
         {results ++ [res_parent], changed2}
       end)
 
@@ -536,11 +536,11 @@ defmodule Lens2.Lenses.Combine do
   """
   @spec context(Lens2.lens, Lens2.lens) :: Lens2.lens
   def_maker context(context_lens, item_lens) do
-    fn data, fun ->
+    fn container, descender ->
       {results, changed} =
-        Deeply.get_and_update(data, context_lens, fn context ->
+        Deeply.get_and_update(container, context_lens, fn context ->
           Deeply.get_and_update(context, item_lens, fn item ->
-            fun.({context, item})
+            descender.({context, item})
           end)
         end)
 
@@ -574,9 +574,9 @@ defmodule Lens2.Lenses.Combine do
   """
   @spec either(Lens2.lens, Lens2.lens) :: Lens2.lens
   def_maker either(lens, other_lens) do
-    fn data, fun ->
-      case Deeply.get_and_update(data, lens, fun) do
-        {[], _updated} -> Deeply.get_and_update(data, other_lens, fun)
+    fn container, descender ->
+      case Deeply.get_and_update(container, lens, descender) do
+        {[], _updated} -> Deeply.get_and_update(container, other_lens, descender)
         {res, updated} -> {res, updated}
       end
     end

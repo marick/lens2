@@ -36,18 +36,18 @@ defmodule Lens2.Lenses.Filter do
   def filter(predicate), do: Combine.root() |> filter(predicate)
 
   deflens_raw filter(lens, predicate) do
-    fn data, fun ->
-      {res, changed} =
-        Deeply.get_and_update(data, lens, fn item ->
+    fn container, descender ->
+      {gotten, updated} =
+        Deeply.get_and_update(container, lens, fn item ->
           if predicate.(item) do
-            {res, changed} = fun.(item)
-            {[res], changed}
+            {gotten, updated} = descender.(item)
+            {[gotten], updated}
           else
             {[], item}
           end
         end)
 
-      {Enum.concat(res), changed}
+      {Enum.concat(gotten), updated}
     end
   end
 
