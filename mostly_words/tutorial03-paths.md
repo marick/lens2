@@ -19,195 +19,118 @@ detailed steps of what's happening in the lens code. To do that, you
 need to understand lenses well enough to write one from
 scratch. That's what this section is about.
 
-The implementation is somewhat tricksy, so I'll work my way up to full
+Note: you might want to defer reading this page until you actually
+*are* perplexed or need to write a lens. Maybe you'll never need it!
+
+The lens implementation is somewhat conceptually tricksy, so I'll work my way up to full
 complexity. I'll start with an implementation that works for
 `Deeply.get`, then I'll expand it to work with `Deeply.update` and
 related operations.  I'll finish with some explanations of why
 particular compositions work as they do.
 
-## Getting
 
-Every lens function has three jobs, in order. I'll pile on details shortly,
-but first a summary:
+## Get
 
-1. The function is given a container and must point to zero or more components
-   of that container. For example, `Lens.at(1)` points at the second
-   element of a list. `Lens.keys!([:a, :b])` points at two values in a
-   map.
-   
-2. It must pass those 0, 1, or _n_ values to the next lens in a
-   sequence of lenses. They're the containers *it* will work on.
+Suppose we want to make this work:
 
-   Importantly, a lens does not know its position in
-   the sequence.  It may be the only element, the first element, or
-   the last element. The code must work in all those cases.
-   
-3. It must collect the results into a list. A lens like that made by 
-   `Lens.at(1)` may "know" it has a single element to return to the
-   lens before it, but it has to wrap that in a list: the
-   previous lens (if any) doesn't know what lens it's calling, so it
-   has to rely on an "I'll get a list of zero or more values"
-   convention.
-   
-A lens is a function that takes two arguments, a **container** and a
-**descender**. So the `Lens2.Lenses.Indexed.at/1` maker returns such a
-function:
-
-     def at(index) do
-       fn container, descender ->   # <<< this is the lens function
-          ...
-       end
-     end
-
-In the case of `Lens.at`, the value to be passed to the next lens is
-gotten with `Enum.at/2`, as in this code:
-
-     def at(index) do
-       fn container, descender ->
-         gotten = 
-           Enum.at(container, index)   # Step 1 above
-           |> descender.()             # Step 2 above
-         [gotten]                      # Step 3 above
-       end
-     end
-
-Note that the descender is *not* a lens. Lenses take two arguments,
-whereas a descender takes only a single value. This often requires
-slightly fancy footwork, which I'll show later. (But not more fancy
-than what you're probably already used to with functions like `Enum.map/2`.)
-
-Also, you can't descend into a container *forever*. Eventually, the
-descender has to be something that stops the descent. It is the
-`Deeply` functions that provide that final non-descending descender.
-For example, `Lens2.Deeply.get_all/2` could be implemented like this:
+    iex> get_all(["0", "1"], at(1))
+    ["1"]
+    
+(I'm not using the `Deeply` or `Lens` because I'm showing you simplified versions of the real ones.)
+    
+The lens is a function, so let's have `get_all` just call it:
 
     def get_all(container, lens) do
-      getter = & &1    # Just return the leaf value
+      lens.(container)
+    end
+
+Then the lens-maker `at/1` just returns a function that takes a container and does its thing:
+
+    def at(index) do
+      fn container ->
+        gotten = Enum.at(container, index)
+        [gotten]
+      end
+    end
+    
+Notice that this version of `at` only works with lists, whereas the
+real one also works with tuples.
+    
+Notice that the result of `Enum.at` is wrapped in a list, because
+that's the contract a lens must follow. There has to be a way to
+distinguish between returning a list of values and a single value
+that's a list. That's done by wrapping everything in a list, so that a
+single value that's a list is returned like this:
+
+    [ [0, 1, 2] ]
+    
+... which is distinct from two values that are lists:
+
+    [ [0, 1, 2], [3, 4, 5] ]
+    
+... or six independent values (as you might get from `Lens2.Lenses.Enum..all/0`):
+
+    [ 0, 1, 2, 3, 4, 5 ]
+
+However, lenses are meant to be used in pipelines like this:
+
+    lens = at(1) |> at(2)
+    
+The code for `at` given above assumes it's at the end of a
+pipeline. That can't work: it may, but it may not be. It has to work
+in both cases.
+
+Since the lens can't know where it is in a pipeline, it needs to be
+told what to do after it finishes extracting a value from inside a
+container. It might be told to return that value (as in the `at`
+above), or it might be told to pass the value to the next lens, for it
+to work with as *its* container.
+
+This is done by passing a second argument to the lens function:
+
+    def at(index) do
+      fn container, descender ->
+                    ^^^^^^^^^
+        gotten =
+          (Enum.at(container, index))
+          |> descender.()
+          ^^^^^^^^^^^^^^^
+        [gotten]
+      end
+    end
+
+The descender encapsulates the knowledge of what to do with an
+extracted value. It's not the best name, since "what to do" might be
+"just return it", not "descend deeper into the extracted value", but I
+can't think of a better one. (This code and what follows, plus tests,
+can be found
+[here]((../test/mostly_words/tutorial/by_hand_get_test.exs)).
+
+The need to handle the `get_all(..., at(1))` case means that `get_all` must pass the identity function to its lens:
+
+    def get_all(container, lens) do
+      getter = & &1
       lens.(container, getter)
     end
 
+If `lens` is an isolated lens like a solitary, unpipelined `at`, by
+calling the descender with the extracted value, it's really returning
+the extracted value.
 
-### Walkthrough
+But what happens in the case where the `at` lens is followed by other
+pipelined lenses? *Something* sitting between `get_all` and the `at`
+lens has to create a new descender.
 
-To see how `get_all` works with the lens from `at`, let's walk through this example: 
+### seq
 
-    get_all(["0", "1", "2"], at(1))`
+That job is done by `seq`. Recall that the pipeline `at(1) |> at(2)`
+is syntactic sugar for this expression:
 
-(I'm leaving off the `Lens` qualifier because I'll be showing you some simplified functions. Their source and tests are [here](../test/mostly_words/tutorial/by_hand_get_test.exs).)
-
-A neat thing about functional programming is
-[*evaluation is substitution*](https://ocw.mit.edu/courses/6-001-structure-and-interpretation-of-computer-programs-spring-2005/182629e35d886325280dbc1bb4b5643c_lecture3webhand.pdf). Suppose you have code like this:
-
-    a = 1
-    b = 2
-    a + double(b)
+    seq(at(1), at(2)
     
-Wherever you see a use of a variable, you can substitute its
-value. For the expression above, you'd get this:
+So we need to figure out the definition of `seq`. 
 
-    1 + double(2)
-    
-We can do more substitution because `double` is just as much a name as
-`a` and `b` are. Although Elixir makes a distinction between functions
-attached to modules, typically defined with `def`, and freestanding
-functions defined with `fn ... end`, at base every kind of
-function has a `fn` behind it. So we can replace `double` with its definition:
-
-    1 + (fn arg -> arg + arg end).(2)
-    
-There's another name now: `arg`. But we know that `arg` is to be
-bound to the value `2` when the function executes, so we can make
-another substitution:
-
-    1 + (2 + 2)
-    
-Since there's nothing left but a *primitive function* (`+/2`) and values, we
-can just execute that primitive (twice) to get `5`.
-
-(Note that the order of substitutions makes no difference. I could
-have substituted for `double` as the first step and left `a` and `b` for later.)
-
-------
-
-Now, given `get_all(["0", "1", "2"], at(1))` and `get_all`'s definition:
-
-
-    def get_all(container, lens) do
-      getter = & &1    # Just return the leaf value
-      lens.(container, getter)
-    end
-
-... we can substitute the given values for `container` and `lens`:
-
-       getter = & &1
-       at(1).(["0", "1", "2"], getter)
-       
-... or, after substituting the value of `getter`:
-
-       at(1).(["0", "1", "2"], & &1)    # I'll refer back to this as "expression 1"
-
-What's the value of `at(1)`? Here's `at`'s definition again, slightly
-rearranged to not use `|>`:
-
-     def at(index) do
-       fn container, descender ->
-         gotten = descender.(Enum.at(container, index))
-         [gotten]
-       end
-     end
-
-Substituting `1` into that definition, we get:
-
-       fn container, descender -> 
-         gotten = descender.(Enum.at(container, 1))
-                                               ^^^
-         [gotten]
-       end
-
-Let's replace `at(1)` in expression 1 with its expansion: 
-
-       (fn container, descender -> 
-         gotten = descender.(Enum.at(container, 1))
-         [gotten]
-       end).(["0", "1", "2"], & &1)
-
-
-Let's substitute uses of `container` and `descender` with their actual values:
-       
-       gotten = (& &1).(Enum.at(["0", "1", "2"], 1))
-                ^^^^^^          ^^^^^^^^^^^^^^^
-       [gotten]
-       
-We could now substitute in
-[the definition of `Enum.at`](https://github.com/elixir-lang/elixir/blob/v1.17.2/lib/elixir/lib/enum.ex#L478),
-but that would be silly. We know the `Enum.at` expression will yield
-`"1"`, so I'll skip the busywork and substitute that in:
-
-       gotten = (fn value -> value end).("1")
-       #                                 ^^^
-       [gotten]
-
-We can now substitute `"1"` for `value` in the `fn`, giving:
-
-       gotten = "1"
-                ^^^
-       [gotten]
-       
-On the first line, pattern matching (binding) associates `"1"` with `gotten`, so we can make a substitution in the final line to get the return value:
-
-       ["1"]
-       
-Zowie!
-
-### Pipelines
-
-Now let's see the "descender" argument earn that name.
-
-Recall that `Lens.at(1) |> Lens.at(2)` is shorthand for this code:
-
-    Lens.seq(Lens.at(1), Lens.at(2))
-    
-Since the result is a lens, `seq` has to have this form:
+Since the result of `seq` is a lens that combines two lenses, it has to have this form:
 
     def seq(lens1, lens2) do
       fn container, descender ->
@@ -215,226 +138,162 @@ Since the result is a lens, `seq` has to have this form:
       end
     end
     
-In that definition, `container` is what's given to the *first* lens (to
-produce a value to hand on down), whereas `descender` has to be given
-to the *second* lens (where it will be used to pluck out the final
-return value). So let's have some better variable names:
+From the point of view of `get_all`, the function that `seq` returns
+is a single lens with a single `container` and `descender`. But from
+the point of view of `seq` itself, it has two lenses, each with a
+container and descender. `seq`'s first argument is the container for
+the *first* lens, but its second argument is the descender for the
+*second*. Let's make that explicit. 
 
-    def seq(lens1, lens2) do
-      fn lens1_container, lens2_descender ->
+I'm going to refer to the *outer* and *inner* lenses, because lenses are
+all about descending *into* structures. So:
+
+    def seq(outer_lens, inner_lens) do
+            ^^^^^^^^^^  ^^^^^^^^^^
+      fn outer_container, inner_descender ->
          ^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^
-        ...
       end
     end
     
-That means the body of the `fn` will have to *make* a
-`lens1_descender` to pass to `lens1`:
-
-    def seq(lens1, lens2) do
-      fn lens1_container, lens2_descender ->
-        lens1_descender = fn ... end                # <<
+Since no `outer_descender` is given, the `seq` code will have to make some. That is, it
+must look like this:
+    
+    def seq(outer_lens, inner_lens) do
+      fn outer_container, inner_descender ->
+        outer_descender = fn ... end                     # <<
 
         gotten = 
-          lens1.(lens1_container, lens1_descender)  # <<
+          outer_lens.(outer_container, outer_descender)  # <<
+
+        ???? calculate the return value
+      end
+    end
+    
+
+The `outer_descender`, passed to the `outer_lens`, must tell
+`outer_lens` to call the `inner_lens` with whatever value the `outer_lens`
+extracts from the `outer_container`. (What value that is, is none of `seq`'s business.)
+
+    def seq(outer_lens, inner_lens) do
+      fn outer_container, inner_descender ->
+        outer_descender =                                  # <<
+          fn inner_container ->                            # <<
+            inner_lens.(inner_container, inner_descender)  # <<
+          end                                              # <<
+
+        gotten = 
+          outer_lens.(outer_container, outer_descender)
 
         ???? calculate the return value
       end
     end
 
-As a descender, `lens1_descender` has to take a value extracted by
-`lens1` and pass it along to `lens2`. It's not `seq`'s business how
-`lens1` gets that value. I think that leaves the following as the only possible definition for 
-`lens1_descender`:
+### The return value
 
-    def seq(lens1, lens2) do
-      fn lens1_container, lens2_descender ->
-        lens1_descender =                              # <<
-           fn lens2_container ->                       # <<
-             lens2.(lens2_container, lens2_descender)  # <<
-           end                                         # <<
+We still have to know how `seq` calculates its return value. To see
+what happens, consider this call:
 
-        gotten = 
-          lens1.(lens1_container, lens1_descender)
-        ???? calculate the return value
-      end
-    end
-
-In order to know how to fill in the rest of `seq` – what goes in the line marked
-???? – I think it's worthwhile to walk through a specific example.
-      
-### Walkthrough
-
-Here's the example:
-
-    composed_lens = Lens.seq(Lens.at(1), Lens.at(2))
-    get_all([ [], [0, 1, "TARGET"], []], composed_lens)
-
-... which expands to:
-
-    Lens.seq(Lens.at(1), Lens.at(2)).([ [], [0, 1, "TARGET"], []], & &1)
+    iex> lens = at(1) |> at(2)
+    iex> get_all([0, [0, 1, "TARGET"]])
     
-Substituting the two arguments:
-
-        # This is the code implementing seq(...)
-        lens1_descender =                             
-           fn lens2_container ->                      
-             lens2.(lens2_container, & &1)
-           end                       ^^^^
-
-        gotten = 
-          lens1.([ [], [0, 1, "TARGET"], []], lens1_descender)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        ???? calculate the return value
     
-Might as well substitute the specific values for `lens1` and `lens2`:
+I'll substitute in the literal values into the code for `seq` to get:
 
-        # This is the code implementing seq(...)
-        lens1_descender =                             
-           fn lens2_container ->                      
-             at(2).(lens2_container, & &1)
-             ^^^^^
-           end                       
-        gotten = 
-          at(1).([ [], [0, 1, "TARGET"], []], lens1_descender)
+          at(1).([0, [0, 1, "TARGET"]], fn inner_container ->
           ^^^^^
-            
-        ???? calculate the return value
-    
+             at(2).(inner_container, & &1)
+             ^^^^^                   ^^^^
+          end
+          
+`at(1)` gets called first. When it executes, it'll run this code:
+
+        gotten =
+          Enum.at([0, [0, 1, "TARGET"]], 1)
+          |> (fn inner_container ->
+                at(2).(inner_container, & &1).()
+          
+        [gotten]
+
+We can evaluate the `Enum.a` expression and simplify:
+
+        gotten =
+          at(2).([0, 1, "TARGET"], & &1)
+        [gotten]
+
+Let's inline `at(2)`:
 
 
-       lens1_descender = ...
-       gotten = (
-         gotten =
-           lens1_descender.(Enum.at([ [], [0, 1, "TARGET"], []], 1))
-         [gotten]
-       )
+        gotten =
+          (
+            gotten = 
+              Enum.at([0, 1, "TARGET"], 2)
+              |> (& &1).()
+            [gotten]
+          )
+        [gotten]
 
-       ???? calculate the return value
- 
+or: 
 
-
-Let's expand out `at(1)`, combining a few steps:
-
-        # This is the code implementing seq(...)
-        lens1_descender =                             
-           fn lens2_container ->                      
-             at(2).(lens2_container, & &1)
-             ^^^^^
-           end                       
-        gotten = 
-          at(1).([ [], [0, 1, "TARGET"], []], lens1_descender)
-          ^^^^^
-            
-        ???? calculate the return value
-
-To keep down the clutter, let's (1) expand `at(1)` and then substitute the two arguments:
-
-        lens1_descender = ...
-        gotten = (
-           gotten = 
-        
-
-
-Now let's replace `lens1` with the code for `at(1)`:
-
-      gotten =
-        (fn lens2_container ->                # the descender
-          lens2.(lens2_container, & &1)
-        end).(
-               Enum.at([ [], [0, 1, "TARGET"], []], 1))
-      [gotten]
+        gotten =
+          (
+            gotten = 
+              "TARGET"
+              |> (& &1).()
+            [gotten]
+          )
+        [gotten]
 
 or:
 
-      gotten =
-        (fn lens2_container ->                # the descender
-          lens2.(lens2_container, fn value -> value end)
-        end).([0, 1, "TARGET"])
-      #       ^^^^^^^^^^^^^^^^
-      [gotten]
+        gotten =
+          (
+            gotten = 
+              "TARGET"
+            [gotten]
+          )
+        [gotten]
 
-Expanding the descender:
+or: 
 
-      gotten = 
-        lens2.([0, 1, "TARGET"], fn value -> value end)
-      [gotten]
+        gotten =
+          ["TARGET"]
+        [gotten]
+        
+or:
 
-Since `lens2` is constructed from `at(2)`, we know that the value of
-the call to `lens2` will be the *list* `["TARGET]`. That is, after processing
-`lens2`, we have this:
+        [["TARGET"]]
 
-      # still in lens1
-      gotten = ["TARGET"]  # from lens2
-      [gotten]
-      
-Or:
 
-      # return value from lens1
-      [["TARGET"]]
-      
-Hmm.
+That would be the wrong value for `seq`: there's an extra level of
+wrapping. So `seq` uses `Enum.concat` to fix things up:
 
-### Unwrapping
-
-To recapitulate, here is the code for the `seq` lens:
-
-      fn lens1_container, lens2_descender ->
-        lens1_descender =                   
-           fn lens2_container ->                
-             lens2.(lens2_container, lens2_descender)
-           end                                       
+    def seq(outer_lens, inner_lens) do
+      fn outer_container, inner_descender ->
+        outer_descender =                                  
+          fn inner_container ->                            
+            inner_lens.(inner_container, inner_descender)  
+          end                                              
 
         gotten = 
-          lens1(lens1_container, lens1_descender)   # <<< you are here
-        ...
-      end
+          outer_lens.(outer_container, outer_descender)
 
-`lens1` has, in the case, returned `[["TARGET"]]`. What do we do about
-that? It might be tempting to let the caller deal with it, but we
-don't know who the caller is. It might be another lens, which would
-add another layer of wrapping. That is, we can't rely on `get_all` to
-patch things up because it doesn't know the internal structure of the
-lens it calls. Instead, `seq` has to remove the nesting. 
-
-That is done by concatenating the singleton list:
-
-    def seq(lens1, lens2) do
-      fn lens1_container, lens2_descender ->
-        lens1_descender =
-          fn lens2_container -> lens2.(lens2_container, lens2_descender) end
-  
-        gotten =
-          lens1.(lens1_container, lens1_descender)
-  
-        Enum.concat([["TARGET"]])    # <<<<<<<<<<<<
+        Enum.concat(gotten)                             # <<
       end
     end
 
-(I'll answer "Why `concat`?" in the next section.)
+So a pipeline involves lenses wrapping too much and `seq` fixing their results.
 
-What this means is that when you have a pipeline of lens makers like this:
-
-    Lens.whatever |> Lens.foo |> Lens.bar |> Lens.quux
-
-... what you've got is a bunch of lenses that finish by wrapping their
-return values, only for `seq` to immediately remove the
-wrappers. Seems inelegant, but without it, there would be special
-cases that no single function has enough information to solve. (Are
-these multiple values *in* a list, or a single value that *is* a
-list?)
 
 ### The garden of forking paths
 
 > With apologies to [Jorge Luis Borges](https://en.wikipedia.org/wiki/The_Garden_of_Forking_Paths)
 
-The previous examples were linear: the code descended to a single
+The previous example was linear: the code descended to a single
 "leaf" node, then returned the value found, wrapping and unwrapping as
 needed. But lenses are built on the assumption that a single `Deeply`
 operation may require the lenses to descend to a leaf, retreat to some
 intermediate position in the container, descend again to another leaf,
 retreat again, and so on.
-
-<<<picture>>>
 
 Here's a simple example:
 
@@ -459,49 +318,58 @@ Here's a version of `all` that works with the makers we previously defined:
 Following the simple example, we'll examine how it fits in with this composed lens:
 
     seq(all(), at(1))
+    
+The `all()` lens will be given this descender:
 
-`seq` will expand to something like this:
+          fn outer_container -> 
+            at(1).(outer_container, & &1)
+            ^^^^^                   ^^^^
+          end
 
-    fn all_lens_container, at_lens_descender ->
-      all_lens_descender =
-        fn at_lens_container -> at_lens.(at_lens_container, at_lens_descender) end
+This will be called many times in `all`'s `for` comprehension, each
+time returning a singleton list. So after `seq` executes this:
 
-      gotten =
-        all_lens.(all_lens_container, all_lens_descender)
+        gotten = 
+          all().(outer_container, outer_descender)
 
-      Enum.concat(gotten)
-    end
+... `gotten` will be bound to something like this:
 
-... or, plugging in a doubly-nested list:
+        [ [1], [2] ]
+        
+Not-at-all coincidentally, `seq`'s ending `Enum.concat(gotten)` will produce the desired list:
 
-      all_lens_descender =
-        fn at_lens_container -> at_lens.(at_lens_container, & &1) end
+        [  1,  2   ]
 
-      gotten =
-        all_lens.([ [0, 1, 2], [0, 1111, 2222]], all_lens_descender)
 
-      Enum.concat(gotten)
+### Summary 
 
-`all_lens` will call the `all_lens_descender` twice:
+When it comes to "getting", every lens function has three jobs, in order:
 
-      at_lens.([0, 1, 2], & &1)
-      at_lens.([0, 1111, 2222], & &1)
-      
-Each of them will return a wrapped value: 
 
-      [1]
-      [1111]
-      
-The `for` comprehension in the `all` lens will bundle those into a larger list:
+1. The function is given a container and must select (point to) zero or more
+   elements of that container.
 
-      [ [1], [1111] ]
-      
-Which is what will be returned to the `seq` lens, which will subject it to:
+   
+2. It must pass those 0, 1, or _n_ extracted elements to... it can't
+   be sure. But it doesn't matter. Just to some `descender` function
+   given to it. All the logistics about where the lens is in a
+   pipeline are handled by its caller.
 
-      Enum.concat([ [1], [1111] ])  # or
-      [1, 1111]
+   
+3. It must ensure the return value is a list. If it operates on a
+   single element, it must wrap it into a singleton list.
+   
+   
+Only the last job differs for `Deeply.update` and similar functions. I
+wish it were as simple as saying `Deeply.update` passes a different
+"descender" than `& &1`. Not quite, though. The complication is that
+"update" functions need a way to refer to both the current and
+updated values in a container.
 
-## Updating
+With that teaser, ...
+
+## Update
+
 
 
 ### Deeply.put

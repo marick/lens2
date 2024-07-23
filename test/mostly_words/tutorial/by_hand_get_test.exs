@@ -18,14 +18,16 @@ defmodule Lens2.MostlyText.ByHandGetTest do
     lens.(container, getter)
   end
 
-  def seq(lens1, lens2) do
-    fn lens1_container, lens2_descender ->
-      lens1_descender =
-        fn lens2_container -> lens2.(lens2_container, lens2_descender) end
+  def seq(outer_lens, inner_lens) do
+    fn outer_container, inner_descender ->
+      outer_descender =                                  # <<
+        fn inner_container ->                            # <<
+          inner_lens.(inner_container, inner_descender)  # <<
+        end                                              # <<
 
       gotten =
-        lens1.(lens1_container, lens1_descender)
-      dbg gotten
+        outer_lens.(outer_container, outer_descender)
+
       Enum.concat(gotten)
     end
   end
