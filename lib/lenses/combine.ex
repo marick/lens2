@@ -241,6 +241,7 @@ defmodule Lens2.Lenses.Combine do
       {gotten, updated} =
         Deeply.get_and_update(outer_container, outer_lens, outer_descender)
 
+      # :erts_debug.same(outer_container, updated) |> dbg
       {Enum.concat(gotten), updated}
     end
   end
