@@ -136,22 +136,22 @@ defmodule Lens2.Makers do
 
 
   # The AST that comes from the `do:` block of the macro is named
-  # `anonymous_function` because the typical usage is:
+  # `lens_function` because the typical usage is:
   #
   #    def_maker key!(key) do
-  #      fn composed, descender -> ... end  <<<< here is the block
+  #      fn container, descender -> ... end  <<<< here is the block
   #    end
 
-  defp _def_maker(name, metadata, args, anonymous_function) do
+  defp _def_maker(name, metadata, args, lens_function) do
     args = canonicalize_arglist(args)
     tracing_name = Tracing.function_name(name)
     quote do
       unquote(def_access_fun({name, metadata, args},
-                             anonymous_function))
+                             lens_function))
 
       @doc false
       unquote(def_access_fun({tracing_name, metadata, args},
-                             wrap_function_with_tracing(name, args, anonymous_function)))
+                             wrap_function_with_tracing(name, args, lens_function)))
 
       unquote(def_with_lens_arg(name, args))
       unquote(def_with_lens_arg(tracing_name, args))
@@ -187,20 +187,20 @@ defmodule Lens2.Makers do
 
 
   # Defines a named function that implements the `Access` behaviour.
-  # Used by `def_maker`. `def_compposed_maker` doesn't need it because
+  # Used by `def_maker`. `def_composed_maker` doesn't need it because
   # it's built on a predefined function.
-  defp def_access_fun(header, anonymous_function) do
+  defp def_access_fun(header, lens_function) do
     quote do
       def unquote(header) do
-        anonymous_function = unquote(anonymous_function)
+        lens_function = unquote(lens_function)
 
         fn
           :get, container, access_list_continuation ->
-            {list, _} = anonymous_function.(container, &{&1, &1})
+            {list, _} = lens_function.(container, &{&1, &1})
             access_list_continuation.(list)
 
           :get_and_update, container, mapper ->
-            anonymous_function.(container, mapper)
+            lens_function.(container, mapper)
         end
       end
     end
@@ -229,10 +229,10 @@ defmodule Lens2.Makers do
   # ----------------
 
   # Add tracing code on behalf of `def_maker`
-  defp wrap_function_with_tracing(name, args, anonymous_function) do
+  defp wrap_function_with_tracing(name, args, lens_function) do
     quote do
       fn container, descender ->
-        lens_action = unquote(anonymous_function)
+        lens_action = unquote(lens_function)
         Tracing.State.log_descent(unquote(name), unquote(args), container)
         result = lens_action.(container, descender)
         Tracing.State.log_retreat(unquote(name), unquote(args), result)
@@ -330,8 +330,8 @@ defmodule Lens2.Makers do
   should link to a tutorial I haven't written yet.**
 
   """
-  defmacro def_maker({name, metadata, args}, do: anonymous_function),
-           do: _def_maker(name, metadata, args, anonymous_function)
+  defmacro def_maker({name, metadata, args}, do: lens_function),
+           do: _def_maker(name, metadata, args, lens_function)
 
 
   @doc """
@@ -358,16 +358,16 @@ defmodule Lens2.Makers do
            do: _def_composed_maker(name, metadata, args, plain_code)
 
   @doc ~S"Alternate spelling of `def_maker/2`."
-  defmacro defmaker({name, metadata, args}, do: anonymous_function),
-           do: _def_maker(name, metadata, args, anonymous_function)
+  defmacro defmaker({name, metadata, args}, do: lens_function),
+           do: _def_maker(name, metadata, args, lens_function)
 
   @doc ~S"""
   Alternate spelling of `def_maker/2`.
 
   This is the equivalent macro from [Lens 1](https://hexdocs.pm/lens/readme.html).
   """
-  defmacro deflens_raw({name, metadata, args}, do: anonymous_function),
-           do: _def_maker(name, metadata, args, anonymous_function)
+  defmacro deflens_raw({name, metadata, args}, do: lens_function),
+           do: _def_maker(name, metadata, args, lens_function)
 
 
 
