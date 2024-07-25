@@ -8,7 +8,9 @@ defmodule Lens2.MostlyText.ByHandGetTest do
   @spec at(non_neg_integer) :: get_lens
   def at(index) do
     fn container, descender ->
-      gotten = descender.(Enum.at(container, index))
+      gotten =
+        Enum.at(container, index)
+        |> descender.()
       [gotten]
     end
   end
@@ -20,10 +22,10 @@ defmodule Lens2.MostlyText.ByHandGetTest do
 
   def seq(outer_lens, inner_lens) do
     fn outer_container, inner_descender ->
-      outer_descender =                                  # <<
-        fn inner_container ->                            # <<
-          inner_lens.(inner_container, inner_descender)  # <<
-        end                                              # <<
+      outer_descender =
+        fn inner_container ->
+          inner_lens.(inner_container, inner_descender)
+        end
 
       gotten =
         outer_lens.(outer_container, outer_descender)
