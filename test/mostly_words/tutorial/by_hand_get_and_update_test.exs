@@ -38,7 +38,7 @@ defmodule Lens2.MostlyText.ByHandGetAndUpdateTest do
       {gotten, updated} =
         outer_lens.(outer_container, outer_descender)
 
-      :erts_debug.same(outer_container, updated) |> dbg
+      :erts_debug.same(outer_container, updated)
       {Enum.concat(gotten), updated}
     end
   end
@@ -97,9 +97,9 @@ defmodule Lens2.MostlyText.ByHandGetAndUpdateTest do
                  [2],
                  [3]
                ]
-    lens = Lens.seq(Lens.at(1), Lens.seq(Lens.at(2), Lens.at(3)))
-    assert Deeply.get_all(container, lens) == [333]
-#    assert update(container, lens, & &1 * 10000100001) == expected
+    lens = seq(at(1), seq(at(2), at(3)))
+    assert get_all(container, lens) == [333]
+    assert update(container, lens, & &1 * 10000100001) == expected
   end
 
   test "all" do
@@ -115,7 +115,6 @@ defmodule Lens2.MostlyText.ByHandGetAndUpdateTest do
     nested = [ [0, 1, 2], [0, 1111, 2222], [:a, :b, :c] ]
     lens = Lens.all |> Lens.at(1)
     assert Deeply.get_all(nested, lens) == [ 1, 1111, :b]
-    IO.puts("FF")
     actual = Deeply.update(nested, lens, &inspect/1)
     assert actual == [ [0, "1", 2], [0, "1111", 2222], [:a, ":b", :c]]
   end
