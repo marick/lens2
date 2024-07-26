@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Timings.Keyed do
+defmodule Mix.Tasks.Timings.List do
   @moduledoc """
   Crude timings that compare Access and Lens operations on a struct+map container.
 
@@ -53,26 +53,30 @@ defmodule Mix.Tasks.Timings.Keyed do
 
   @impl Mix.Task
   def run([]) do
-    time_with_node_count(10, 4000)
+    time_with_node_count(10, 40_000)
   end
 
   def run(args) do
     node_counts =
       for a <- args, do: Integer.parse(a) |> elem(0)
     for count <- node_counts do
-      time_with_node_count(count, 40_000_000)
+      time_with_node_count(count, 4_000_000)
       IO.puts("\n")
     end
   end
+
+
 
   use TypedStruct
   use Lens2
   import Lens2.Helpers.Section
 
   section "the data structures" do
+
     defmodule Router do
       @moduledoc false
-      typedstruct do
+
+      typedstruct enforce: true do
         field :target_by_route, %{atom => integer}
       end
 
@@ -87,34 +91,25 @@ defmodule Mix.Tasks.Timings.Keyed do
       @moduledoc false
       # It is annoying that using `moduledoc false` with a typedstruct
       # causes warnings.
-      defstruct [:atom1, :string, :fun, :router]
+      defstruct [:int, :string, :fun, :router]
     end
 
     defmodule Network do
       @moduledoc false
-      typedstruct do
-        field :clusters_by_name, %{atom => Cluster.t}, default: %{}
-        field :names_by_index, %{integer => atom}, default: %{}
+      typedstruct enforce: true do
+        field :clusters, [Cluster.t]
         field :cluster_count, integer
       end
 
       def new(cluster_count) do
-        names_by_index =
-          for i <- 1..cluster_count, into: %{} do
-            {i, String.to_atom("name#{i}")}
+        clusters =
+          for i <- 0..cluster_count-1 do
+            %Cluster{int: i, string: inspect(i), fun: &inspect/1,
+                     router: Router.new}
           end
 
-        clusters_by_name =
-          for i <- 1..cluster_count, into: %{} do
-            name = names_by_index[i]
-            cluster = %Cluster{atom1: name, string: inspect(name), fun: &inspect/1,
-                               router: Router.new}
-            {name, cluster}
-          end
-
-        struct(__MODULE__, clusters_by_name: clusters_by_name,
-                           names_by_index: names_by_index,
-                           cluster_count: cluster_count)
+        struct(Network, clusters: clusters,
+                        cluster_count: cluster_count)
       end
     end
 
@@ -122,16 +117,16 @@ defmodule Mix.Tasks.Timings.Keyed do
 
   section "paths" do
     @doc false
-    def_composed_maker lens_path(name, destination) do
-      Lens.key!(:clusters_by_name)
-      |> Lens.key!(name)
+    def_composed_maker lens_path(cluster_index, destination) do
+      Lens.key!(:clusters)
+      |> Lens.at(cluster_index)
       |> Lens.key!(:router)
       |> Lens.key!(destination)
     end
 
-    defp access_path(name, destination) do
-      [Access.key(:clusters_by_name),
-       name,
+    defp access_path(cluster_index, destination) do
+      [Access.key(:clusters),
+       Access.at(cluster_index),
        Access.key(:router),
        destination]
     end
@@ -147,35 +142,34 @@ defmodule Mix.Tasks.Timings.Keyed do
 
     defp repeatedly_get(one_call, network, iterations) do
       Enum.reduce(1..iterations, %{}, fn _, acc ->
-        {_, name} = call_on_random_cluster(one_call, network)
-        Map.update(acc, name, 0, & &1+1)
+        {_, index} = call_on_random_cluster(one_call, network)
+        Map.update(acc, index, 0, & &1+1)
       end)
     end
 
     defp call_on_random_cluster(one_call, network) do
-      index = :rand.uniform(network.cluster_count)
-      name = network.names_by_index[index]
+      index = :rand.uniform(network.cluster_count)-1
       destination = Enum.random(Router.destinations)
-      {one_call.(network, name, destination), name}
+      {one_call.(network, index, destination), index}
     end
 
     defp one_call(tuple) do
       case tuple do
         {:get, Access} ->
-          fn network, name, destination ->
-            get_in(network, access_path(name, destination))
+          fn network, cluster_index, destination ->
+            get_in(network, access_path(cluster_index, destination))
           end
         {:get, Lens} ->
-          fn network, name, destination ->
-            Deeply.get_all(network, lens_path(name, destination))
+          fn network, cluster_index, destination ->
+            Deeply.get_all(network, lens_path(cluster_index, destination))
           end
         {:update, Access} ->
-          fn network, name, destination ->
-            update_in(network, access_path(name, destination), & &1+1)
+          fn network, cluster_index, destination ->
+            update_in(network, access_path(cluster_index, destination), & &1+1)
           end
         {:update, Lens} ->
-          fn network, name, destination ->
-            Deeply.update(network, lens_path(name, destination), & &1+1)
+          fn network, cluster_index, destination ->
+            Deeply.update(network, lens_path(cluster_index, destination), & &1+1)
           end
       end
     end
@@ -206,6 +200,5 @@ defmodule Mix.Tasks.Timings.Keyed do
 
     time(:get, Access, network, iteration_count)
     time(:get, Lens, network, iteration_count)
-
   end
 end
