@@ -12,9 +12,9 @@ defmodule Mix.Tasks.Has.Smart.Put do
   that. `put` just returns the original map.
 
   This matters for the current implementation of lenses because
-  `Deeply.get_all` will do such equality-preserving puts. Naive
-  implementations of a container data type will do extra work that
-  `get_in` avoids.
+  `Deeply.get_all` will do such equality-preserving puts (and then
+  throw the result away). Naive implementations of a container data
+  type will do extra work that `get_in` avoids.
 
   If you're implementing lenses for a new data structure, you nmight want to know
   whether it's smart or naive.
