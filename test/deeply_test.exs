@@ -29,4 +29,9 @@ defmodule Lens2.DeeplyTest do
     # Surprising, yes, but consistent with `Access`.
     assert Deeply.put(keylist, lens, :NEW) == [a: :NEW, other: 2, a: 3]
   end
+
+  test "get_and_update" do
+    returner = fn value -> {value, inspect(value)} end
+    assert Deeply.get_and_update(%{a: 1}, Lens.key(:a), returner) == { [1], %{a: "1"} }
+  end
 end
