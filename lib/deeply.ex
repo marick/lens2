@@ -163,8 +163,8 @@ defmodule Lens2.Deeply do
   `get_and_update` produces its result with `get_and_update_in/3`.
   """
   @spec get_and_update(Lens2.container, Lens2.lens, (Lens2.value -> {Lens2.value, Lens2.updated_value})) :: {list(Lens2.value), Lens2.container}
-  def get_and_update(container, lens, fun) do
-    Tracing.wrap [:get, :update], do: Kernel.get_and_update_in(container, [lens], fun)
+  def get_and_update(container, lens, tuple_returner) do
+    Tracing.wrap [:get, :update], do: Kernel.get_and_update_in(container, [lens], tuple_returner)
   end
 
   # =====

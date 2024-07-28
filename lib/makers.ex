@@ -143,7 +143,7 @@ defmodule Lens2.Makers do
   #    end
 
   defp _def_maker(name, metadata, args, lens_function) do
-    args = canonicalize_arglist(args)
+    args = force_arglist(args)
     tracing_name = Tracing.function_name(name)
     quote do
       unquote(def_access_fun({name, metadata, args},
@@ -167,7 +167,7 @@ defmodule Lens2.Makers do
   #    end
 
   defp _def_composed_maker(name, metadata, args, plain_code) do
-    args = canonicalize_arglist(args)
+    args = force_arglist(args)
     tracing_name = Tracing.function_name(name)
     quote do
       unquote(def_composed_fun({name, metadata, args},
@@ -189,18 +189,18 @@ defmodule Lens2.Makers do
   # Defines a named function that implements the `Access` behaviour.
   # Used by `def_maker`. `def_composed_maker` doesn't need it because
   # it's built on a predefined function.
-  defp def_access_fun(header, lens_function) do
+  defp def_access_fun(header, lens_code) do
     quote do
       def unquote(header) do
-        lens_function = unquote(lens_function)
+        lens = unquote(lens_code)
 
         fn
           :get, container, access_list_continuation ->
-            {list, _} = lens_function.(container, &{&1, &1})
+            {list, _} = lens.(container, &{&1, &1})
             access_list_continuation.(list)
 
-          :get_and_update, container, mapper ->
-            lens_function.(container, mapper)
+          :get_and_update, container, tuple_returner ->
+            lens.(container, tuple_returner)
         end
       end
     end
@@ -229,10 +229,10 @@ defmodule Lens2.Makers do
   # ----------------
 
   # Add tracing code on behalf of `def_maker`
-  defp wrap_function_with_tracing(name, args, lens_function) do
+  defp wrap_function_with_tracing(name, args, lens_code) do
     quote do
       fn container, descender ->
-        lens_action = unquote(lens_function)
+        lens_action = unquote(lens_code)
         Tracing.State.log_descent(unquote(name), unquote(args), container)
         result = lens_action.(container, descender)
         Tracing.State.log_retreat(unquote(name), unquote(args), result)
@@ -258,7 +258,8 @@ defmodule Lens2.Makers do
 
   # ----------------
 
-  defp canonicalize_arglist(args) do
+  # A missing arglist is passed to a macro as `nil`, rather than `[]`.
+  defp force_arglist(args) do
     case args do
       nil -> []
       _ -> args
@@ -330,8 +331,8 @@ defmodule Lens2.Makers do
   should link to a tutorial I haven't written yet.**
 
   """
-  defmacro def_maker({name, metadata, args}, do: lens_function),
-           do: _def_maker(name, metadata, args, lens_function)
+  defmacro def_maker({name, metadata, args}, do: lens_code),
+           do: _def_maker(name, metadata, args, lens_code)
 
 
   @doc """
@@ -358,16 +359,16 @@ defmodule Lens2.Makers do
            do: _def_composed_maker(name, metadata, args, plain_code)
 
   @doc ~S"Alternate spelling of `def_maker/2`."
-  defmacro defmaker({name, metadata, args}, do: lens_function),
-           do: _def_maker(name, metadata, args, lens_function)
+  defmacro defmaker({name, metadata, args}, do: lens_code),
+           do: _def_maker(name, metadata, args, lens_code)
 
   @doc ~S"""
   Alternate spelling of `def_maker/2`.
 
   This is the equivalent macro from [Lens 1](https://hexdocs.pm/lens/readme.html).
   """
-  defmacro deflens_raw({name, metadata, args}, do: lens_function),
-           do: _def_maker(name, metadata, args, lens_function)
+  defmacro deflens_raw({name, metadata, args}, do: lens_code),
+           do: _def_maker(name, metadata, args, lens_code)
 
 
 
