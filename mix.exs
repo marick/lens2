@@ -65,10 +65,20 @@ defmodule Lens2.MixProject do
                "mostly_words/tutorial01-pointers.md",
                "mostly_words/tutorial02-nested.md",
                "mostly_words/tutorial03-missing.md",
-               "mostly_words/tutorial04-implementation.md",
+               "mostly_words/tutorial04-unusual-lenses.md",
+               "mostly_words/implementation01-intro.md",
+               "mostly_words/implementation02-continuation-passing.md",
+               "mostly_words/implementation02-get_all.md",
+               "mostly_words/implementation03-update.md",
+               "mostly_words/implementation04-get_and_update.md",
+               "mostly_words/implementation05-access.md",
+               "mostly_words/implementation06-into.md",
+               "mostly_words/implementation07-const.md",
+               "mostly_words/implementation08-some-makers.md",
       ],
       groups_for_extras: [
         "Tutorial": Path.wildcard("mostly_words/tutorial??-*.md"),
+        "Debugging Pipelines / Defining Makers": Path.wildcard("mostly_words/implementation??-*.md"),
       ],
 
       groups_for_modules: [
