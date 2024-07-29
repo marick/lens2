@@ -685,7 +685,7 @@ with the `Lens2.Makers.def_maker/2` macro. That macro does two things:
           :get_and_update, container, tuple_returner -> ...
         end
           
-   The `:get_and_update case is simplest:
+   The `:get_and_update` case is simplest:
            
           :get_and_update, container, tuple_returner -> 
             lens.(container, tuple_returner)

@@ -72,7 +72,7 @@ defmodule Lens2.MixProject do
       ],
 
       groups_for_modules: [
-        "Predefined": ~r/Lens2.Lenses.*/
+        "Lens Makers": ~r/Lens2.Lenses.*/
       ],
       assets: %{
         "mostly_words/pics" => "pics",
