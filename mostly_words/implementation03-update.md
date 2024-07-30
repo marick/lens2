@@ -1,5 +1,5 @@
 
-# Version 3: update
+# Version 2: update
 
 Because updating and getting work so similarly, we can use the
 previous major section as a model – but speed through it.

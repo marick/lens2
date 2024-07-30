@@ -38,7 +38,6 @@ defmodule Lens2.MostlyText.ImplementationV1GetTest do
   end
 
   defmodule Derply do
-
     def get_all(container, lens) do
       getter = & &1    # Just return the leaf value
       lens.(container, getter)

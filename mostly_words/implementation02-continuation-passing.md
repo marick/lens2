@@ -7,11 +7,12 @@ don't *exactly* use continuation-passing style, but it's pretty close.
 
 In this style, every function call is a two-part instruction:
 
-1. Dear function, do that thing you do with these arguments, then...
+1. Dear function, do that thing you do, using these arguments, then...
 
-2. ... do *not* return the result. Instead, pass it to another
-   function, called the *continuation* (because it continues the
-   computation).
+2. ... do *not* return the result. Instead, pass it to the function I
+   also gave you in an argument. That function is called the
+   *continuation* (because it continues the overall computation of
+   which the function call is a part).
 
 Any function can be converted to continuation-passing style. Here's a
 continuation-passing version of `Map.put/3`:
@@ -33,8 +34,8 @@ Here's a more elaborate call that puts two
 different key/value pairs into a map:
 
     iex> map_put(%{}, :a, 1,
-                 fn map ->
-                   map_put(map, :b, 2,
+                 fn just_created_map ->
+                   map_put(just_created_map, :b, 2,
                            & &1)
                  end)
     %{a: 1, b: 2}
@@ -42,7 +43,7 @@ different key/value pairs into a map:
 There are two continuations here: one that calls another instance of
 `map_put`, and one that just returns the final value. The sequence of events is:
 
-1. `map_put` calculates %{a: 1}, and passes it to the continuation.
+1. `map_put` calculates %{a: 1}, and passes it to the bigger continuation.
 2. The continuation passes that value on to another `map_put`,
    together with a second continuation, the identity function.
 3. The second `map_put` calculates %{a: 1, b: 2} and passes it to the second continuation.
@@ -50,10 +51,10 @@ There are two continuations here: one that calls another instance of
 5. ... the second `map_put` returns the value to...
 6. ... the first continuation, which returns it to...
 7. ... the first instance of `map_put` which...
-8. ... returns it for IEX to print.
+8. ... returns it to IEX for printing to the terminal.
 
 (A sufficiently smart compiler could eliminate all but the last
-return; indeed, continuation-passing style was invented to use in a
+return; indeed, continuation-passing style was invented for use in a
 compiler as an intermediate form that lent itself to certain
 optimizations.)
 
@@ -61,41 +62,48 @@ The code isn't what you'd call wildly readable. There's a general structure that
 
       map_put(%{}, :a, 1,
       ^^^^^^^ ^^^  ^^  ^
-              fn map ->
-                map_put(map, :b, 2,
-                             ^^  ^
+              fn just_created_map ->
+                map_put(just_created_map, :b, 2,
+                ^^^^^^^                   ^^  ^
                         & &1)
                         ^^^^
               end)
 
-Code full of constants can be turned into a function that takes appropriate arguments. Let's pull out `%{}` and `& &1`first:
+Code full of constants can be turned into a function that takes appropriate arguments. Let's pull `%{}` and `& &1`out first:
 
     two_puts =
       fn initial_value, final_continuation ->
-        map_put(initial_value, :a, 1,           # step 1
-                fn map ->
-                  map_put(map, :b, 2,           # step 2
+         ^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^
+        map_put(initial_value, :a, 1,
+                ^^^^^^^^^^^^^
+                fn just_created_map ->
+                  map_put(just_created_map, :b, 2,
                           final_continuation)
+                          ^^^^^^^^^^^^^^^^^^
                 end)
       end
 
     iex> two_puts.(%{}, & &1)
     %{a: 1, b: 2}
 
-Next let's pull out the two explicit calls to `map_put` into two "step" arguments:
+Next let's extract the two explicit calls to `map_put` into two "step"
+arguments that give functions for the internal code to execute:
 
     step_combiner =
       fn step1, step2 ->
+         ^^^^^  ^^^^^
         fn initial_value, final_continuation ->
           step1.(initial_value,
-                 fn map ->
-                   step2.(map,
-                          final_continuation)
+          ^^^^^  fn just_created_map ->
+                   step2.(just_created_map,
+                   ^^^^^  final_continuation)
                  end)
         end
       end
 
-It could be used like this:
+The `step_combiner` is a function that returns a function that
+executes two computations in a row, passing the first result to the
+second computation. It could be used like this:
 
     two_puts =
       step_combiner.(
@@ -165,6 +173,7 @@ Second, a variant `make_put_fn` that takes a previous step and combines it with 
 
 And now:
 
-    iex> do_to(%{c: 3}, make_put_fn(:a, 1) |> make_put_fn(b: 2))
+    iex> two_step = make_put_fn(:a, 1) |> make_put_fn(b: 2))
+    iex> do_to(%{c: 3}, two_step)
     %{a: 1, b: 2, c: 3}
 

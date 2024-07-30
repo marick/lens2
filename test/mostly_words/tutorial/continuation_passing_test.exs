@@ -7,8 +7,6 @@ defmodule Lens2.MostlyText.ContinuationPassingTest do
     |> continuation.()
   end
 
-
-
   test "simple" do
     assert map_put(%{}, :a, 1, & &1) == %{a: 1}
   end
@@ -16,8 +14,8 @@ defmodule Lens2.MostlyText.ContinuationPassingTest do
   test "nested" do
     actual =
       map_put(%{}, :a, 1,
-              fn map ->
-                map_put(map, :b, 2,
+              fn just_created_map ->
+                map_put(just_created_map, :b, 2,
                         & &1)
               end)
     assert actual == %{a: 1, b: 2}
@@ -28,8 +26,8 @@ defmodule Lens2.MostlyText.ContinuationPassingTest do
     two_puts =
       fn initial_value, final_continuation ->
         map_put(initial_value, :a, 1,          # step 1
-                fn map ->
-                  map_put(map, :b, 2,          # step 2
+                fn just_created_map ->
+                  map_put(just_created_map, :b, 2,          # step 2
                           final_continuation)
                 end)
       end
@@ -43,8 +41,8 @@ defmodule Lens2.MostlyText.ContinuationPassingTest do
       fn step1, step2 ->
         fn initial_value, final_continuation ->
           step1.(initial_value,
-                 fn map ->
-                   step2.(map,
+                 fn just_created_map ->
+                   step2.(just_created_map,
                           final_continuation)
                  end)
         end
@@ -78,8 +76,8 @@ defmodule Lens2.MostlyText.ContinuationPassingTest do
       fn step1, step2 ->
         fn initial_value, final_continuation ->
           step1.(initial_value,
-                 fn map ->
-                   step2.(map,
+                 fn just_created_map ->
+                   step2.(just_created_map,
                           final_continuation)
                  end)
         end
