@@ -19,7 +19,10 @@ defmodule Lens2.MostlyText.ImplementationV2UpdateTest do
 
     def key(key) do
       fn container, descender ->
-        updated = descender.(Map.get(container, key))
+        updated =
+          Map.get(container, key)
+          |> descender.()
+
         Map.put(container, key, updated)
       end
     end

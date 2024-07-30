@@ -1,18 +1,19 @@
 
 # Version 2: update
 
-Because updating and getting work so similarly, we can use the
-previous major section as a model – but speed through it.
+The code and tests for this version – version 2 – can be found in
+[`implementation_v1_update_test.exs`](../test/mostly_words/tutorial/implementation_v2_update_test.exs).
 
-An `update` operation looks almost like `get_all`, except that the
-identify function is replaced with the update function passed in:
+Update-capable lens code has the same "shape" as get-capable code. For
+example, here's `V2.update` vs. `V1.get_all`. `update` takes an update
+function and uses it as the final "descender":
 
 
-    def update(container, lens, update_fn) do          def get_all(container, lens) do
-                                ^^^^^^^^^
-      lens.(container, update_fn)                        lens.(container, & &1)
-                       ^^^^^^^^^                                          ^^^^
-    end                                                end
+    def update(container, lens, update_fn) do      def get_all(container, lens) do
+                                ^^^^^^^^^             
+      lens.(container, update_fn)                    lens.(container, & &1)
+                       ^^^^^^^^^                                      ^^^^
+    end                                            end
 
 (A `put` operation is the same, except that it codes up a constant-returning update function:
 
@@ -22,122 +23,112 @@ identify function is replaced with the update function passed in:
 
 I won't mention `put` any more.)
 
-We can make a similar small change to `at` to make it work with `update`. Instead of returning an extracted element (wrapped in a list), we `put` the new element in the given index:
+It's worth emphasizing what happens in a call like:
 
+    iex> lens = Lens.key(:a) |> Lens.key(:b) |> Lens.key(:c)
+    iex> container = %{a: %{b: %{c: 1}}}
+    iex> update_fn = & &1 * 1111
+    iex> Deeply.update(container, lens, update_fn)
+    %{a: %{b: %{c: 1111}}}
+    
+The code descends all the way to the inner map `%{c: 1}`. It calls this function:
 
-    def at(index) do                                    def at(index) do
-      fn container, descender ->                          fn container, descender ->
-        updated =                                           gotten = 
-          Enum.at(container, index)                           Enum.at(container, index)
-          |> descender.()                                     |> descender.()
+    Map.update!(%{c: 1}, :c, update_fn)
+    
+... which produces `%{c: 1111}`. Having descended as far as it can, it
+begins to "retreat" back to the original container. That means that
+the lens for `key(:b)` will have pointers to two pieces of data:
 
-        List.replace_at(container, index, updated)          [gotten]
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^          ^^^^^^^^
-      end                                                 end
-    end                                                 end
+    %{b: %{c: 1}}  # embedded within the original container
+    %{c: 1111}     # a value returned from the lower lens
 
-You may wonder why I didn't use just `List.update`, as in:
+It must do this: 
 
-    def at(index) do
+    Map.put(%{b: %{c: 1}}, :b, %{c: 1111})
+    
+... to make a *new* map `%{b: %{c: 1111}}`. And, retreating further up the pipeline, we
+get this:
+
+    Map.put(%{a: %{b: %{c: 1}}}, :a, %{b: %{c: 1111}})
+    
+Every step of retreat "back up to" the original container allocates a
+new map. That's just the way it is in a language without
+mutability. (Such languages can make optimizations to share structure
+between original and updated versions of structures, so long as no
+user code can tell. I don't know if the Erlang virtual machine's
+optimizations for maps would help with this example.)
+
+With that background, here's the definition of `V2.key`:
+
+    def key(key) do
       fn container, descender ->
-        List.update_at(container, index, descender)
+        updated =
+          Map.get(container, key)
+          |> descender.()
+
+        Map.put(container, key, updated)
       end
     end
 
-That would work just as well, but I'm using the other form for two reasons:
+In the leaf (`%{c: 1}`) case, that code has this effect:
 
-1. You may have noticed that this new version of `at` won't work with
-   `get_all`. The next major section will fix that by taking advantage
-   of the structural similarity between the two versions.
-   
-2. In both versions, the effect the effect is to descend into the
-   container, do something, then retreat up out of the container,
-   adjusting each successive container. But separating the `Enum.at` from the
-   `List.replace_at` makes the sequence of events clearer.
-   That is, consider this container:
-   
-        iex>     container =
-        ...>         [
-        ...>           [0],
-        ...>           [
-        ...>             [00],
-        ...>             [11],
-        ...>             [
-        ...>               :---, :---, :---, 333
-        ...>             ],
-        ...>           [33]
-        ...>          ],
-        ...>          [2],
-        ...>          [3]
-        ...>        ]
-
-
-   I want to change the triply-nested element `333`. I can't pipe my
-   homegrown `at`-makers together because I used `def` instead of the
-   `Lens2.Makers.def_maker/2` macro that would create the
-   extra-argument version of `at` that works in a pipeline. So, I'll use
-   `seq` again:
-   
-        iex> lens = seq(at(1), seq(at(2), at(3)))
-       
-    Now what happens during this?
+        updated =
+          Map.get(%{c: 1}, :c)
+          |> (&1 * 1111).()
+        Map.put(%{c: 1}, :c, updated)
     
-        iex> update(container, lens, & &1 * 10000100001)
-       
-    1. The composed lens descends (via `Enum.at(..., 1`) and passes this interior container
-       to its `descender`:
-       
-                  [
-                    [00],
-                    [11],
-                    [
-                      :---, :---, :---, 333
-                    ],
-                    [33]
-                  ],
-       
-    2. The descender uses the `at(2)` lens to extract this:
+In the next level up, the code should look like this:
+
+        updated =
+          Map.get(%{b: {c: 1}}, :b)
+          |> leaf_descender.()
+        Map.put(%{b: %{c: 1}}, :b, updated)
     
-                    [
-                      :---, :---, :---, 333
-                    ]
+However, there's a `V2.seq` in between the `key(:c)` leaf lens and the
+preceding `key(:b)` lens. What must that look like?
 
-       ... and calls its descender.
-    
-    3. And the `at(3)` uses `Enum.at(..., 3)` to extract `333`, which – as usual – goes to its
-       descender.
-    4. But that descender is `& &1 * 10000100001`, which yields `3330033300333`. That is
-       returned.
-    5. Now the retreat begins. The new value replaces the 333 to yield:
-    
-                    [
-                      :---, :---, :---, 3330033300333
-                    ]
-    5. The retreat continues, and *that* value is replaced in the `[00, 11, ... 33]` list.
-    6. And the same happens in the top level.
-    
-    Descend, descend, descend, update, replace, replace, replace.    
-    At, at, at, update, replace_at, replace_at, replace_at
+The `V1` version of `seq` gets wrapped values and has to unwrap
+them. But this `V2` version gets *replacement* values for the current
+level of the data structure. It doesn't have to do anything. So that's easy:
 
-Now, at this point, that won't actually work because our version of
-`seq` unwraps what's assumed to be a doubly-wrapped list of gotten
-values. So another one-line change is needed, to replace `Enum.concat`
-with a plain return value:
+    # `get_all` version                                     # `update` version
+    def seq(outer_lens, inner_lens) do                      def seq(outer_lens, inner_lens) do
+      fn outer_container, inner_descender ->                  fn outer_container, inner_descender ->
+        outer_descender =                                       outer_descender =
+          fn inner_container ->                                   fn inner_container ->
+            inner_lens.(inner_container, inner_descender)           inner_lens.(inner_container, inner_descender)
+          end                                                     end
+                                                               
+        gotten =                                                updated =
+        ^^^^^^                                                  ^^^^^^^
+          outer_lens.(outer_container, outer_descender)           outer_lens.(outer_container, outer_descender)
+                                                             
+        Enum.concat(gotten)                                     updated
+        ^^^^^^^^^^^^^^^^^^^                                     ^^^^^^^
+      end                                                     end
+    end                                                     end
 
-      def seq(outer_lens, inner_lens) do
-        fn outer_container, inner_descender ->
-          outer_descender =
-            fn inner_container ->
-              inner_lens.(inner_container, inner_descender)
-            end
-    
-          updated =
-            outer_lens.(outer_container, outer_descender)
 
-          updated                                          # Used to be `Enum.concat(gotten)`
-          ^^^^^^^
-        end
-      end
+When it comes to ordinary lenses, the changes are equally trivial. Here's `at`:
 
-And that's it!
+    # `get_all` version                # `update` version
+    def at(index) do                   def at(index) do
+      fn container, descender ->        fn container, descender ->
+        gotten =                          updated =
+          Enum.at(container, index)         Enum.at(container, index)
+          |> descender.()                   |> descender.()
+        [gotten]                          List.replace_at(container, index, updated)
+        ^^^^^^^^                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      end                               end
+    end                               end
 
+`all` doesn't have to change at all:
+
+    def all do                          def all do
+      fn container, descender ->          fn container, descender ->
+        for item <- container,              for item <- container,
+            do: descender.(item)                do: descender.(item)
+      end                                 end
+    end                                 end
+
+So that was easy. It will also be pretty easy produce a lens that works to both get and update.
