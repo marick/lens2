@@ -13,7 +13,6 @@ different project, see the
 
 1. Lots of beginner and intermediate documentation.
 2. An alternate API for operating on data with lenses (but the same API for creating lenses).
-3. A tracing API to let you watch how lenses descend into containers.
 3. Operations that encourage (but do not require) information hiding.
 4. Extra lenses and utility functions.
 

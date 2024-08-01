@@ -98,30 +98,6 @@ highlights of the new package:
    learner is still too much, in my opinion.
    So this package has lots of explanatory and tutorial documentation, longer docstrings,
    and some renamed functions. (With the old names still supported.)
-
-2. Composing existing lenses to make new lenses is *usually* straightforward, but there
-   are occasionally subtleties and gotchas. I try to call those out in
-   docstrings and tutorials, but that may not be enough. So each predefined lens maker
-   (and the ones you create yourself) has a `tracing_` variant that makes a lens
-   which describes what it's doing as it moves around within a nested container.
-   For example, suppose you have this lens:
-   
-   ```elixir
-   lens = 
-     Lens.tracing_seq(Lens.tracing_map_values,
-                      Lens.tracing_all |> Lens.tracing_into(MapSet.new))
-   ```
-       
-   ... and you use it with `Deeply.update`:
-
-   ```elixir
-   Deeply.update(%{a: 0..2, b: 3..4}, lens, &inspect/1)
-   ```
-       
-   You'll see this:
-
-   ![Alt-text is coming](pics/tracing_example.png)
-
    
 3. The `Deeply` API encourages information hiding and the use of structs
    more than does Lens 1 (or `put_in` and friends). When I use

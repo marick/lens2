@@ -36,89 +36,7 @@ defmodule Lens2.Makers do
            end
          end
 
-  In both cases, there are actually *four* distinct functions defined,
-  though the documentation only describes one. For the `leaf(key)`
-  example above, those functions are:
-
-  * `leaf(key)`: Takes a key and returns a lens. This is the documented version.
-
-  * `leaf(lens, key)`: This composes the given lens with the one made
-    from `leaf(key)`.  This is why you can build pipelines from lens
-    makers (as in the definition of `leaf` itself).
-
-  * tracing_leaf(key): Produces the same lens as `leaf(key)` except that, when the
-    lens is used, it contributes to a trace of what a `Lens2.Deeply` function does:
-
-       ![Alt-text is coming](pics/tracing_example.png)
-
-  * `tracing_leaf(lens, key)`: the pipeline-friendly version of `tracing_leaf/1`.
-
-
-  [[[[Move the following elsewhere.]]]
-
-  ## Understanding the mechanism
-
-  A lens function is of two forms. The first is a subtype of what `Access` calls type
-  `Access.access_fun`. It is a function with this API:
-
-      fn
-        :get, container, getting_descender ->
-          # returns a list with the gotten values.
-
-        :get_and_update, container, getting_and_updating_descender ->
-          # returns a tuple:
-          #   { a list with the gotten values,
-          #     an updated version of the original `data`.
-          #   }
-      end
-
-  (It's a subtype because the gotten value must be a list, whereas `Access` functions
-  can return `any` type, typically a leaf value rather than a list.)
-
-  For this module, I'm going to call it a *composed* function because it's typically
-  built from other lenses, like this:
-
-      deflens keys(keys),
-        do: keys |> Enum.map(&key/1) |> Lens.multiple
-
-  or
-
-      deflens clusters,
-        do: Lens.key(:name_to_cluster) |> Lens.map_values
-
-  Lenses can also be built by wrapping an `access_fun` around another
-  type of function which I'll call a "raw" function (for backwards compatibility
-  with code that uses [Lens 1](https://hexdocs.pm/lens/readme.html)).
-
-  This is a function like this:
-
-      fn container, descender ->
-        # Returns a tuple
-      end
-
-  Instead of the caller choosing between one descender (used for
-  `:get`, returns a single value) and another (used for
-  `:get_and_update`, returns a two-value tuple), the single
-  `descender` function always returns a two-value tuple.
-
-  * For updating cases like `Deeply.put/2` or `Deeply.update/3`, it's
-    the usual `{gotten, updated}` tuple (and the `gotten` value is just
-    discarded).
-
-  * In the `:get` case, there's no updating, so the tuple duplicates the
-    `gotten` values, and the second one is ignored.
-
-  The `deflens_raw` macro takes the code for such a function and
-  produces a `def` that creates a legitimate (`Access.access_fun` or
-  `Lens2.lens`) lens maker. It creates the pipeline and tracing versions, too.
-
-  ## Tracing
-
-  Tracing versions of a function are given the name of the lens function with `tracing_`
-  prepended. They don't appear in documentation, but they're there.
-
   """
-
 
   @doc """
   Import the maker macros.
@@ -132,7 +50,6 @@ defmodule Lens2.Makers do
   end
 
   alias Lens2.Lenses.Combine
-  alias Lens2.Tracing
 
 
   # The AST that comes from the `do:` block of the macro is named
@@ -144,17 +61,11 @@ defmodule Lens2.Makers do
 
   defp _def_maker(name, metadata, args, lens_function) do
     args = force_arglist(args)
-    tracing_name = Tracing.function_name(name)
     quote do
       unquote(def_access_fun({name, metadata, args},
                              lens_function))
 
-      @doc false
-      unquote(def_access_fun({tracing_name, metadata, args},
-                             wrap_function_with_tracing(name, args, lens_function)))
-
       unquote(def_with_lens_arg(name, args))
-      unquote(def_with_lens_arg(tracing_name, args))
     end
   end
 
@@ -168,17 +79,11 @@ defmodule Lens2.Makers do
 
   defp _def_composed_maker(name, metadata, args, plain_code) do
     args = force_arglist(args)
-    tracing_name = Tracing.function_name(name)
     quote do
       unquote(def_composed_fun({name, metadata, args},
                                          plain_code))
 
-      @doc false
-      unquote(def_composed_fun({tracing_name, metadata, args},
-                                         wrap_code_with_tracing(name, args, plain_code)))
-
       unquote(def_with_lens_arg(name, args))
-      unquote(def_with_lens_arg(tracing_name, args))
     end
   end
 
@@ -222,36 +127,6 @@ defmodule Lens2.Makers do
       @doc false
       def unquote(name)(previous_lens, unquote_splicing(args)) do
         Combine.seq(previous_lens, unquote(name)(unquote_splicing(args)))
-      end
-    end
-  end
-
-  # ----------------
-
-  # Add tracing code on behalf of `def_maker`
-  defp wrap_function_with_tracing(name, args, lens_code) do
-    quote do
-      fn container, descender ->
-        lens_action = unquote(lens_code)
-        Tracing.State.log_descent(unquote(name), unquote(args), container)
-        result = lens_action.(container, descender)
-        Tracing.State.log_retreat(unquote(name), unquote(args), result)
-        result
-      end
-    end
-  end
-
-  # Add tracing code on behalf of `def_composed_maker`
-  defp wrap_code_with_tracing(name, args, plain_code) do
-    quote do
-      fn
-        # We must support the `Access.access_fun` interface
-        selector, container, access_function_arg ->
-          lens_action = unquote(plain_code)
-          Tracing.State.log_descent(unquote(name), unquote(args), container)
-          result = lens_action.(selector, container, access_function_arg)
-          Tracing.State.log_retreat(unquote(name), unquote(args), result)
-          result
       end
     end
   end
