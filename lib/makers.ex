@@ -51,49 +51,13 @@ defmodule Lens2.Makers do
 
   alias Lens2.Lenses.Combine
 
-
-  # The AST that comes from the `do:` block of the macro is named
-  # `lens_code` because the typical usage is:
-  #
-  #    def_maker key!(key) do
-  #      fn container, descender -> ... end  <<<< here is the block
-  #    end
-
-  defp _def_maker(name, metadata, args, lens_code) do
+  # These are the real versions of the two maker macros. There's a funny
+  # name because there are synonyms for each.
+  
+  defp _def_maker({name, _metadata, args} = header, lens_code) do
     args = force_arglist(args)
     quote do
-      unquote(wrap_with_access_interface({name, metadata, args},
-                                         lens_code))
 
-      unquote(allow_pipeline(name, args))
-    end
-  end
-
-
-  # The AST that comes from the `do:` block of the macro is named
-  # `plain_code` because it typically looks like this:
-  #
-  #    deflens keys(keys) do
-  #      keys |> Enum.map(&key/1) |> Combine.multiple  <<<< here is the block
-  #    end
-
-  defp _def_composed_maker(name, metadata, args, plain_code) do
-    args = force_arglist(args)
-    quote do
-      def unquote({name, metadata, args}), do: unquote(plain_code)
-      unquote(allow_pipeline(name, args))
-    end
-  end
-
-
-  # -------------------
-
-
-  # Defines a named function that implements the `Access` behaviour.
-  # Used by `def_maker`. `def_composed_maker` doesn't need it because
-  # it's built on a predefined function.
-  defp wrap_with_access_interface(header, lens_code) do
-    quote do
       def unquote(header) do
         lens = unquote(lens_code)
 
@@ -106,10 +70,20 @@ defmodule Lens2.Makers do
             lens.(container, tuple_returner)
         end
       end
+
+      unquote(allow_pipeline(name, args))
     end
   end
 
-  # Create maker(lens, original_args...)
+  defp _def_composed_maker({name, metadata, args}, plain_code) do
+    args = force_arglist(args)
+    quote do
+      def unquote({name, metadata, args}), do: unquote(plain_code)
+      unquote(allow_pipeline(name, args))
+    end
+  end
+
+
   defp allow_pipeline(name, args) do
     quote do
       @doc false
@@ -128,7 +102,7 @@ defmodule Lens2.Makers do
   end
 
 
-  # ----------------
+  # -- Define the two maker functions plus a bunch of aliases.
 
   @doc """
   Write a lens maker without using other lens makers.
@@ -192,8 +166,8 @@ defmodule Lens2.Makers do
   should link to a tutorial I haven't written yet.**
 
   """
-  defmacro def_maker({name, metadata, args}, do: lens_code),
-           do: _def_maker(name, metadata, args, lens_code)
+  defmacro def_maker(header, do: lens_code),
+           do: _def_maker(header, lens_code)
 
 
   @doc """
@@ -216,20 +190,20 @@ defmodule Lens2.Makers do
 
   """
 
-  defmacro def_composed_maker({name, metadata, args}, do: plain_code),
-           do: _def_composed_maker(name, metadata, args, plain_code)
+  defmacro def_composed_maker(header, do: plain_code),
+           do: _def_composed_maker(header, plain_code)
 
   @doc ~S"Alternate spelling of `def_maker/2`."
-  defmacro defmaker({name, metadata, args}, do: lens_code),
-           do: _def_maker(name, metadata, args, lens_code)
+  defmacro defmaker(header, do: lens_code),
+           do: _def_maker(header, lens_code)
 
   @doc ~S"""
   Alternate spelling of `def_maker/2`.
 
   This is the equivalent macro from [Lens 1](https://hexdocs.pm/lens/readme.html).
   """
-  defmacro deflens_raw({name, metadata, args}, do: lens_code),
-           do: _def_maker(name, metadata, args, lens_code)
+  defmacro deflens_raw(header, do: lens_code),
+           do: _def_maker(header, lens_code)
 
 
 
@@ -250,6 +224,6 @@ defmodule Lens2.Makers do
   >    – Walt Whitman, Leaves of Grass   
 
   """
-  defmacro deflens({name, metadata, args}, do: plain_code),
-           do: _def_composed_maker(name, metadata, args, plain_code)
+  defmacro deflens(header, do: plain_code),
+           do: _def_composed_maker(header, plain_code)
 end
