@@ -75,10 +75,12 @@ defmodule Lens2.MixProject do
                "mostly_words/implementation06-into.md",
                "mostly_words/implementation07-const.md",
                "mostly_words/implementation08-some-makers.md",
+               "mostly_words/draft_popping.md"
       ],
       groups_for_extras: [
         "Tutorial": Path.wildcard("mostly_words/tutorial??-*.md"),
         "Debugging Pipelines / Defining Makers": Path.wildcard("mostly_words/implementation??-*.md"),
+        "Drafts": Path.wildcard("mostly_words/draft*.md")
       ],
 
       groups_for_modules: [

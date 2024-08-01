@@ -174,7 +174,8 @@ defmodule Lens2.Lenses.Combine do
   This is essentially the implementation of `Lens2.Lenses.Indexed.indices/1`.
   """
   @spec multiple([Lens2.lens]) :: Lens2.lens
-  def_composed_maker multiple(lenses), do: lenses |> Enum.reverse() |> Enum.reduce(empty(), &both/2)
+  def_composed_maker multiple(lenses),
+                     do: lenses |> Enum.reverse() |> Enum.reduce(empty(), &both/2)
 
   @doc ~S"""
   Convert one pointer into two pointers (usually into the next level down).

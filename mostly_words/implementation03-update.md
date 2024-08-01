@@ -88,8 +88,10 @@ However, there's a `V2.seq` in between the `key(:c)` leaf lens and the
 preceding `key(:b)` lens. What must that look like?
 
 The `V1` version of `seq` gets wrapped values and has to unwrap
-them. But this `V2` version gets *replacement* values for the current
-level of the data structure. It doesn't have to do anything. So that's easy:
+them. But this `V2` version gets a sub-container that's had a
+repacement done. It doesn't have to do anything but return that value
+to the previous lens, which will put it into the enclosing container.
+So that's easy:
 
     # `get_all` version                                     # `update` version
     def seq(outer_lens, inner_lens) do                      def seq(outer_lens, inner_lens) do
@@ -131,4 +133,4 @@ When it comes to ordinary lenses, the changes are equally trivial. Here's `at`:
       end                                 end
     end                                 end
 
-So that was easy. It will also be pretty easy produce a lens that works to both get and update.
+Next is to combine the V1 and V2 lenses into a template that works for both getting and updating. 

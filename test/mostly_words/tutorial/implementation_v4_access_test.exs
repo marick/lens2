@@ -1,5 +1,6 @@
 defmodule Lens2.MostlyText.ImplementationV4AccessTest do
   use ExUnit.Case, async: true
+  alias Lens2.Deeply
 
   defmodule DefMaker do
     defmacro def_maker(header = {name, _, args}, do: lens_code) do
@@ -11,8 +12,8 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
 
           fn
             :get, container, continuation ->
-              {list, _} = lens.(container, &{&1, &1})
-              continuation.(list)
+              {gotten, _} = lens.(container, &{&1, &1})
+              continuation.(gotten)
 
             :get_and_update, container, tuple_returner ->
               lens.(container, tuple_returner)
@@ -35,21 +36,6 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
     end
   end
 
-  defmodule Derply do
-    def get_and_update(container, lens, tuple_returner) do
-      Kernel.get_and_update_in(container, [lens], tuple_returner)
-    end
-
-    def update(container, lens, update_fn) do
-      Kernel.update_in(container, [lens], update_fn)
-    end
-
-    def get_all(container, lens) do
-      Kernel.get_in(container, [lens])
-    end
-  end
-
-
   defmodule V4 do
     import DefMaker
 
@@ -65,15 +51,32 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
       end
     end
 
+    def_maker key(key) do
+      fn container, descender ->
+        {gotten, updated} =
+          Map.get(container, key)
+          |> descender.()
+        {[gotten], Map.put(container, key, updated)}
+      end
+    end
+
+    def_maker both(lens1, lens2) do
+      fn container, descender ->
+        {res1, changed1} = Deeply.get_and_update(container, lens1, descender)
+        {res2, changed2} = Deeply.get_and_update(changed1, lens2, descender)
+        {res1 ++ res2, changed2}
+      end
+    end
+
     def_maker seq(outer_lens, inner_lens) do
       fn outer_container, inner_descender ->
         outer_descender =
           fn inner_container ->
-            Derply.get_and_update(inner_container, inner_lens, inner_descender)
+            Deeply.get_and_update(inner_container, inner_lens, inner_descender)
           end
 
         {gotten, updated} =
-          Derply.get_and_update(outer_container, outer_lens, outer_descender)
+          Deeply.get_and_update(outer_container, outer_lens, outer_descender)
 
         {Enum.concat(gotten), updated}
       end
@@ -97,9 +100,9 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
     expected = { [1], [0, "1", 2] }
     tuple_returner = & {&1, inspect(&1)}
 
-    assert Derply.get_and_update(container, lens, tuple_returner) == expected
-    assert Derply.update(container, lens, &inspect/1) == elem(expected, 1)
-    assert Derply.get_all(container, lens) == elem(expected, 0)
+    assert Deeply.get_and_update(container, lens, tuple_returner) == expected
+    assert Deeply.update(container, lens, &inspect/1) == elem(expected, 1)
+    assert Deeply.get_all(container, lens) == elem(expected, 0)
   end
 
   test "using seq" do
@@ -108,9 +111,9 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
     expected = { [1], [[0, "1", 2], [], []] }
     tuple_returner = & {&1, inspect(&1)}
 
-    assert Derply.get_and_update(container, lens, tuple_returner) == expected
-    assert Derply.update(container, lens, &inspect/1) == elem(expected, 1)
-    assert Derply.get_all(container, lens) == elem(expected, 0)
+    assert Deeply.get_and_update(container, lens, tuple_returner) == expected
+    assert Deeply.update(container, lens, &inspect/1) == elem(expected, 1)
+    assert Deeply.get_all(container, lens) == elem(expected, 0)
   end
 
   test "longer" do
@@ -148,9 +151,9 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
                ]
     lens = V4.seq(V4.at(1), V4.seq(V4.at(2), V4.at(3)))
 
-    assert Derply.get_and_update(container, lens, & {&1, &1 * 10000100001}) == {[333], expected}
-    assert Derply.update(container, lens, & &1 * 10000100001) == expected
-    assert Derply.get_all(container, lens) == [333]
+    assert Deeply.get_and_update(container, lens, & {&1, &1 * 10000100001}) == {[333], expected}
+    assert Deeply.update(container, lens, & &1 * 10000100001) == expected
+    assert Deeply.get_all(container, lens) == [333]
   end
 
   test "all" do
@@ -159,8 +162,8 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
     lens = V4.seq(V4.all(), V4.at(1))
     tuple_returner = & {&1, inspect(&1)}
 
-    assert Derply.get_and_update(container, lens, tuple_returner) == { [ 1, 1111, :b], expected}
-    assert Derply.update(container, lens, &inspect/1) == expected
-    assert Derply.get_all(container, lens) == [ 1, 1111, :b]
+    assert Deeply.get_and_update(container, lens, tuple_returner) == { [ 1, 1111, :b], expected}
+    assert Deeply.update(container, lens, &inspect/1) == expected
+    assert Deeply.get_all(container, lens) == [ 1, 1111, :b]
   end
 end
