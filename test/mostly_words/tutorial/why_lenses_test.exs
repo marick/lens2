@@ -68,12 +68,6 @@ defmodule WhyLensesTest do
     end)
   end
 
-  @tag :skip
-  test "use Deeply.update" do
-  end
-
-
-  @tag :skip
   test "use update_in" do
     network = network()
 
