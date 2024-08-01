@@ -53,19 +53,19 @@ defmodule Lens2.Makers do
 
 
   # The AST that comes from the `do:` block of the macro is named
-  # `lens_function` because the typical usage is:
+  # `lens_code` because the typical usage is:
   #
   #    def_maker key!(key) do
   #      fn container, descender -> ... end  <<<< here is the block
   #    end
 
-  defp _def_maker(name, metadata, args, lens_function) do
+  defp _def_maker(name, metadata, args, lens_code) do
     args = force_arglist(args)
     quote do
-      unquote(def_access_fun({name, metadata, args},
-                             lens_function))
+      unquote(wrap_with_access_interface({name, metadata, args},
+                                         lens_code))
 
-      unquote(def_with_lens_arg(name, args))
+      unquote(allow_pipeline(name, args))
     end
   end
 
@@ -80,10 +80,8 @@ defmodule Lens2.Makers do
   defp _def_composed_maker(name, metadata, args, plain_code) do
     args = force_arglist(args)
     quote do
-      unquote(def_composed_fun({name, metadata, args},
-                                         plain_code))
-
-      unquote(def_with_lens_arg(name, args))
+      def unquote({name, metadata, args}), do: unquote(plain_code)
+      unquote(allow_pipeline(name, args))
     end
   end
 
@@ -94,7 +92,7 @@ defmodule Lens2.Makers do
   # Defines a named function that implements the `Access` behaviour.
   # Used by `def_maker`. `def_composed_maker` doesn't need it because
   # it's built on a predefined function.
-  defp def_access_fun(header, lens_code) do
+  defp wrap_with_access_interface(header, lens_code) do
     quote do
       def unquote(header) do
         lens = unquote(lens_code)
@@ -111,18 +109,8 @@ defmodule Lens2.Makers do
     end
   end
 
-  # Composed functions are already consistent with the `Access.access_fun` interface,
-  # so they need only be given a name.
-  defp def_composed_fun(header, plain_code) do
-    quote do
-      def unquote(header) do
-        unquote(plain_code)
-      end
-    end
-  end
-
   # Create maker(lens, original_args...)
-  defp def_with_lens_arg(name, args) do
+  defp allow_pipeline(name, args) do
     quote do
       @doc false
       def unquote(name)(previous_lens, unquote_splicing(args)) do
@@ -130,8 +118,6 @@ defmodule Lens2.Makers do
       end
     end
   end
-
-  # ----------------
 
   # A missing arglist is passed to a macro as `nil`, rather than `[]`.
   defp force_arglist(args) do
