@@ -1,6 +1,6 @@
 defmodule Lens2.Lenses.Keyed do
   @moduledoc """
-  Lenses helpful for working with structs and maps.
+  Lenses helpful for working with structs, maps, and types implementing the `Access` behaviour.
 
   Unlike `Access`, these functions make no distinction between structs
   and lenses. All operate on both. `Lens2.Deeply.put/3` and
