@@ -9,7 +9,6 @@ defmodule Lens2.Lenses.Use do
 
       delegate_to(Enum, [
         all(),
-        into(lens, collectable),
       ])
 
 
@@ -53,6 +52,7 @@ defmodule Lens2.Lenses.Use do
         either(lens1, fallback),
         repeatedly(descender),
         and_repeatedly(descender),
+        into(lens, collectable),
       ])
 
       delegate_to(Keyed, [

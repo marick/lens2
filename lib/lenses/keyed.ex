@@ -331,6 +331,7 @@ defmodule Lens2.Lenses.Keyed do
   keys of a struct, since all the keys are known at compile time.
   """
   @spec map_keys :: Lens2.lens
-  def_composed_maker map_keys, do: Lenses.Enum.all() |> Lenses.Enum.into(%{}) |> Indexed.at(0)
+  def_composed_maker map_keys,
+    do: Lenses.Enum.all() |> Lenses.Combine.into(%{}) |> Indexed.at(0)
 
 end
