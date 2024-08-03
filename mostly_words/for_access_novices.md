@@ -8,7 +8,7 @@ going to call such structures *containers*. We're interested in nested
 containers.
 
 Here's a simple example. We have `Network` structure. It has various
-fields, one of which is named `:name_to_cluster`. That points to a `Map`
+fields, one of which is `:name_to_cluster`. That points to a `Map`
 whose keys are atoms (cluster names) and whose values are `Cluster` structs. A
 `Cluster` has various fields, one of which, `:downstream`, holds a
 `MapSet` of atoms (also cluster names). Like this:
@@ -38,8 +38,8 @@ Fine, but what I'm doing has two conceptual steps:
 
 In the above code, those two steps are buried inside a lot of
 bookkeeping code that does the work of constructing each level of the
-new nested container. What really matters are highlighted below: the
-path and the `MapSet.put` use.
+new nested container. What really matters is highlighted below: the
+path into the container and the `MapSet.put` operation.
 
 ![alt text coming](pics/tidy-scribbled.png)
 
@@ -84,8 +84,6 @@ But no joy:
 ** (RuntimeError) Access.all/0 expected a list, got: %{gate: %Cluster{downstream: MapSet.new([:big_edit, :has_fragments]), name: :gate}, watcher: %Cluster{downstream: MapSet.new([]), name: :watcher}}
 ```
 
-(I don't know why `Access.all/0` is restricted to lists.)
-
 To handle multiple clusters, you need some kind of a loop, perhaps
 using `for`. `for` does what I expected `Access.all` to do, and
 produces tuples:
@@ -111,7 +109,7 @@ clusters in the network doesn't require a loop:
 
 ```elixir
    lens = Lens.key(:name_to_cluster) |> Lens.map_values |> Lens.key(:downstream)
-   #                                    ^^^^^^^^^^^^^^^
+                                        ^^^^^^^^^^^^^^^
    Deeply.update(network, lens, & MapSet.update(&1, :some_name))
 ```
 
@@ -119,7 +117,7 @@ As you'd hope, it looks almost the same to update a *subset* of the clusters:
 
 ```elixir
    lens = Lens.key(:name_to_cluster) |> Lens.keys([:gate, :watcher]) |> Lens.key(:downstream)
-   #                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
    Deeply.update(network, lens, & MapSet.update(&1, :some_name))
 ```
 

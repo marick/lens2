@@ -1,8 +1,8 @@
 # Pointing into nested containers
 
-Lenses claim to fame is the ability to descend through nested data
+Lenses' claim to fame is the ability to descend through nested data
 structures in a variety of ways, for a variety of structures. This
-page is about how that's done.
+page is about how you use them to do that.
 
 
 ## Composing lens makers
@@ -63,7 +63,7 @@ remove pointers. For example, consider this map from numbers to names:
      iex> Deeply.get_all(map, Lens.map_values)
      ["one", "two", "three"]
 
-We can use `Lens.filter` to make a lens that retains only pointers to three-character names:
+We can use `Lens2.Lenses.Filter.filter/1` (aliased to `Lens.filter/1`) to make a lens that retains only pointers to three-character names:
 
      iex> lens = Lens.map_values |> Lens.filter(& String.length(&1) == 3)
      
@@ -78,7 +78,7 @@ We can use `Lens.filter` to make a lens that retains only pointers to three-char
 
 Normally, we think of a maker like `Lens.keys` as taking a single argument:
 
-   iex> Lens.keys[:a, :b]
+    iex> Lens.keys[:a, :b]
    
 However, each lens maker has a two-argument version whose first
 argument is a *lens* (not a lens *maker*). Therefore this pipeline:
@@ -101,7 +101,7 @@ data structure, like this one for a two-level map:
 
     iex> two_level_lens = Lens.key(:a) |> Lens.key(:aa)
     
-... and then I have a list of such maps and want a lens that will pick
+... and then I have a list containing such maps and want a lens that will pick
 out all the `:aa` values of all the maps in the list:
 
     iex> Deeply.get_all(list_of_maps, a_bigger_lens)
@@ -158,8 +158,11 @@ I could use a simple `def`:
     
 That works for making an isolated lens, but it doesn't work for composition:
 
-    Lens.at(0) |> MyLens.nested(:a, :b)
-    
+    iex> Lens.at(0) |> MyLens.nested(:a, :b)
+    ** MyLens.nested/3 is undefined or private. Did you mean:
+
+           * nested/2    
+
 The problem is that I haven't defined the extra-argument version. I could do that easily enough:
 
     def nested(lens, level1, level2),
@@ -179,8 +182,5 @@ define a lens maker from scratch with `deflens_raw`. I prefer
 `def_maker/2`, despite the annoyance of having the more common case
 having the longer name.)
 
-You'll probably write a lot of lens makers, so there will be more
-examples later. But first, it'll be worth taking a little time to walk
-through what happens at runtime when you use a lens operation like
-`Lens.get_all`.
+You'll probably write a lot of lens makers.
 

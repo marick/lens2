@@ -54,8 +54,9 @@ iex> Lens.at(3)
 ```
 
 ... and `Lens.at` is a function-making (or "higher order")
-function. I'm going to give such higher-order functions the kinda ugly
-name "lens makers".
+function. I'm going to give such higher-order functions the name "lens
+makers". It's kind of an ugly name, but it's important to remember the
+difference between a lens function and the function that makes it.
 
 Except when you're writing a new lens from scratch, your code never
 calls a lens function directly. Instead, your code passes the lens to
@@ -69,6 +70,8 @@ To peek ahead, the functions that use lenses are in the `Lens2.Deeply` package (
 iex> Deeply.update([0, 1, 2], Lens.at(1), & &1 * 1111)
 [0, 1111, 2]
 ```
+
+I'm going to call such functions *operations* because they use lenses to operate on containers.
 
 ## Lenses are all about "zero, one, many"
 
@@ -185,41 +188,27 @@ iex> get_in(map, [:c])
 3
 ```
 
-... so why do we get it with a lens?
+... so why do we get it with a lens? It's because a lens used with
+`get_in` might point to multiple elements of the container, so it's
+always working internally with lists. If it treated singleton lists
+differently (by unwrapping them), calling code couldn't distinguish
+between a single value that *is* a list or a list of multiple
+values. So everything stays in a list.
 
+To remind you that you always get a list, the `Deeply` equivalent to
+`get_in/2` is named `Lens2.Deeply.get_all/2`. I apologize in advance
+for the number of times you'll habitually type `Deeply.get(...)` and
+then be annoyed by this compiler error:
 
+     Lens2.Deeply.get/2 is undefined or private. Did you mean:
 
-Right now, I want to
-defer the answer to later, when it will be easier to explain. As a teaser, though, it's like the difference between using `Enum.map/2` and
-`Enum.flat_map/2`, or between these two lists:
+           * get_all/2
+           * get_only/2
+     
+Note `Lens2.Deeply.get_only/2`. If you're really truly sure you'll get
+a singleton list, you can use it to unwrap the value for you. If it's
+not a singleton list, `get_only` will raise an error.
 
-```
-[[0, 1, 2], [3, 4, 5]]
-[ 0, 1, 2,   3, 4, 5 ]
-```
-
-For now, just notice that there is no `Deeply.get`. Having a function
-whose name implies "return a single value" actually return a list of
-values is asking for confusion and bugs. Therefore, when using `Lens2.Deeply`,
-you have two options.
-
-`Lens2.Deeply.get_all/2` returns the list of values:
-
-```elixir
-iex> Deeply.get_all(map, Lens.key(:c))
-[3]
-```
-
-If you're sure that there's a single value, you can use `Lens2.Deeply.get_only/2`:
-
-
-```elixir
-iex> Deeply.get_only(map, lens)
-3
-```
-
-`get_only` will raise
-an error for cases where there isn't exactly one value. Otherwise, it unwraps the singleton value and returns it.
 
 -----
 

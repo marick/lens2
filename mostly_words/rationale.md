@@ -47,14 +47,14 @@ like `get_in` is a description of how to navigate into a nested data
 structure. An element in the list can be any function that has this interface:
 
       fn
-        :get, container, getting_descender ->
+        :get, container, continuation ->
            ...
-        :get_and_update, container, getting_and_updating_descender ->
+        :get_and_update, container, get_and_update_function ->
            ...
       end
 
 So you could write functions that obey that interface and descend just
-fine into MapSets. One way to look at lenses is to save you the
+fine into MapSets. One way to look at lenses is that save you the
 trouble of writing such functions:
 
 1. You can just use `Lens.MapSet.all` instead of writing it yourself.
@@ -62,7 +62,7 @@ trouble of writing such functions:
 2. If you write a lot of such functions, you'll find that you're
    repeating yourself. The traditional functional language approach to
    repetition is to factor it out into smaller functions that you
-   compose together in different ways. But those functions have already been writte;
+   compose together in different ways. But those functions have already been written.
    They have names like `Lens.multiple` and `Lens.repeatedly`.
 
 
@@ -90,7 +90,7 @@ highlights of the new package:
    *use* them were in the same module, `Lens`. I've separated the latter out into
    the `Deeply` module and changed some names to ones I think are
    usefully closer to Elixir conventions. (So the lens version of
-   `update_in/3` is `Deeply.update` rather than `Lens.map`.)
+   `update_in/3` is `Lens2.Deeply.update` rather than `Lens.map`.)
    
 1. Lenses are notoriously hard to understand. A lot of that, I think,
    comes down to documentation. While Lens 1 is better
