@@ -1,7 +1,7 @@
 defmodule Lens2.DeeplyTest do
-  use ExUnit.Case
-  use Lens2
-  use FlowAssertions
+  use Lens2.Case
+  use TypedStruct
+
   doctest Deeply
 
   test "get_all" do
@@ -33,5 +33,22 @@ defmodule Lens2.DeeplyTest do
   test "get_and_update" do
     returner = fn value -> {value, inspect(value)} end
     assert Deeply.get_and_update(%{a: 1}, Lens.key(:a), returner) == { [1], %{a: "1"} }
+  end
+
+
+  defmodule Point do
+    typedstruct do
+      field :x, integer, default: 0
+      field :y, integer, default: 0
+    end
+
+    def_composed_maker x, do: Lens.key(:x)
+    def_composed_maker y, do: Lens.key(:y)
+  end
+
+  IO.puts "you broke Deeply.get_all(..., :atom)"
+  @tag :skip
+  test "actions on atoms" do
+    assert Deeply.get_all(%Point{}, :x) == [0]
   end
 end
