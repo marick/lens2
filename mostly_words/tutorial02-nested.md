@@ -32,6 +32,7 @@ That's easy to do by composing the Lens-making functions:
 
 
 ```elixir
+iex>  use Lens2
 iex>  lens = Lens.key(:c) |> Lens.keys([:a, :e])
 #Function<13.52599976/3 in Lens2.Lenses.Combine.seq/2>
 ```

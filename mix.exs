@@ -64,8 +64,8 @@ defmodule Lens2.MixProject do
                "mostly_words/are_lenses_for_you.md",
                "mostly_words/tutorial01-pointers.md",
                "mostly_words/tutorial02-nested.md",
-               "mostly_words/tutorial03-into.md",
                "mostly_words/tutorial04-missing.md",
+               "mostly_words/tutorial04-non-list.md",
                "mostly_words/tutorial05-combining.md",
                "mostly_words/tutorial06-information-hiding.md",
                "mostly_words/implementation01-intro.md",
@@ -77,7 +77,8 @@ defmodule Lens2.MixProject do
                "mostly_words/implementation06-into.md",
                "mostly_words/implementation07-const.md",
                "mostly_words/implementation08-some-makers.md",
-               "mostly_words/draft_popping.md"
+               "mostly_words/draft_popping.md",
+               "mostly_words/draft_into.md",
       ],
       groups_for_extras: [
         "Tutorial": Path.wildcard("mostly_words/tutorial??-*.md"),

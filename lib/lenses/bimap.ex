@@ -64,7 +64,7 @@ defmodule Lens2.Lenses.BiMap do
     """
     @spec all_values :: Lens2.lens
     def_composed_maker all_values() do
-      Lens.into(Lens.all |> Lens.at(1), BiMap.new)
+      Lens.update_into(BiMap.new, Lens.all |> Lens.at(1))
     end
 
     @doc """

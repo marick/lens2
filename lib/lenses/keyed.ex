@@ -332,6 +332,6 @@ defmodule Lens2.Lenses.Keyed do
   """
   @spec map_keys :: Lens2.lens
   def_composed_maker map_keys,
-    do: Lenses.Enum.all() |> Lenses.Combine.into(%{}) |> Indexed.at(0)
+    do: Lenses.Enum.update_into(%{}, Lenses.Enum.all() |> Indexed.at(0))
 
 end
