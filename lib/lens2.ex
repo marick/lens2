@@ -15,7 +15,7 @@ defmodule Lens2 do
   3. ... traverse containers with lens-using functions like
      `Deeply.update`. (See `Lens2.Deeply`.)
 
-  3. ... define its own lens makers with `deflens` and `deflens_raw`. (See
+  3. ... define its own lens makers with `def_maker` and `def_composed_maker`. (See
      `Lens2.Makers`.)
 
 

@@ -1,4 +1,4 @@
-# `Lens.into/2`
+# DRAFT: Why `Lens.into` invites bugs
 
 Here I'll describe a very common mistake using
 `Lens2.Lenses.Enum.into/2`. This is sort of a digression, but it

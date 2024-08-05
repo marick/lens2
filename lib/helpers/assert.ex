@@ -6,6 +6,7 @@ defmodule Helpers.AssertionError do
 end
 
 defmodule Helpers.Assert do
+  @moduledoc false
   @doc "Raise an AssertionError error if the expression is false."
   defmacro assert(expression) do
     code = Macro.to_string(expression)
