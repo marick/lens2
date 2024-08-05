@@ -16,3 +16,14 @@ different project, see the
 3. Operations that encourage (but do not require) information hiding.
 4. Extra lenses and utility functions.
 
+## TODO?
+
+* Consder separating `:get` and `:get_and_update` cases.
+    * some performance advantage for lists
+    * Lens.at would work with Enumerables for getting.
+    * Makes writing `def_maker` style lenses more complicated.
+* Make Deeply.pop?
+* Fix the bug where `Deeply.update(["0", "1"], Lens.at(2), &Integer.parse/1)` calls the
+  update function with a nil.
+* Figure out if it's possible to make TypedStructLens work with this, or include a
+  Lens2.TypedStructLens. 
