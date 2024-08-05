@@ -2,9 +2,9 @@ defmodule Lens2.Deeply do
   @moduledoc """
   Operations that work with lenses. The API is close to the familiar `get`, `put`, `update` one.
 
-  There are two differences to note:
+  Note, though, these differences:
 
-  1. In most APIs with `get` (like `Map` and `Keyword`) return a
+  1. Most APIs with `get` (like `Map` and `Keyword`) return a
      single value from a container. Lenses point at zero or more
      places within a container, so the natural "read" operation is to
      return a collection (specifically, a `List`). Naming that
@@ -17,7 +17,19 @@ defmodule Lens2.Deeply do
      missing keys and the like. Consider `Map.update/4` (use a default)
      and `Map.update!/3` (raise an error). In this lens package, it's the
      *lens* that decides. See, for example, `Lens2.Lenses.Keyed.key/1`,
-     `Lens2.Lenses.Keyed.key?/1`, and `Lens2.Lenses.Keyed.key!/1`.
+     `Lens2.Lenses.Keyed.key?/1`, and `Lens2.Lenses.Keyed.key!/1`. Or see [this page in the tutorial](tutorial04-missing.html).
+
+  3. When you have structs, you can add lenses to the module interface so that you can
+     write code like:
+
+          Deeply.put(%Container{...}, Container.place(...), ...)
+
+     In the reasonably-common case where the module's lens function takes no argument, you
+     can just use the bare atom name:
+
+          Deeply.put(%Container{...}, :place, ...)
+
+     See [this page](tutorial06-information-hiding.html) for more.
 
   The functions in this module have simple implementations because lenses are
   compatible with the `Access` behaviour. For example,
@@ -41,9 +53,12 @@ defmodule Lens2.Deeply do
 
   `get_all` produces its result with `get_in/2`.
   """
+  import Lens2.Helpers.DefDeeply
 
-  @spec get_all(Lens2.container, Lens2.lens) :: list(Lens2.value)
-  def get_all(container, lens) do
+  @type lens_or_atom :: Lens2.lens | atom
+
+  @spec get_all(Lens2.container, lens_or_atom) :: list(Lens2.value)
+  defdeeply get_all(container, lens) do
     Kernel.get_in(container, [lens])
   end
 
@@ -68,7 +83,7 @@ defmodule Lens2.Deeply do
 
   `get_all` produces its result with `get_in/2`.
   """
-  @spec to_list(Lens2.container, Lens2.lens) :: list(Lens2.value)
+  @spec to_list(Lens2.container, lens_or_atom) :: list(Lens2.value)
   def to_list(container, lens), do: get_all(container, lens)
 
   @doc ~S"""
@@ -81,8 +96,8 @@ defmodule Lens2.Deeply do
       iex>  %{a: 1, b: 2, c: 3} |> Deeply.get_only(lens)
       1
   """
-  @spec get_only(Lens2.container, Lens2.lens) :: Lens2.value
-  def get_only(container, lens) do
+  @spec get_only(Lens2.container, lens_or_atom) :: Lens2.value
+  defdeeply get_only(container, lens) do
     [result] = get_all(container, lens)
     result
   end
@@ -100,7 +115,7 @@ defmodule Lens2.Deeply do
       iex>  %{a: 1, b: 2, c: 3} |> Deeply.one!(lens)
       1
   """
-  @spec one!(Lens2.container, Lens2.lens) :: Lens2.value
+  @spec one!(Lens2.container, lens_or_atom) :: Lens2.value
   def one!(container, lens), do: get_only(container, lens)
 
   # ===========
@@ -114,8 +129,8 @@ defmodule Lens2.Deeply do
 
   `put` produces its result with `put_in/3`.
   """
-  @spec put(Lens2.container, Lens2.lens, Lens2.value) :: Lens2.container
-  def put(container, lens, value) do
+  @spec put(Lens2.container, lens_or_atom, Lens2.value) :: Lens2.container
+  defdeeply put(container, lens, value) do
     Kernel.put_in(container, [lens], value)
   end
 
@@ -136,8 +151,9 @@ defmodule Lens2.Deeply do
 
   `update` produces its result with `update_in/3`.
   """
-  @spec update(Lens2.container, Lens2.lens, (Lens2.value -> Lens2.updated_value)) :: Lens2.container
-  def update(container, lens, fun) do
+  @spec update(Lens2.container, lens_or_atom, (Lens2.value -> Lens2.updated_value))
+        :: Lens2.container
+  defdeeply update(container, lens, fun) do
     Kernel.update_in(container, [lens], fun)
   end
 
@@ -159,13 +175,12 @@ defmodule Lens2.Deeply do
 
   `get_and_update` produces its result with `get_and_update_in/3`.
   """
-  @spec get_and_update(Lens2.container, Lens2.lens, (Lens2.value -> {Lens2.value, Lens2.updated_value})) :: {list(Lens2.value), Lens2.container}
-  def get_and_update(container, lens, tuple_returner) do
+  @spec get_and_update(Lens2.container, lens_or_atom,
+                       (Lens2.value -> {Lens2.value, Lens2.updated_value}))
+        :: {list(Lens2.value), Lens2.container}
+  defdeeply get_and_update(container, lens, tuple_returner) do
     Kernel.get_and_update_in(container, [lens], tuple_returner)
   end
-
-  # =====
-
 
   @doc ~S"""
   Call a function (for side effects) on each pointed-at value.
@@ -180,7 +195,7 @@ defmodule Lens2.Deeply do
 
   Any return value from the `fun` is ignored.
   """
-  @spec each(Lens2.container, Lens2.lens, (Lens2.value -> no_return)) :: :ok
+  @spec each(Lens2.container, lens_or_atom, (Lens2.value -> no_return)) :: :ok
   def each(container, lens, fun),
       do: get_all(container, lens) |> Enum.each(fun)
 end

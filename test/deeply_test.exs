@@ -38,17 +38,23 @@ defmodule Lens2.DeeplyTest do
 
   defmodule Point do
     typedstruct do
-      field :x, integer, default: 0
-      field :y, integer, default: 0
+      field :x, integer
+      field :y, integer
     end
 
     def_composed_maker x, do: Lens.key(:x)
     def_composed_maker y, do: Lens.key(:y)
   end
 
-  IO.puts "you broke Deeply.get_all(..., :atom)"
-  @tag :skip
   test "actions on atoms" do
-    assert Deeply.get_all(%Point{}, :x) == [0]
+    p = %Point{x: 0, y: 1}
+    assert Deeply.each(p, :x, fn _ -> :for_side_effect end) == :ok
+    assert Deeply.get_all(p, :x) == [0]
+    assert Deeply.get_and_update(p, :x, & {&1, inspect(&1)}) == {[0], %Point{x: "0", y: 1}}
+    assert Deeply.get_only(p, :x) == 0
+    assert Deeply.one!(p, :x) == 0
+    assert Deeply.put(p, :x, :NEW) == %Point{x: :NEW, y: 1}
+    assert Deeply.to_list(p, :x) == [0]
+    assert Deeply.update(p, :x, & &1+1) == %Point{x: 1, y: 1}
   end
 end
