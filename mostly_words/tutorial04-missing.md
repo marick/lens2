@@ -1,7 +1,7 @@
 # Missing and nil values
 
-In Elixir, a `nil` sometimes means "there was nothing there" and
-sometimes "there was something there, specifically `nil`.
+In Elixir, a `nil` sometimes means "there is nothing here" and
+sometimes "there is something here, specifically `nil`.
 
     iex> Map.get(%{a: nil}, :a)
     nil
@@ -12,10 +12,10 @@ Sometimes you want to handle the two cases differently. For example:
 
     iex> Map.put_new(%{a: 1}, :a, :NEW)
     %{a: 1}
-    iex)> Map.put_new(%{    }, :a, :NEW)
+    iex> Map.put_new(%{    }, :a, :NEW)
     %{a: :NEW}
 
-This page is how you navigate such distinctions with lenses. Unlike
+This page is how you navigate such distinctions when using lenses. Unlike
 `Map`, where you choose an operation (`Map.put/3`
 vs. `Map.put_new/3`), with lenses you choose a different lens maker.
 
@@ -26,6 +26,7 @@ Lenses for map structures come in three varieties, such as `Lens.key`,
 
 `Lens.key` treats a missing value and nil the same way:
 
+    iex> use Lens2
     iex> Deeply.get_all(%{a: nil}, Lens.key(:a))
     [nil]
     iex> Deeply.get_all(%{      }, Lens.key(:a))
@@ -40,7 +41,7 @@ Lenses for map structures come in three varieties, such as `Lens.key`,
     %{a: "nil"}
     iex> Deeply.update(%{      }, Lens.key(:a), &inspect/1)
     %{a: "nil"}
-
+    
 If the container is a struct, `Deeply.get_all` behaves the same as for
 a plain map. It will still produce a `nil` for a missing key.
 
@@ -57,7 +58,7 @@ We've destroyed the contract for `Point`. This is, however, the same thing that 
     iex> put_in(%Point{x: 1, y: 2}, [Access.key(:missing)], :NEW)
     %{missing: :NEW, y: 2, __struct__: Point, x: 1}
     
-I assume there's a reason for it, but I don't know what it is.
+I assume there's a reason for that, but I don't know what it is.
 
 `Deeply.update` can also be used to add fields to a struct, as can `update_in/3`.
 
@@ -71,7 +72,7 @@ included in the return list:
     iex> Deeply.get_all(%{a: nil, b: 1}, Lens.keys?([:a, :b, :missing]))
     [nil, 1] # `keys` would have provided an extra `nil`
     
-`Deeply.put` will only override an existing value. (It's like `put_not_new`.)
+`Deeply.put` will only override an existing value. (It's like a `put_not_new`.)
 
     iex> Deeply.put(%{a: nil, b: 1}, Lens.keys?([:a, :b, :missing]), :NEW)
     %{a: :NEW, b: :NEW}
@@ -100,7 +101,7 @@ Structs are handled the same way.
 
 ### Other types
 
-Any container that implements the `Access` behaviour will be analogously to `Map`.
+Any container that implements the `Access` behaviour will be treated like a map.
 More precisely, 
 
 * `Lens.key` uses `Access.fetch/2` but converts an `:error` return
@@ -116,8 +117,8 @@ More precisely,
 
 ## Indexed lenses (lists, tuples)
 
-The core function is `Lens2.Lenses.Indexed.at/1`. It, and its
-derivative, `Lens2.Lenses.Indexed.indices/1` will return `nil` when getting an
+The core function is `Lens2.Lenses.Indexed.at/1`. It and its
+derivative, `Lens2.Lenses.Indexed.indices/1`, will return `nil` when getting an
 index that's out of bounds:
 
       iex> Deeply.get_all([0, 1], Lens.at(2))
@@ -140,18 +141,17 @@ update function and *then* the return value is ignored. That's a
 problem in the common case when the update function doesn't expect a nil:
 
      iex> Deeply.update(["0", "1"], Lens.at(2), &Integer.parse/1)
-     The following arguments were given to Integer.parse/2:
+     ** (FunctionClauseError) no function clause matching in Integer.parse/2
+         The following arguments were given to Integer.parse/2:
         
-     # 1
-     nil
+             # 1
+             nil
     
 
 This is *not* consistent with the behavior of `update_in`, and I'm inclined to think it a bug. 
 
-
     iex> update_in(["0", "1"], [Access.at(2)], &Integer.parse/1)
     ["0", "1"]
-
 
 ### Tuples
 
@@ -159,24 +159,24 @@ This is *not* consistent with the behavior of `update_in`, and I'm inclined to t
 
     iex> Deeply.get_all({"0", "1", "2"}, Lens.indices([0, 2]))
     ["0", "2"]
-    iex> Deeply.update({0, 1, 2}, Lens.at(2), & &1*1111)
+    iex> Deeply.update({0, 1, 2}, Lens.at(2), & &1 * 1111)
     {0, 1, 2222}
 
 However, you cannot use an index out of range:
 
     iex> Deeply.get_all({"0", "1"}, Lens.at(2))
-     ** (ArgumentError) errors were found at the given arguments:
+    ** (ArgumentError) errors were found at the given arguments:
 
-       * 1st argument: out of range
+            * 1st argument: out of range
 
-This is consistent with `elem/2`
+This is consistent with `elem/2`.
 
 You also get an `ArgumentError` when attempting to `put` or `update` a value out of range.
 
 ### Enumerable types
 
 Although `Lens.at/1` is suggestive of `Enum.at/2`, you can't use it
-with any non-`List` `Enumerable`. That makes sense for `put` and
+with a non-list `Enumerable`. That makes sense for `put` and
 `update`, since there's no general way to modify elements of an
 `Enumerable`. Consider this:
 
@@ -193,26 +193,25 @@ because of
 ### Lenses specifically for adding to lists
 
 `Lens2.Lenses.Indexed` supplies lenses that point, not to elements of a list,
-but *next to them*. Consider `Lens2.Lenses.Indexes.before/1`. This lens:
-
+but *next to them*. Consider `Lens2.Lenses.Indexes.before/1`:
 
     iex> lens = Lens.before(2)
     
 Given a list like `[0, 1, 2]`, it lets you add a new element:
 
-    iex> Deeply.put([0, 1, 2], Lens.before(2), :NEW)
-    [0, 1, :NEW, 2]
+    iex> Deeply.put(["0", "1", "2"], lens, :NEW)
+    ["0", "1", :NEW, "2"]
 
 It's rather peculiar to ask for a value at the place where there isn't
 a value. If you do, you'll get a `nil`:
 
-    iex> Deeply.get_all([0, 1, 2], Lens.before(2))
+    iex> Deeply.get_all(["0", "1", "2"], Lens.before(2))
     [nil]
     
 Similarly, you can use `Deeply.update`, but the update function will
 always get a `nil`. Which is therefore a more elaborate version of
 `Deeply.put`:
 
-    iex> Deeply.update([0, 1, 2], Lens.before(2), fn nil -> :NEW end)
+    iex> Deeply.update(["0", "1", "2"], Lens.before(2), fn nil -> :NEW end)
     [0, 1, :NEW, 2]
 
