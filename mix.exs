@@ -62,6 +62,7 @@ defmodule Lens2.MixProject do
                "mostly_words/rationale.md",
                "mostly_words/for_access_novices.md",
                "mostly_words/are_lenses_for_you.md",
+               "mostly_words/migrating.md",
                "mostly_words/tutorial01-pointers.md",
                "mostly_words/tutorial02-nested.md",
                "mostly_words/tutorial04-missing.md",
