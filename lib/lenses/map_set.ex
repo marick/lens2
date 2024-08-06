@@ -4,6 +4,7 @@ defmodule Lens2.Lenses.MapSet do
   """
 
   use Lens2
+  alias Lens2.Helpers.DefOps
 
   @doc """
   Like `Lens.all/0`, but intended for use with a `MapSet`.
@@ -34,5 +35,61 @@ defmodule Lens2.Lenses.MapSet do
 
   """
 
-  deflens all(), do: Lens.into(Lens.all, MapSet.new)
+  @spec all() :: Lens2.lens
+  def_composed_maker all(),
+    do: Lens.update_into(MapSet.new, Lens.all)
+
+
+  @doc """
+  Make a lens that points at elements satisfying a predicate.
+
+  Here is how you might increment all the even values of a `MapSet`:
+
+      iex> import Integer, only: [is_even: 1]
+      iex> container = MapSet.new([-1, 0, 1, 2])
+      iex> Deeply.update(container, Lens.MapSet.is(&is_even/1), & &1+1)
+      MapSet.new([-1, 1, 3])  # Note that duplicate 1 has been removed.
+  """
+  @spec is( (Lens2.value -> boolean) ) :: Lens2.lens
+  def_composed_maker is(predicate),
+    do: all() |> Lens.filter(predicate)
+
+
+  @doc """
+  Make a lens that points at elements containing a particular key/value pair.
+
+  A `MapSet` might contain a struct or other `Access`-compatible container,
+  such as a map or struct. A lens created by this maker will select all elements
+  with a given key that matches the given value:
+
+      iex> container = MapSet.new([%{name: "bullwinkle"}, %{name: "rocky"}])
+      iex> Deeply.get_all(container, Lens.MapSet.has!(name: "rocky"))
+      [%{name: "rocky"}]
+
+  Here, I get all the names from a keyword list that are associated with the value
+  `2`:
+
+      iex> container = [ [name: "bullwinkle", val: 1],
+      ...>               [name: "rocky",      val: 2],
+      ...>               [name: "natasha",    val: 2]] |> MapSet.new
+      iex> lens = Lens.MapSet.has!(val: 2) |> Lens.key(:name)
+      iex> Deeply.get_all(container, lens) |> Enum.sort
+      ["natasha", "rocky"]
+
+  As the exclamation point suggests, an error is raised if any of the
+  elements doesn't have the given key.
+
+  Structs are not required to implement the `Access` callback
+  functions. (Indeed, even if it does implement `Access.fetch/2`,
+  that's not used.)
+
+  """
+  @spec has!(keyword(any)) :: Lens2.lens
+  def_composed_maker has!([{key, value}]) do
+    predicate =
+      fn element ->
+        DefOps.fetch!(element, key) == value
+      end
+    is(predicate)
+  end
 end
