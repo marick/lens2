@@ -385,12 +385,12 @@ defmodule Lens2.Lenses.Combine do
       iex>  Deeply.get_all(nested, values) |> Enum.sort
       [1, 2, 3]
 
-   Had `repeatedly/1` be used, the `1` value would not be included in the result.
+   Had `repeatedly/1` been used, the `1` value would not be included in the result.
   """
   @spec and_repeatedly(Lens2.lens) :: Lens2.lens
   defmaker and_repeatedly(descender) do
     pointers_below = repeatedly(descender)
-    both(root(), pointers_below)
+    both(pointers_below, root())
   end
 
 
