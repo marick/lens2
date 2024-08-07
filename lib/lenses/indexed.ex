@@ -67,13 +67,13 @@ defmodule Lens2.Lenses.Indexed do
 
   Since there is nothing there, `Deeply.get_only/2` returns `nil`:
 
-     iex> Deeply.get_only([0, 1, 2], Lens.front)
-     nil
+       iex> Deeply.get_only([0, 1, 2], Lens.front)
+       nil
 
   However, you can use it to prepend to the list:
 
-     iex> Deeply.put([0, 1, 2], Lens.front, :NEW)
-     [:NEW, 0, 1, 2]
+       iex> Deeply.put([0, 1, 2], Lens.front, :NEW)
+       [:NEW, 0, 1, 2]
 
   `front` raises an error if used on a tuple.
   """
@@ -85,13 +85,13 @@ defmodule Lens2.Lenses.Indexed do
 
   Since there is nothing there, `Deeply.get_only/2` returns `nil`:
 
-     iex> Deeply.get_only([0, 1, 2], Lens.back)
-     nil
+       iex> Deeply.get_only([0, 1, 2], Lens.back)
+       nil
 
   However, you can use it to append to the list:
 
-     iex> Deeply.put([0, 1, 2], Lens.back, :NEW)
-     [0, 1, 2, :NEW]
+       iex> Deeply.put([0, 1, 2], Lens.back, :NEW)
+       [0, 1, 2, :NEW]
 
   Raises an error if used on a tuple.
   """
@@ -108,13 +108,13 @@ defmodule Lens2.Lenses.Indexed do
 
   Since there is nothing there, `Deeply.get_only/2` returns `nil`:
 
-     iex> Deeply.get_only([0, 1, 2], Lens.before(2))
-     nil
+       iex> Deeply.get_only([0, 1, 2], Lens.before(2))
+       nil
 
   However, you can use it to insert into the list:
 
-     iex> Deeply.put([0, 1, 2], Lens.before(2), :NEW)
-     [0, 1, :NEW, 2]
+       iex> Deeply.put([0, 1, 2], Lens.before(2), :NEW)
+       [0, 1, :NEW, 2]
 
   Raises an error if used on a tuple.
   """
@@ -132,13 +132,13 @@ defmodule Lens2.Lenses.Indexed do
 
   Since there is nothing there, `Deeply.get_only/2` returns `nil`:
 
-     iex> Deeply.get_only([0, 1, 2], Lens.behind(0))
-     nil
+       iex> Deeply.get_only([0, 1, 2], Lens.behind(0))
+       nil
 
   However, you can use it to insert into the list:
 
-     iex> Deeply.put([0, 1, 2], Lens.behind(0), :NEW)
-     [0, :NEW, 1, 2]
+       iex> Deeply.put([0, 1, 2], Lens.behind(0), :NEW)
+       [0, :NEW, 1, 2]
 
   Raises an error if used on a tuple.
   """
@@ -155,11 +155,11 @@ defmodule Lens2.Lenses.Indexed do
   @doc ~S"""
   Returns a lens that points to all of the supplied indices.
 
-     iex> lens = Lens.indices([0, 2])
-     iex> Deeply.get_all([00, 10, 20, 30], lens)
-     [00, 20]
-     iex> Deeply.put([00, 10, 20, 30], lens, :NEW)
-     [:NEW, 10, :NEW, 30]
+       iex> lens = Lens.indices([0, 2])
+       iex> Deeply.get_all([00, 10, 20, 30], lens)
+       [00, 20]
+       iex> Deeply.put([00, 10, 20, 30], lens, :NEW)
+       [:NEW, 10, :NEW, 30]
 
   Alas, you cannot use a range to refer to an `Enum.slice/2` of indices.
 
@@ -167,11 +167,11 @@ defmodule Lens2.Lenses.Indexed do
   `at/1`. Negative indices count from the end, and out-of-range
   indices are ignored.
 
-     iex> lens = Lens.indices([0, 2, -1, 40])
-     iex> Deeply.get_all([00, 10, 20, 30], lens)
-     [00, 20, 30, nil]
-     iex> Deeply.put([00, 10, 20, 30], lens, :NEW)
-     [:NEW, 10, :NEW, :NEW]
+       iex> lens = Lens.indices([0, 2, -1, 40])
+       iex> Deeply.get_all([00, 10, 20, 30], lens)
+       [00, 20, 30, nil]
+       iex> Deeply.put([00, 10, 20, 30], lens, :NEW)
+       [:NEW, 10, :NEW, :NEW]
 
   Raises an error if used on a tuple.
   """
