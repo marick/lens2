@@ -42,7 +42,7 @@ There is, however, a lens that is the equivalent of `Enum.into/2`:
 Looks good. Let's even put it in a module a a predefined lens maker:
 
     defmodule MyLenses do
-      def_composed_maker as_mapset,
+      defmaker as_mapset,
         do: Lens.all |> Lens.into(MapSet.new)
     end
 

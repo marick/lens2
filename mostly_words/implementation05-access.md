@@ -93,12 +93,12 @@ The `:get_and_update` clause looks just like the code for version 3's `Derply.ge
 
 
 The code for the actual lenses is the same as in version 3, except
-that it should use the macro `Lens2.Makers.def_maker/2` instead of
-`def`. `def_maker` wraps its body in a `:get`/`:get_and_update`
+that it should use the macro `Lens2.Makers.def_raw_maker/2` instead of
+`def`. `def_raw_maker` wraps its body in a `:get`/`:get_and_update`
 function, and also arranges to create the lens maker with an
-additional argument – the one used in a pipeline. So, this use of `def_maker`:
+additional argument – the one used in a pipeline. So, this use of `def_raw_maker`:
 
-    def_maker at(index) do
+    def_raw_maker at(index) do
       fn container, descender -> ... end
     end
 

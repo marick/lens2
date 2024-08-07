@@ -1,4 +1,4 @@
-# Introduction to debugging and `def_maker`
+# Introduction to debugging and `def_raw_maker`
 
 > I really hate this damn machine.    
 > I wish that they would sell it.    
@@ -25,7 +25,7 @@ Note: you might want to defer reading this page until you actually
 
 A lens is an anonymous function created by a *lens maker* (a named
 function). You can easily write a lens maker using `def`, but the
-`def_maker` macro handles some busywork for you. In either case, the
+`def_raw_maker` macro handles some busywork for you. In either case, the
 form of the lens function is fixed: you use a template and fill in
 some blanks.
 

@@ -141,7 +141,7 @@ example, `Lens2.Lenses.Keyed.keys/1` uses `Lens.seq/2`:
 ## Defining a lens maker
 
 There are two ways to define a lens maker: coding one up from scratch,
-or composing existing functions. The first way is rare and more
+or composing existing lens makers. The first way is rare and more
 complicated, so I'll put that off and talk only about composition.
 
 Suppose I frequently want to descend two levels into a nested map. Rather than write code like:
@@ -167,21 +167,20 @@ That works for making an isolated lens, but it doesn't work for composition:
 The problem is that I haven't defined the extra-argument version. I could do that easily enough:
 
     def nested(lens, level1, level2),
-        do: Lens.seq(lens, nested(level1, level2)
+      do: Lens.seq(lens, nested(level1, level2)
         
 However, that code will always always look the same, so there's a macro that defines both versions with a single definition:
 
-    def_composed_maker nested(level1, level2),
-        do: Lens.key(level1) |> Lens.key(level2)
+    defmaker nested(level1, level2),
+      do: Lens.key(level1) |> Lens.key(level2)
 
-(That's not the most gracious name, I admit. In the Lens 1 package,
-it's called `deflens` and you can still use that name if you
-prefer. But I'm hoping that the more cumbersome name will help you
+(In the Lens 1 package,
+this is called `deflens` and you can still use that name if you
+prefer. But I'm hoping the name will help you
 keep in mind that you're not defining a *lens* but rather a lens
 *maker*, thus saving you from some mistakes. Also: in Lens 1, you
 define a lens maker from scratch with `deflens_raw`. I prefer
-`def_maker/2`, despite the annoyance of having the more common case
-having the longer name.)
+`def_raw_maker/2`.)
 
-You'll probably write a lot of lens makers.
+You'll probably write a lot of lens makers of this sort.
 

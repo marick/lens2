@@ -41,7 +41,7 @@ handles `:pop` return values. Here, for example is `Map.get_and_update/3`
        end
        
 We could not put a similar `:pop` clause in the function that
-`def_maker` wraps around a lens function because it's too late. The
+`def_raw_maker` wraps around a lens function because it's too late. The
 wrapper takes control *after* the lens (and descender) have modified
 its container.  So a `:pop` case for a map would be working with an
 `updated` value like `%{a: :pop}`, not a simple `:pop`-or-tuple return
@@ -54,7 +54,7 @@ top level for `:pop`.)
 So supporting this kind of popping would mean we'd have to change quite a number
 of lenses: 
 
-    def_maker key(key) do
+    def_raw_maker key(key) do
       fn container, descender ->
         {gotten, updated} = descender.(Map.get(container, key))
         {[gotten], Map.put(container, key, updated)}
@@ -63,7 +63,7 @@ of lenses:
     
 ... to this:
 
-    def_maker key(key) do
+    def_raw_maker key(key) do
       fn container, descender ->
 
         current = Map.get(container, key)

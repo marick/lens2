@@ -15,21 +15,21 @@ defmodule Lens2.Makers do
          Lens.key(:upper) |> leaf(:bottom)
          error: undefined function leaf/2
 
-  1. Because of that, it's better to use `def_composed_maker/2` (alternately, `deflens/2`).
+  1. Because of that, it's better to use `defmaker/2` (alternately, `deflens/2`).
      This creates a lens maker from one or more other lens makers, most often
      by piping them into each other. For example, a lens maker for two-level maps
      could be defined like this:
 
-         def_composed_maker leaf(key), do: Lens.key(:down) |> Lens.key(key)
+         defmaker leaf(key), do: Lens.key(:down) |> Lens.key(key)
          # Works fine:
          Lens.key(:upper) |> leaf(:bottom)
 
-  1. `def_maker/2` (alternately, `defmaker/2` or `deflens_raw/2` is used for cases where
+  1. `def_raw_maker/2` (alternately, `deflens_raw/2`, is used for cases where
      a lens maker can't be made from other lens makers. For example, the definition of
      ``Lens2.Lenses.Keyed.key!/1`` looks like this:
 
          @spec key!(any) :: Lens2.lens
-         def_maker key!(key) do
+         def_raw_maker key!(key) do
            fn composed, descender ->
              {gotten, updated} = descender.(DefOps.fetch!(composed, key))
              {[gotten], DefOps.put(composed, key, updated)}
@@ -54,7 +54,7 @@ defmodule Lens2.Makers do
   # These are the real versions of the two maker macros. There's a funny
   # name because there are synonyms for each.
   
-  defp _def_maker({name, _metadata, args} = header, lens_code) do
+  defp _def_raw_maker({name, _metadata, args} = header, lens_code) do
     args = force_arglist(args)
     quote do
 
@@ -75,7 +75,7 @@ defmodule Lens2.Makers do
     end
   end
 
-  defp _def_composed_maker({name, metadata, args}, plain_code) do
+  defp _defmaker({name, metadata, args}, plain_code) do
     args = force_arglist(args)
     quote do
       def unquote({name, metadata, args}), do: unquote(plain_code)
@@ -111,7 +111,7 @@ defmodule Lens2.Makers do
   and a "descender" function:
 
       @spec key!(any) :: Lens2.lens
-      def_maker key!(key) do
+      def_raw_maker key!(key) do
         fn container, descender ->
           ...
         end
@@ -120,7 +120,7 @@ defmodule Lens2.Makers do
   The job of the returned function is to take the container, take a
   value within it, and pass it to the descender:
 
-      def_maker key(key) do
+      def_raw_maker key(key) do
         fn container, descender ->
           ... = descender.(DefOps.fetch!(container, key))
           ...
@@ -166,8 +166,8 @@ defmodule Lens2.Makers do
   should link to a tutorial I haven't written yet.**
 
   """
-  defmacro def_maker(header, do: lens_code),
-           do: _def_maker(header, lens_code)
+  defmacro def_raw_maker(header, do: lens_code),
+           do: _def_raw_maker(header, lens_code)
 
 
   @doc """
@@ -176,42 +176,39 @@ defmodule Lens2.Makers do
   Most often, this is used to name a pipeline of lenses (and make the
   resulting function suitable for including in other pipelines):
 
-       def_composed_maker leaf(key), do: Lens.key(:down) |> Lens.key(key)
+       defmaker leaf(key), do: Lens.key(:down) |> Lens.key(key)
   
   The body after the `do:` can be arbitrary code:
 
-       def_composed_maker keys(keys) do
+       defmaker keys(keys) do
          keys |> Enum.map(&key/1) |> Combine.multiple
        end
 
   The only requirement is that the last thing the code does must be to
   call a lens maker.  (Or, I suppose, produce a lens in some other
-  way, but you'd probably use `def_maker/2` for that.)
+  way, but you'd probably use `def_raw_maker/2` for that.)
 
   """
 
-  defmacro def_composed_maker(header, do: plain_code),
-           do: _def_composed_maker(header, plain_code)
+  defmacro defmaker(header, do: plain_code),
+           do: _defmaker(header, plain_code)
 
-  @doc ~S"Alternate spelling of `def_maker/2`."
-  defmacro defmaker(header, do: lens_code),
-           do: _def_maker(header, lens_code)
 
   @doc ~S"""
-  Alternate spelling of `def_maker/2`.
+  Alternate spelling of `def_raw_maker/2`.
 
   This is the equivalent macro from [Lens 1](https://hexdocs.pm/lens/readme.html).
   """
   defmacro deflens_raw(header, do: lens_code),
-           do: _def_maker(header, lens_code)
+           do: _def_raw_maker(header, lens_code)
 
 
 
   @doc ~S"""
-  Alternate spelling of `def_composed_maker/2`.
+  Alternate spelling of `defmaker/2`.
 
   This is the equivalent macro from [Lens 1](https://hexdocs.pm/lens/readme.html). You won't break my heart
-  if you prefer it to `def_composed_maker/1`, but I had early troubles confusing
+  if you prefer it to `defmaker/1`, but I had early troubles confusing
   a lens and a lens *maker*. I suspect this name will help other novices avoid my
   mistakes.
 
@@ -225,5 +222,5 @@ defmodule Lens2.Makers do
 
   """
   defmacro deflens(header, do: plain_code),
-           do: _def_composed_maker(header, plain_code)
+           do: _defmaker(header, plain_code)
 end

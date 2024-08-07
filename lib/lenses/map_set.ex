@@ -36,7 +36,7 @@ defmodule Lens2.Lenses.MapSet do
   """
 
   @spec all() :: Lens2.lens
-  def_composed_maker all(),
+  defmaker all(),
     do: Lens.update_into(MapSet.new, Lens.all)
 
 
@@ -51,7 +51,7 @@ defmodule Lens2.Lenses.MapSet do
       MapSet.new([-1, 1, 3])  # Note that duplicate 1 has been removed.
   """
   @spec is( (Lens2.value -> boolean) ) :: Lens2.lens
-  def_composed_maker is(predicate),
+  defmaker is(predicate),
     do: all() |> Lens.filter(predicate)
 
 
@@ -85,7 +85,7 @@ defmodule Lens2.Lenses.MapSet do
 
   """
   @spec has!(keyword(any)) :: Lens2.lens
-  def_composed_maker has!([{key, value}]) do
+  defmaker has!([{key, value}]) do
     predicate =
       fn element ->
         DefOps.fetch!(element, key) == value

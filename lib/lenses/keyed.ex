@@ -30,7 +30,7 @@ defmodule Lens2.Lenses.Keyed do
   alias Lens2.Lenses
   alias Lenses.{Combine,Indexed}
 
-  # `def_composed_maker` doesn't cooperate with guards, so need an explicit precondition.
+  # `defmaker` doesn't cooperate with guards, so need an explicit precondition.
   defmacrop assert_list(first_arg) do
     quote do
       unless is_list(unquote(first_arg)) do
@@ -81,7 +81,7 @@ defmodule Lens2.Lenses.Keyed do
   """
 
   @spec key(any) :: Lens2.lens
-  def_maker key(key) do
+  def_raw_maker key(key) do
     fn container, descender ->
       {gotten, updated} = descender.(DefOps.get(container, key))
       {[gotten], DefOps.put(container, key, updated)}
@@ -97,7 +97,7 @@ defmodule Lens2.Lenses.Keyed do
       ** (KeyError) key :missing not found in: %{a: 1}
   """
   @spec key!(any) :: Lens2.lens
-  def_maker key!(key) do
+  def_raw_maker key!(key) do
     fn container, descender ->
       {gotten, updated} = descender.(DefOps.fetch!(container, key))
       {[gotten], DefOps.put(container, key, updated)}
@@ -134,7 +134,7 @@ defmodule Lens2.Lenses.Keyed do
   Use `key/1` for that.
   """
   @spec key?(any) :: Lens2.lens
-  def_maker key?(key) do
+  def_raw_maker key?(key) do
     fn container, descender ->
       case DefOps.fetch(container, key) do
         :error ->
@@ -173,7 +173,7 @@ defmodule Lens2.Lenses.Keyed do
   That's the same behavior as `Lens2.Lenses.Basic.empty/0`.
   """
   @spec keys(list(any)) :: Lens2.lens
-  def_composed_maker keys(keys) do
+  defmaker keys(keys) do
     assert_list(keys)
     keys |> Enum.map(&key/1) |> Combine.multiple
   end
@@ -193,7 +193,7 @@ defmodule Lens2.Lenses.Keyed do
       ** (KeyError) key :missing not found in: %{a: :NEW}
   """
   @spec keys!(list(any)) :: Lens2.lens
-  def_composed_maker keys!(keys) do
+  defmaker keys!(keys) do
     assert_list(keys)
     keys |> Enum.map(&key!/1) |> Combine.multiple
   end
@@ -210,7 +210,7 @@ defmodule Lens2.Lenses.Keyed do
       %{a: :NEW, b: :NEW, c: 3}
   """
   @spec keys?(list(any)) :: Lens2.lens
-  def_composed_maker keys?(keys) do
+  defmaker keys?(keys) do
     assert_list(keys)
     keys |> Enum.map(&key?/1) |> Combine.multiple
   end
@@ -246,7 +246,7 @@ defmodule Lens2.Lenses.Keyed do
 
   TODO: There should be a `key_path?` and a `key_path`.
   """
-  def_composed_maker key_path!(path) do
+  defmaker key_path!(path) do
     reducer = fn key_or_keys, building_lens ->
       next_lens =
         case key_or_keys do
@@ -283,7 +283,7 @@ defmodule Lens2.Lenses.Keyed do
   does not work with structs.
   """
   @spec map_values :: Lens2.lens
-  def_maker map_values do
+  def_raw_maker map_values do
     fn container, get_and_update ->
       {built_list, built_container} =
         extract_keys(container)
@@ -331,7 +331,7 @@ defmodule Lens2.Lenses.Keyed do
   keys of a struct, since all the keys are known at compile time.
   """
   @spec map_keys :: Lens2.lens
-  def_composed_maker map_keys,
+  defmaker map_keys,
     do: Lenses.Enum.update_into(%{}, Lenses.Enum.all() |> Indexed.at(0))
 
 end

@@ -20,13 +20,13 @@ defmodule Lens2.Lenses.Combine do
   `and_repeatedly/1`: the latter uses `both/2` and `root/0` to add the
   root pointer to what `repeatedly/1` produces.
 
-      def_composed_maker and_repeatedly(descender) do
+      defmaker and_repeatedly(descender) do
         pointers_below = repeatedly(descender)
         both(root(), pointers_below)
       end
   """
   @spec root :: Lens2.lens
-  def_maker root do
+  def_raw_maker root do
     fn container, descender ->
       {res, updated} = descender.(container)
       {[res], updated}
@@ -51,7 +51,7 @@ defmodule Lens2.Lenses.Combine do
 
   """
   @spec empty :: Lens2.lens
-  def_maker empty, do: fn container, _descender -> {[], container} end
+  def_raw_maker empty, do: fn container, _descender -> {[], container} end
 
 
   @doc deprecated: "Too confusing."
@@ -112,7 +112,7 @@ defmodule Lens2.Lenses.Combine do
   """
 
   @spec const(any) :: Lens.lens
-  def_maker const(value) do
+  def_raw_maker const(value) do
     fn _container, descender ->
       {res, updated} = descender.(value)
       {[res], updated}
@@ -150,7 +150,7 @@ defmodule Lens2.Lenses.Combine do
 
   """
   @spec match((any -> Lens2.lens)) :: Lens2.lens
-  def_maker match(matcher_fun) do
+  def_raw_maker match(matcher_fun) do
     fn container, descender ->
       Deeply.get_and_update(container, matcher_fun.(container), descender)
     end
@@ -174,7 +174,7 @@ defmodule Lens2.Lenses.Combine do
   This is essentially the implementation of `Lens2.Lenses.Indexed.indices/1`.
   """
   @spec multiple([Lens2.lens]) :: Lens2.lens
-  def_composed_maker multiple(lenses),
+  defmaker multiple(lenses),
                      do: lenses |> Enum.reverse() |> Enum.reduce(empty(), &both/2)
 
   @doc ~S"""
@@ -212,7 +212,7 @@ defmodule Lens2.Lenses.Combine do
   twice. (So was the `0`, though you can't tell.)
   """
   @spec both(Lens2.lens, Lens2.lens) :: Lens2.lens
-  def_maker both(lens1, lens2) do
+  def_raw_maker both(lens1, lens2) do
     fn container, descender ->
       {res1, changed1} = Deeply.get_and_update(container, lens1, descender)
       {res2, changed2} = Deeply.get_and_update(changed1, lens2, descender)
@@ -233,7 +233,7 @@ defmodule Lens2.Lenses.Combine do
       Lens.seq(Lens.key(:a), Lens.key(:b))
   """
   @spec seq(Lens2.lens, Lens2.lens) :: Lens2.lens
-  def_maker seq(outer_lens, inner_lens) do
+  def_raw_maker seq(outer_lens, inner_lens) do
     fn outer_container, inner_descender ->
       outer_descender = fn inner_container ->
         Deeply.get_and_update(inner_container, inner_lens, inner_descender)
@@ -287,7 +287,7 @@ defmodule Lens2.Lenses.Combine do
 
   """
   @spec seq_both(Lens2.lens, Lens2.lens) :: Lens2.lens
-  def_composed_maker seq_both(lens1, lens2), do: both(seq(lens1, lens2), lens1)
+  defmaker seq_both(lens1, lens2), do: both(seq(lens1, lens2), lens1)
 
 
   @doc ~S"""
@@ -367,7 +367,7 @@ defmodule Lens2.Lenses.Combine do
   `repeatedly/1` is a synonym for `recur/1`, the name in the original `Lens` package.
   """
   @spec repeatedly(Lens2.lens) :: Lens2.lens
-  def_maker repeatedly(descender), do: &do_recur(descender, &1, &2)
+  def_raw_maker repeatedly(descender), do: &do_recur(descender, &1, &2)
 
   @doc ~S"""
   Apply a `descender` lens repeatedly to augment the current set of
@@ -388,7 +388,7 @@ defmodule Lens2.Lenses.Combine do
    Had `repeatedly/1` be used, the `1` value would not be included in the result.
   """
   @spec and_repeatedly(Lens2.lens) :: Lens2.lens
-  def_composed_maker and_repeatedly(descender) do
+  defmaker and_repeatedly(descender) do
     pointers_below = repeatedly(descender)
     both(root(), pointers_below)
   end
@@ -400,13 +400,13 @@ defmodule Lens2.Lenses.Combine do
   It confused me, so I retaliated by renaming it.
   """
   @spec recur(Lens2.lens) :: Lens2.lens
-  def_composed_maker recur(descender), do: repeatedly(descender)
+  defmaker recur(descender), do: repeatedly(descender)
 
   @doc ~S"""
   The [Lens 1](https://hexdocs.pm/lens/readme.html) name for `and_repeatedly/1`.
   """
   @spec recur_root(Lens2.lens) :: Lens2.lens
-  def_composed_maker recur_root(descender), do: and_repeatedly(descender)
+  defmaker recur_root(descender), do: and_repeatedly(descender)
 
   defp do_recur(lens, container, descender) do
     {res, changed} =
@@ -536,7 +536,7 @@ defmodule Lens2.Lenses.Combine do
 
   """
   @spec context(Lens2.lens, Lens2.lens) :: Lens2.lens
-  def_maker context(context_lens, item_lens) do
+  def_raw_maker context(context_lens, item_lens) do
     fn container, descender ->
       {results, changed} =
         Deeply.get_and_update(container, context_lens, fn context ->
@@ -574,7 +574,7 @@ defmodule Lens2.Lenses.Combine do
   the missing `:a` key.
   """
   @spec either(Lens2.lens, Lens2.lens) :: Lens2.lens
-  def_maker either(lens, other_lens) do
+  def_raw_maker either(lens, other_lens) do
     fn container, descender ->
       case Deeply.get_and_update(container, lens, descender) do
         {[], _updated} -> Deeply.get_and_update(container, other_lens, descender)

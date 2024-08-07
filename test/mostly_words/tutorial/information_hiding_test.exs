@@ -11,7 +11,7 @@ defmodule Lens2.MostlyText.InformationHidingTest do
     def new(name, downstream \\ []),
         do: %__MODULE__{name: name, downstream: downstream}
 
-    def_composed_maker downstream, do: Lens.key!(:downstream)
+    defmaker downstream, do: Lens.key!(:downstream)
   end
 
   defmodule Network1 do
@@ -25,7 +25,7 @@ defmodule Lens2.MostlyText.InformationHidingTest do
       struct(__MODULE__, clusters_by_name: map)
     end
 
-    def_composed_maker downstream_of(name),
+    defmaker downstream_of(name),
       do: Lens.key!(:clusters_by_name) |> Lens.key!(name) |> Cluster1.downstream
   end
 

@@ -35,6 +35,7 @@ defmodule Lens2.Lenses.Filter do
   # I can't imagine the use case for the following.
   def filter(predicate), do: Combine.root() |> filter(predicate)
 
+  # Note: I use deflens_raw here just to catch if I ever break it.
   deflens_raw filter(lens, predicate) do
     fn container, descender ->
       {gotten, updated} =

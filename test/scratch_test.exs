@@ -2,7 +2,7 @@ defmodule Lens2.ScratchTest do
   use Lens2.Case, async: true
 
   defmodule MyLenses do
-    def_composed_maker as_mapset,
+    defmaker as_mapset,
       do: Lens.all |> Lens.into(MapSet.new)
   end
 

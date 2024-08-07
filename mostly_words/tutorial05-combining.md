@@ -7,7 +7,7 @@ using lens makers in `Lens2.Lenses.Combine`.
 
 Here I want to call out a few that
 operate on other lenses and show examples of how they're used with
-`def_composed_maker`.
+`defmaker`.
 
 
 TO BE WRITTEN

@@ -60,7 +60,7 @@ defmodule Lens2.Lenses.Enum do
 
   """
   @spec all :: Lens2.lens
-  def_maker all do
+  def_raw_maker all do
     fn container, descender ->
       {gotten, updated} =
         Enum.reduce(container, {[], []}, fn item, {gotten, updated} ->
@@ -139,7 +139,7 @@ defmodule Lens2.Lenses.Enum do
         b: MapSet.new(["3", "4"])}
   """
   @spec into(Lens2.lens, Collectable.t()) :: Lens2.lens
-  def_maker into(lens, collectable) do
+  def_raw_maker into(lens, collectable) do
     fn container, descender ->
       {gotten, updated} = Deeply.get_and_update(container, lens, descender)
       {gotten, Enum.into(updated, collectable)}
@@ -208,7 +208,7 @@ defmodule Lens2.Lenses.Enum do
 
   """
   @spec update_into(Collectable.t, Lens2.lens) :: Lens2.lens
-  def_maker update_into(collectable, lens) do
+  def_raw_maker update_into(collectable, lens) do
     fn container, descender ->
       {gotten, updated} = Deeply.get_and_update(container, lens, descender)
       {gotten, Enum.into(updated, collectable)}

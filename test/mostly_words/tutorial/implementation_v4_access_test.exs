@@ -3,7 +3,7 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
   alias Lens2.Deeply
 
   defmodule DefMaker do
-    defmacro def_maker(header = {name, _, args}, do: lens_code) do
+    defmacro def_raw_maker(header = {name, _, args}, do: lens_code) do
       args = force_arglist(args)
 
       quote do
@@ -39,7 +39,7 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
   defmodule V4 do
     import DefMaker
 
-    def_maker at(index) do
+    def_raw_maker at(index) do
       fn container, descender ->
         {gotten, updated} =
           Enum.at(container, index)
@@ -51,7 +51,7 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
       end
     end
 
-    def_maker key(key) do
+    def_raw_maker key(key) do
       fn container, descender ->
         {gotten, updated} =
           Map.get(container, key)
@@ -60,7 +60,7 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
       end
     end
 
-    def_maker both(lens1, lens2) do
+    def_raw_maker both(lens1, lens2) do
       fn container, descender ->
         {res1, changed1} = Deeply.get_and_update(container, lens1, descender)
         {res2, changed2} = Deeply.get_and_update(changed1, lens2, descender)
@@ -68,7 +68,7 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
       end
     end
 
-    def_maker seq(outer_lens, inner_lens) do
+    def_raw_maker seq(outer_lens, inner_lens) do
       fn outer_container, inner_descender ->
         outer_descender =
           fn inner_container ->
@@ -83,7 +83,7 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
     end
 
     # No change needed
-    def_maker all do
+    def_raw_maker all do
       fn container, descender ->
         pairs =
           for item <- container, do: descender.(item)

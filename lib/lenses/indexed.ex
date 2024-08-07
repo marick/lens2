@@ -46,7 +46,7 @@ defmodule Lens2.Lenses.Indexed do
 
   """
   @spec at(non_neg_integer) :: Lens2.lens
-  def_maker at(index) do
+  def_raw_maker at(index) do
     fn container, descender ->
       {gotten, updated} = descender.(DefOps.at(container, index))
       {[gotten], DefOps.put_at(container, index, updated)}
@@ -58,7 +58,7 @@ defmodule Lens2.Lenses.Indexed do
   An alias for `at`.
   """
   @spec index(non_neg_integer) :: Lens2.lens
-  def_composed_maker index(index), do: at(index)
+  defmaker index(index), do: at(index)
 
 
 
@@ -78,7 +78,7 @@ defmodule Lens2.Lenses.Indexed do
   `front` raises an error if used on a tuple.
   """
   @spec front :: Lens2.lens
-  def_composed_maker front, do: before(0)
+  defmaker front, do: before(0)
 
   @doc ~S"""
   Returns a lens that points after the last element of a list.
@@ -96,7 +96,7 @@ defmodule Lens2.Lenses.Indexed do
   Raises an error if used on a tuple.
   """
   @spec back :: Lens2.lens
-  def_maker back do
+  def_raw_maker back do
     fn container, descender ->
       lens = behind(Enum.count(container))
       Deeply.get_and_update(container, lens, descender)
@@ -119,7 +119,7 @@ defmodule Lens2.Lenses.Indexed do
   Raises an error if used on a tuple.
   """
   @spec before(non_neg_integer) :: Lens2.lens
-  def_maker before(index) do
+  def_raw_maker before(index) do
     fn container, descender ->
       {gotten, item} = descender.(nil)
       {init, tail} = Enum.split(container, index)
@@ -143,7 +143,7 @@ defmodule Lens2.Lenses.Indexed do
   Raises an error if used on a tuple.
   """
   @spec behind(non_neg_integer) :: Lens2.lens
-  def_maker behind(index) do
+  def_raw_maker behind(index) do
     fn container, descender ->
       {gotten, item} = descender.(nil)
       {init, tail} = Enum.split(container, index + 1)
@@ -176,5 +176,5 @@ defmodule Lens2.Lenses.Indexed do
   Raises an error if used on a tuple.
   """
   @spec indices([non_neg_integer]) :: Lens2.lens
-  def_composed_maker indices(indices), do: indices |> Enum.map(&index/1) |> Combine.multiple
+  defmaker indices(indices), do: indices |> Enum.map(&index/1) |> Combine.multiple
 end

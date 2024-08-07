@@ -117,7 +117,7 @@ defmodule Mix.Tasks.Timings.List do
 
   section "paths" do
     @doc false
-    def_composed_maker lens_path(cluster_index, destination) do
+    defmaker lens_path(cluster_index, destination) do
       Lens.key!(:clusters)
       |> Lens.at(cluster_index)
       |> Lens.key!(:router)

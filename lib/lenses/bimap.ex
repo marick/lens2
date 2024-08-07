@@ -63,7 +63,7 @@ defmodule Lens2.Lenses.BiMap do
         ...>  # On my machine, today, it turns out to be `:e`.
     """
     @spec all_values :: Lens2.lens
-    def_composed_maker all_values() do
+    defmaker all_values() do
       Lens.update_into(BiMap.new, Lens.all |> Lens.at(1))
     end
 
@@ -84,7 +84,7 @@ defmodule Lens2.Lenses.BiMap do
 
     """
     @spec all_keys :: Lens2.lens
-    def_composed_maker all_keys() do
+    defmaker all_keys() do
       Lens.into(Lens.all |> Lens.at(0), BiMap.new)
     end
   end
@@ -110,7 +110,7 @@ defmodule Lens2.Lenses.BiMap do
         BiMap.new
     """
     @spec key?(any) :: Lens2.lens
-    def_maker key?(key) do
+    def_raw_maker key?(key) do
       fn bimap, descender ->
         case BiMap.fetch(bimap, key) do
           :error ->
@@ -140,7 +140,7 @@ defmodule Lens2.Lenses.BiMap do
         BiMap.new
     """
     @spec to_key?(any) :: Lens2.lens
-    def_maker to_key?(value) do
+    def_raw_maker to_key?(value) do
       fn bimap, descender ->
         case BiMap.fetch_key(bimap, value) do
           :error ->
@@ -166,7 +166,7 @@ defmodule Lens2.Lenses.BiMap do
 
     """
     @spec keys?([any]) :: Lens2.lens
-    def_composed_maker keys?(keys) do
+    defmaker keys?(keys) do
       keys |> Enum.map(&key?/1) |> Lens.multiple
     end
 
@@ -184,7 +184,7 @@ defmodule Lens2.Lenses.BiMap do
 
     """
     @spec to_keys?([any]) :: Lens2.lens
-    def_composed_maker to_keys?(keys) do
+    defmaker to_keys?(keys) do
       keys |> Enum.map(&to_key?/1) |> Lens.multiple
     end
 
@@ -203,7 +203,7 @@ defmodule Lens2.Lenses.BiMap do
         ** (ArgumentError) key :missing not found in: BiMap.new([a: 1])
     """
     @spec key!(any) :: Lens2.lens
-    def_maker key!(key) do
+    def_raw_maker key!(key) do
       fn bimap, descender ->
         {gotten, updated} = descender.(BiMap.fetch!(bimap, key))
         {[gotten], BiMap.put(bimap, key, updated)}
@@ -223,7 +223,7 @@ defmodule Lens2.Lenses.BiMap do
 
     """
     @spec to_key!(any) :: Lens2.lens
-    def_maker to_key!(value) do
+    def_raw_maker to_key!(value) do
       fn bimap, descender ->
         {gotten, updated} = descender.(BiMap.fetch_key!(bimap, value))
         {[gotten], BiMap.put(bimap, updated, value)}
@@ -243,7 +243,7 @@ defmodule Lens2.Lenses.BiMap do
 
     """
     @spec keys!([any]) :: Lens2.lens
-    def_composed_maker keys!(keys) do
+    defmaker keys!(keys) do
       keys |> Enum.map(&key!/1) |> Lens.multiple
     end
 
@@ -259,7 +259,7 @@ defmodule Lens2.Lenses.BiMap do
 
     """
     @spec to_keys!([any]) :: Lens2.lens
-    def_composed_maker to_keys!(keys) do
+    defmaker to_keys!(keys) do
       keys |> Enum.map(&to_key!/1) |> Lens.multiple
     end
   end
@@ -284,7 +284,7 @@ defmodule Lens2.Lenses.BiMap do
     """
 
     @spec key(any) :: Lens2.lens
-    def_maker key(key) do
+    def_raw_maker key(key) do
       fn bimap, descender ->
         {gotten, updated} = descender.(BiMap.get(bimap, key))
         {[gotten], BiMap.put(bimap, key, updated)}
@@ -309,7 +309,7 @@ defmodule Lens2.Lenses.BiMap do
 
     """
     @spec keys([any]) :: Lens2.lens
-    def_composed_maker keys(keys) do
+    defmaker keys(keys) do
       keys |> Enum.map(&key/1) |> Lens.multiple
     end
   end

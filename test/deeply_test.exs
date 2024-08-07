@@ -42,8 +42,8 @@ defmodule Lens2.DeeplyTest do
       field :y, integer
     end
 
-    def_composed_maker x, do: Lens.key(:x)
-    def_composed_maker y, do: Lens.key(:y)
+    defmaker x, do: Lens.key(:x)
+    defmaker y, do: Lens.key(:y)
   end
 
   test "actions on atoms" do
