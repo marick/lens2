@@ -31,7 +31,7 @@ The package can be installed by adding it to your list of dependencies in mix.ex
 
 ## TODO?
 
-* Consder separating `:get` and `:get_and_update` cases.
+* Consider separating `:get` and `:get_and_update` cases.
     * some performance advantage for lists
     * Lens.at would work with Enumerables for getting.
     * Makes writing `def_raw_maker` style lenses more complicated.
