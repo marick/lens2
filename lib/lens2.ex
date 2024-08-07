@@ -8,8 +8,8 @@ defmodule Lens2 do
      under the same names: `Lens.key/1`, for example. See
      `Lens2.Lenses` for the complete list.
 
-  2. ... make lenses for `MapSet` containers with `Lens2.MapSet` and
-     lenses for `BiMap` with `Lens2.BiMap`. Those are aliases for
+  2. ... make lenses for `MapSet` containers with `Lens.MapSet` and
+     lenses for `BiMap` with `Lens.BiMap`. Those are aliases for
      `Lens2.Lenses.MapSet` and `Lens2.Lenses.BiMap`.
 
   3. ... traverse containers with lens-using functions like
