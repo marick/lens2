@@ -16,6 +16,19 @@ different project, see the
 3. Operations that encourage (but do not require) information hiding.
 4. Extra lenses and utility functions.
 
+
+## Installation
+
+The package can be installed by adding it to your list of dependencies in mix.exs:
+
+    def deps do
+      [
+        {:lens2, "~> 0.1.0"},
+      ]
+    end
+
+
+
 ## TODO?
 
 * Consder separating `:get` and `:get_and_update` cases.
