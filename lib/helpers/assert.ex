@@ -16,4 +16,27 @@ defmodule Helpers.Assert do
       end
     end
   end
+
+  # `defmaker` doesn't cooperate with guards, so need an explicit precondition.
+  defmacro assert_list(first_arg) do
+    quote do
+      unless is_list(unquote(first_arg)) do
+        {name, arity} =  __ENV__.function
+        raise Helpers.AssertionError, "#{name}/#{arity} takes a list as its argument."
+      end
+    end
+  end
+
+  # `defmaker` doesn't cooperate with guards, so need an explicit precondition.
+  defmacro assert_atom(first_arg) do
+    quote do
+      unless is_atom(unquote(first_arg)) do
+        {name, arity} =  __ENV__.function
+        raise Helpers.AssertionError, "#{name}/#{arity} takes an atom as its argument."
+      end
+    end
+  end
+
+
+
 end
