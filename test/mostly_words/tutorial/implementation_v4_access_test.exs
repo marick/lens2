@@ -22,7 +22,7 @@ defmodule Lens2.MostlyText.ImplementationV4AccessTest do
 
         @doc false
         def unquote(name)(previous, unquote_splicing(args)) do
-          Lens.seq(previous, unquote(name)(unquote_splicing(args)))
+          seq(previous, unquote(name)(unquote_splicing(args)))
         end
       end
     end
