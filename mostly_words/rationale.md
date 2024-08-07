@@ -99,41 +99,6 @@ highlights of the new package:
    So this package has lots of explanatory and tutorial documentation, longer docstrings,
    and some renamed functions. (With the old names still supported.)
    
-3. The `Deeply` API encourages information hiding and the use of structs
-   more than does Lens 1 (or `put_in` and friends). When I use
-   lenses, I usually make them part of a module's interface. For
-   example, I have a `Network` struct that connects named
-   "clusters". The connections are somewhat complicated internally,
-   but a client of `Network` needn't know that: it merely wants to
-   ask for one cluster's downstream neighbors. This function:
-   
-        Network.downstream_from(name)
-   
-   ... returns a lens for clients to use in calls like this:
-   
-        Deeply.get_all(network, Network.downstream_from(cluster))
-        
-   Often, that code could be simpler. `Network.downstream_from/1`
-   makes a lens that refers to a particular `cluster`. However,
-   lens-making functions often don't take parameters. For example, `Lens.map_values/0`
-   always refers to all the values of a map (or struct), and
-   `Network.linear_clusters/0` refers to all the "linear clusters." In such a case, and
-   because `Network` is a struct, client code can fetch all the linear clusters with:
-   
-        Deeply.get_all(network, :linear_clusters)
-        
-   I like the idea of "pointing at" struct values with a single name or atom, without
-   client code having to care if the field is at the top level, is buried within the
-   network, or is computed on the fly. 
-   
-   Although it's less emphasized in
-   functional programming than object-oriented programming, information hiding still rules. Joe Bergin
-   used to say of object-oriented code that "I should be able to ask
-   you what you had for breakfast without knowing how to reach into
-   your stomach to find out", and I think Lens 2 supports the
-   functional programming equivalent.
-   
-   
 4. It would be a tragic waste of human life for multiple people to
    write lenses for `MapSet` or
    [`BiMap`]([`BiMap`](https://hexdocs.pm/bimap/readme.html)), so this
