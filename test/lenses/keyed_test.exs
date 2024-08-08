@@ -6,6 +6,7 @@ defmodule Lens2.Lenses.KeyedTest do
   end
 
   doctest Lens2.Lenses.Keyed
+  alias Lens2.Helpers.AssertionError
 
   describe "use with structures" do
     test "key" do
@@ -134,15 +135,15 @@ defmodule Lens2.Lenses.KeyedTest do
 
 
   test "useful error message" do
-    assert_raise(RuntimeError, "keys/1 takes a list as its argument.", fn ->
+    assert_raise(AssertionError, "keys/1 takes a list as its argument.", fn ->
       Lens.keys(:a, :b)
     end)
 
-    assert_raise(RuntimeError, "keys?/1 takes a list as its argument.", fn ->
+    assert_raise(AssertionError, "keys?/1 takes a list as its argument.", fn ->
       Lens.keys?(:a, :b)
     end)
 
-    assert_raise(RuntimeError, "keys!/1 takes a list as its argument.", fn ->
+    assert_raise(AssertionError, "keys!/1 takes a list as its argument.", fn ->
       Lens.keys!(:a, :b)
     end)
   end

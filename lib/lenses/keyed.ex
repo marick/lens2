@@ -29,16 +29,7 @@ defmodule Lens2.Lenses.Keyed do
   alias Lens2.Helpers.DefOps
   alias Lens2.Lenses
   alias Lenses.{Combine,Indexed}
-
-  # `defmaker` doesn't cooperate with guards, so need an explicit precondition.
-  defmacrop assert_list(first_arg) do
-    quote do
-      unless is_list(unquote(first_arg)) do
-        {name, arity} =  __ENV__.function
-        raise "#{name}/#{arity} takes a list as its argument."
-      end
-    end
-  end
+  import Lens2.Helpers.Assert
 
   @doc ~S"""
   Returns a lens that points to the value of `key`.
