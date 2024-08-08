@@ -275,12 +275,12 @@ defmodule Lens2.Lenses.Keyed do
   """
   @spec map_values :: Lens2.lens
   def_raw_maker map_values do
-    fn container, get_and_update ->
+    fn container, descender ->
       {built_list, built_container} =
         extract_keys(container)
         |> Enum.reduce({[], container}, fn key, {building_list, building_container} ->
           current_value = Map.get(container, key)
-          {gotten, updated} = get_and_update.(current_value)
+          {gotten, updated} = descender.(current_value)
           {[gotten | building_list], Map.put(building_container, key, updated)}
         end)
 
