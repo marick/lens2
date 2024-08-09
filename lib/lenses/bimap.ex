@@ -1,31 +1,60 @@
 defmodule Lens2.Lenses.BiMap do
   use Lens2
   import Lens2.Helpers.Section
+  use Private
+
+  private do
+    def relevant?({k, _v}, lens_arg,  :descend_value), do: k == lens_arg
+    def relevant?({_k, v}, lens_arg,  :descend_key),   do: v == lens_arg
+
+    def choose(   {_k, v},            :descend_value), do: v
+    def choose(   {k, _v},            :descend_key),   do: k
+
+    def new_kv(   {k, _v},  new_value, :descend_value), do: {k, new_value}
+    def new_kv(   {_k, v},  new_key,   :descend_key),   do: {new_key, v}
+    def new_kv(   lens_arg, new_value, :descend_value), do: {lens_arg, new_value}
+    def new_kv(   lens_arg, new_key,   :descend_key),   do: {new_key, lens_arg}
+
+    def fetch_one(container, key,   :descend_value), do: BiMap.fetch(container, key)
+    def fetch_one(container, value, :descend_key), do: BiMap.fetch_key(container, value)
 
 
-  defp _key?(key, %BiMap{} = container, descender) do
-    case BiMap.fetch(container, key) do
-      :error ->
-        {[], container}
-      {:ok, value} ->
-        {gotten, updated} = descender.(value)
-        {[gotten], BiMap.put(container, key, updated)}
+    def multimap_kv?(lens_arg, container, descender, descend_which) do
+      BiMultiMap.to_list(container)
+      |> Enum.reduce({[], BiMultiMap.new},fn kv, {building_gotten, building_updated} ->
+        if relevant?(kv, lens_arg, descend_which) do
+          {gotten_from_one, updated_from_one} = descender.(choose(kv, descend_which))
+          {
+            [gotten_from_one | building_gotten],
+            BiMultiMap.put(building_updated, new_kv(kv, updated_from_one, descend_which))
+          }
+        else
+          {building_gotten, BiMultiMap.put(building_updated, kv)}
+        end
+      end)
     end
-  end
 
-  defp _key?(key, %BiMultiMap{} = container, descender) do
-    BiMultiMap.to_list(container)
-    |> Enum.reduce({[], BiMultiMap.new}, fn {k, v}, {building_gotten, building_updated} ->
-      if k == key do
-        {gotten_from_one_value, updated_from_one_value} = descender.(v)
-        {
-          [gotten_from_one_value | building_gotten],
-          BiMultiMap.put(building_updated, key, updated_from_one_value)
-        }
-      else
-        {building_gotten, BiMultiMap.put(building_updated, k, v)}
+    def bimap_kv?(lens_arg, %BiMap{} = container, descender, descend_which) do
+      case fetch_one(container, lens_arg, descend_which) do
+        :error ->
+          {[], container}
+        {:ok, fetched} ->
+          {gotten, updated} = descender.(fetched)
+          {[gotten], BiMap.put(container, new_kv(lens_arg, updated, descend_which))}
       end
-    end)
+    end
+
+
+
+    def _to_key?(value, %BiMap{} = container, descender),
+        do: bimap_kv?(value, container, descender, :descend_key)
+    def _to_key?(value, %BiMultiMap{} = container, descender),
+        do: multimap_kv?(value, container, descender, :descend_key)
+
+    def _key?(key, %BiMap{} = container, descender),
+        do: bimap_kv?(key, container, descender, :descend_value)
+    def _key?(key, %BiMultiMap{} = container, descender),
+        do: multimap_kv?(key, container, descender, :descend_value)
   end
 
 
@@ -164,13 +193,7 @@ defmodule Lens2.Lenses.BiMap do
     @spec to_key?(any) :: Lens2.lens
     def_raw_maker to_key?(value) do
       fn bimap, descender ->
-        case BiMap.fetch_key(bimap, value) do
-          :error ->
-            {[], bimap}
-          {:ok, key} ->
-            {gotten, updated} = descender.(key)
-            {[gotten], BiMap.put(bimap, updated, value)}
-        end
+        _to_key?(value, bimap, descender)
       end
     end
 
