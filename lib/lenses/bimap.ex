@@ -2,6 +2,33 @@ defmodule Lens2.Lenses.BiMap do
   use Lens2
   import Lens2.Helpers.Section
 
+
+  defp _key?(key, %BiMap{} = container, descender) do
+    case BiMap.fetch(container, key) do
+      :error ->
+        {[], container}
+      {:ok, value} ->
+        {gotten, updated} = descender.(value)
+        {[gotten], BiMap.put(container, key, updated)}
+    end
+  end
+
+  defp _key?(key, %BiMultiMap{} = container, descender) do
+    BiMultiMap.to_list(container)
+    |> Enum.reduce({[], BiMultiMap.new}, fn {k, v}, {building_gotten, building_updated} ->
+      if k == key do
+        {gotten_from_one_value, updated_from_one_value} = descender.(v)
+        {
+          [gotten_from_one_value | building_gotten],
+          BiMultiMap.put(building_updated, key, updated_from_one_value)
+        }
+      else
+        {building_gotten, BiMultiMap.put(building_updated, k, v)}
+      end
+    end)
+  end
+
+
   @moduledoc """
 
   Lens makers for the [`BiMap`](https://hexdocs.pm/bimap/readme.html)
@@ -111,16 +138,11 @@ defmodule Lens2.Lenses.BiMap do
     """
     @spec key?(any) :: Lens2.lens
     def_raw_maker key?(key) do
-      fn bimap, descender ->
-        case BiMap.fetch(bimap, key) do
-          :error ->
-            {[], bimap}
-          {:ok, value} ->
-            {gotten, updated} = descender.(value)
-            {[gotten], BiMap.put(bimap, key, updated)}
-        end
+      fn container, descender ->
+        _key?(key, container, descender)
       end
     end
+
 
     @doc """
 

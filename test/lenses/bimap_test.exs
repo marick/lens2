@@ -48,29 +48,6 @@ defmodule Lens2.Lenses.BiMapTest do
     assert BiMap.get(result, :missing) |> is_reference
   end
 
-  # test "bimap_missing_keys/1" do
-  #   lens = Lens.key(:a) |> Lens.BiMap.bimap_missing_keys([:a, :b, :c])
-  #   data = %{a: BiMap.new(%{a: 1})}
-
-  #   Deeply.get_all(data, lens)
-  #   |> assert_good_enough(in_any_order([:b, :c]))
-
-  #   %{a: result} = Deeply.put(data, lens, 393)
-  #   assert BiMap.get(result, :a) == 1 # not set because it's not missing.
-  #   # Remember that duplicate values are not allowed in BiMaps.
-  #   assert BiMap.get(result, :b) == 393 || BiMap.get(result, :c) == 393
-
-  #   %{a: result} = Deeply.update(data, lens, fn key -> {key, :erlang.make_ref} end)
-  #   assert BiMap.get(result, :a) == 1
-  #   {:b, b_ref} = BiMap.get(result, :b)
-  #   assert is_reference(b_ref)
-
-  #   assert {:c, c_ref} = BiMap.get(result, :c)
-  #   assert is_reference(c_ref)
-
-  #   refute b_ref == c_ref
-  # end
-
   test "key" do
     bimap = BiMap.new(a: %{aa: 1}, b: %{aa: 2})
     map = %{          a: %{aa: 1}, b: %{aa: 2}}
