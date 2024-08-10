@@ -62,6 +62,17 @@ defmodule Lens2.Lenses.BiMap do
     #
     # That will *add* `{:a, 6}` to the bimultimap that *still contains* `{:a, 5}`.
     # You have to explicitly delete the old pair.
+    #
+    # Because a BiMultiMap `fetch` operation returns a *list* of values, instead of
+    # a single value, the division between the `?`, `!`, and unadorned makers is
+    # different.
+    #
+    # * `key!` and `to_key!` should use `fetch!` or `fetch_keys!`, which will raise
+    #   rather than return a empty list.
+    # * `key?` and `to_key?` can use `fetch` and `fetch_keys` and simply iterate over
+    #   all the return values. If there are none, no big deal.
+    # * `key` and `to_key` have to special case an `:error` return value and fake a
+    #   `[nil]` return value.
 
     def multimap_ignore_missing(lens_arg, container, descender, descend_which) do
       BiMultiMap.to_list(container)
