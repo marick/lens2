@@ -4,29 +4,77 @@ defmodule Lens2.Lenses.BiMap do
   use Private
 
   private do
-    def relevant?({k, _v}, lens_arg,  :descend_value), do: k == lens_arg
-    def relevant?({_k, v}, lens_arg,  :descend_key),   do: v == lens_arg
 
-    def choose(   {_k, v},            :descend_value), do: v
-    def choose(   {k, _v},            :descend_key),   do: k
+    # There's some perhaps-excessive parameterization here. There are three decisions
+    # to consider.
+    #
+    # 1. Is the container a BiMap or a BiMultiMap?
+    # 2. Are we descending through values (selected by key) or keys (selected by value)?
+    # 3. Do we ignore missing values (as in key?), raise errors (as in key!), or
+    #    use `nil` to mean "missing" (`key`)
 
-    def new_kv(   {k, _v},  new_value, :descend_value), do: {k, new_value}
-    def new_kv(   {_k, v},  new_key,   :descend_key),   do: {new_key, v}
-    def new_kv(   lens_arg, new_value, :descend_value), do: {lens_arg, new_value}
-    def new_kv(   lens_arg, new_key,   :descend_key),   do: {new_key, lens_arg}
+    # Let's start with the case where we're dealing with a `Bimap`.
 
-    def fetch_one(container, key,   :descend_value), do: BiMap.fetch(container, key)
-    def fetch_one(container, value, :descend_key), do: BiMap.fetch_key(container, value)
+    # `bimap` deals with error-raising lenses (`key!` and `fetch_key!`) and
+    # nil-returning lenses (`key` and `fetch_key`).
+    #
+    # 1. The `descend_which` argument is either `:descend_value` or `descend_key`.
+    #    BiMap uses this to construct a replacement key/value pair to use with
+    #    BiMap.put. (If the lookup was by key, you want the pair to be key/new-value.
+    #    If it was by value, you want it to be new-key/value.)
+    # 2. The `fetcher_name` could be one of `fetch!` (for `key!`),
+    #    `get` (for `key`), or their inverse functions (`fetch_key!` and `get_key`)
+    #
+    # Note that `descend_which` could be derived from `fetcher_name`, but I prefer
+    # to deal with supplied constants than calculated values.
 
+    def bimap(
+          lens_arg, container, descender, fetcher_name, descend_which) do
+      fetched = apply(BiMap, fetcher_name, [container, lens_arg])
+      {gotten, updated} =  descender.(fetched)
 
-    def multimap_kv?(lens_arg, container, descender, descend_which) do
+      replacement = replacement_kv(lens_arg, updated, descend_which)
+      {[gotten], BiMap.put(container, replacement)}
+    end
+
+    # `bimap_ignore_missing` is used for `key?` and `to_key?`. The difference is that
+    # it has to handle a return value of type `:error | {:ok, any}`.
+
+    def bimap_ignore_missing(
+          lens_arg, container, descender, fetcher_name, descend_which) do
+      fetched = apply(BiMap, fetcher_name, [container, lens_arg])
+      case fetched do
+        :error ->
+          {[], container}
+        {:ok, fetched} ->
+          {gotten, updated} = descender.(fetched)
+          replacement = replacement_kv(lens_arg, updated, descend_which)
+          {[gotten], BiMap.put(container, replacement)}
+      end
+    end
+
+    # Now for the `BiMultiMap` cases. The tricky thing with `BiMultiMap` is that you
+    # can't do, for example:
+    #
+    #     Get a value: say, a 5 associated with `:a`.
+    #     Update it, by, say incrementing it.
+    #     Put it back under the same key, like `BiMultiMap.put(..., :a, 6)`.
+    #
+    # That will *add* `{:a, 6}` to the bimultimap that *still contains* `{:a, 5}`.
+    # You have to explicitly delete the old pair.
+
+    def multimap_ignore_missing(lens_arg, container, descender, descend_which) do
       BiMultiMap.to_list(container)
-      |> Enum.reduce({[], BiMultiMap.new},fn kv, {building_gotten, building_updated} ->
+      |> Enum.reduce({[], BiMultiMap.new}, fn kv, {building_gotten, building_updated} ->
         if relevant?(kv, lens_arg, descend_which) do
-          {gotten_from_one, updated_from_one} = descender.(choose(kv, descend_which))
+          {gotten_from_one, updated_from_one} =
+            kv
+            |> choose(descend_which)
+            |> descender.()
+          replacement = replacement_kv(kv, updated_from_one, descend_which)
           {
             [gotten_from_one | building_gotten],
-            BiMultiMap.put(building_updated, new_kv(kv, updated_from_one, descend_which))
+            BiMultiMap.put(building_updated, replacement)
           }
         else
           {building_gotten, BiMultiMap.put(building_updated, kv)}
@@ -34,27 +82,50 @@ defmodule Lens2.Lenses.BiMap do
       end)
     end
 
-    def bimap_kv?(lens_arg, %BiMap{} = container, descender, descend_which) do
-      case fetch_one(container, lens_arg, descend_which) do
-        :error ->
-          {[], container}
-        {:ok, fetched} ->
-          {gotten, updated} = descender.(fetched)
-          {[gotten], BiMap.put(container, new_kv(lens_arg, updated, descend_which))}
-      end
-    end
+    # Note that the multimap cases could be fairly easily extended to
+    # handle `keys?([:a, :b])`, in that the test if a key (or value)
+    # is relevant would be `x in lens_arg` instead of `x ===
+    # lens_arg`. That would be more O(n) than O(n^2), but I haven't
+    # bothered.
 
 
+    # Here are the functions that depend on the `descend_which` parameters. They
+    # are primarily about picking either the first or second value of a tuple, or
+    # about flipping them.
 
-    def _to_key?(value, %BiMap{} = container, descender),
-        do: bimap_kv?(value, container, descender, :descend_key)
-    def _to_key?(value, %BiMultiMap{} = container, descender),
-        do: multimap_kv?(value, container, descender, :descend_key)
+    def relevant?({k, _v}, lens_arg,  :descend_value), do: k === lens_arg
+    def relevant?({_k, v}, lens_arg,  :descend_key),   do: v === lens_arg
+
+    def choose(   {_k, v},            :descend_value), do: v
+    def choose(   {k, _v},            :descend_key),   do: k
+
+    def replacement_kv(   {k, _v},  new_value, :descend_value), do: {k, new_value}
+    def replacement_kv(   {_k, v},  new_key,   :descend_key),   do: {new_key, v}
+    def replacement_kv(   lens_arg, new_value, :descend_value), do: {lens_arg, new_value}
+    def replacement_kv(   lens_arg, new_key,   :descend_key),   do: {new_key, lens_arg}
+
+
+    # These are intermediate functions. Their purpose is to switch on whether the
+    # container is a BiMap or a BiMultiMap.
+
+    def _key(key, %BiMap{} = container, descender, fetcher_name),
+        do: bimap(key, container, descender, fetcher_name, :descend_value)
 
     def _key?(key, %BiMap{} = container, descender),
-        do: bimap_kv?(key, container, descender, :descend_value)
+        do: bimap_ignore_missing(key, container, descender, :fetch, :descend_value)
     def _key?(key, %BiMultiMap{} = container, descender),
-        do: multimap_kv?(key, container, descender, :descend_value)
+        do: multimap_ignore_missing(key, container, descender, :descend_value)
+
+
+    def _to_key(value, %BiMap{} = container, descender, fetcher_name),
+        do: bimap(value, container, descender, fetcher_name, :descend_key)
+
+    def _to_key?(value, %BiMap{} = container, descender),
+        do: bimap_ignore_missing(value, container, descender, :fetch_key, :descend_key)
+    def _to_key?(value, %BiMultiMap{} = container, descender),
+        do: multimap_ignore_missing(value, container, descender, :descend_key)
+
+
   end
 
 
@@ -119,9 +190,8 @@ defmodule Lens2.Lenses.BiMap do
         ...>  # On my machine, today, it turns out to be `:e`.
     """
     @spec all_values :: Lens2.lens
-    defmaker all_values() do
-      Lens.update_into(BiMap.new, Lens.all |> Lens.at(1))
-    end
+    defmaker all_values(),
+             do: Lens.update_into(BiMap.new, Lens.all |> Lens.at(1))
 
     @doc """
     Return a lens that points at all keys of a [`BiMap`](https://hexdocs.pm/bimap/readme.html).
@@ -166,11 +236,8 @@ defmodule Lens2.Lenses.BiMap do
         BiMap.new
     """
     @spec key?(any) :: Lens2.lens
-    def_raw_maker key?(key) do
-      fn container, descender ->
-        _key?(key, container, descender)
-      end
-    end
+    def_raw_maker key?(key),
+      do: fn container, descender -> _key?(key, container, descender) end
 
 
     @doc """
@@ -191,11 +258,8 @@ defmodule Lens2.Lenses.BiMap do
         BiMap.new
     """
     @spec to_key?(any) :: Lens2.lens
-    def_raw_maker to_key?(value) do
-      fn bimap, descender ->
-        _to_key?(value, bimap, descender)
-      end
-    end
+    def_raw_maker to_key?(value),
+      do: fn bimap, descender -> _to_key?(value, bimap, descender) end
 
     @doc """
     Like `key?/1` but takes a list of keys.
@@ -248,12 +312,8 @@ defmodule Lens2.Lenses.BiMap do
         ** (ArgumentError) key :missing not found in: BiMap.new([a: 1])
     """
     @spec key!(any) :: Lens2.lens
-    def_raw_maker key!(key) do
-      fn bimap, descender ->
-        {gotten, updated} = descender.(BiMap.fetch!(bimap, key))
-        {[gotten], BiMap.put(bimap, key, updated)}
-      end
-    end
+    def_raw_maker key!(key),
+      do: fn container, descender -> _key(key, container, descender, :fetch!) end
 
     @doc """
 
@@ -268,13 +328,8 @@ defmodule Lens2.Lenses.BiMap do
 
     """
     @spec to_key!(any) :: Lens2.lens
-    def_raw_maker to_key!(value) do
-      fn bimap, descender ->
-        {gotten, updated} = descender.(BiMap.fetch_key!(bimap, value))
-        {[gotten], BiMap.put(bimap, updated, value)}
-      end
-    end
-
+    def_raw_maker to_key!(value),
+      do: fn container, descender -> _to_key(value, container, descender, :fetch_key!) end
 
     @doc """
     Like `key!/1` but takes a list of keys.
@@ -329,12 +384,8 @@ defmodule Lens2.Lenses.BiMap do
     """
 
     @spec key(any) :: Lens2.lens
-    def_raw_maker key(key) do
-      fn bimap, descender ->
-        {gotten, updated} = descender.(BiMap.get(bimap, key))
-        {[gotten], BiMap.put(bimap, key, updated)}
-      end
-    end
+    def_raw_maker key(key),
+      do: fn container, descender -> _key(key, container, descender, :get) end
 
     # There is no `to_key` because a `nil` key is not worth much.
 
