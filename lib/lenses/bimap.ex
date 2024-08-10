@@ -33,7 +33,7 @@ defmodule Lens2.Lenses.BiMap do
       fetched = apply(BiMap, fetcher_name, [container, lens_arg])
       {gotten, updated} =  descender.(fetched)
 
-      replacement = replacement_kv(lens_arg, updated, descend_which)
+      replacement = ordered(lens_arg, updated, descend_which)
       {[gotten], BiMap.put(container, replacement)}
     end
 
@@ -48,10 +48,13 @@ defmodule Lens2.Lenses.BiMap do
           {[], container}
         {:ok, fetched} ->
           {gotten, updated} = descender.(fetched)
-          replacement = replacement_kv(lens_arg, updated, descend_which)
+          replacement = ordered(lens_arg, updated, descend_which)
           {[gotten], BiMap.put(container, replacement)}
       end
     end
+
+    def ordered(lens_arg, new_value, :descend_value), do: {lens_arg, new_value}
+    def ordered(lens_arg, new_key,   :descend_key),   do: {new_key, lens_arg}
 
     # Now for the `BiMultiMap` cases. The tricky thing with `BiMultiMap` is that you
     # can't do, for example:
@@ -74,23 +77,41 @@ defmodule Lens2.Lenses.BiMap do
     # * `key` and `to_key` have to special case an `:error` return value and fake a
     #   `[nil]` return value.
 
-    def multimap_ignore_missing(lens_arg, container, descender, descend_which) do
-      BiMultiMap.to_list(container)
-      |> Enum.reduce({[], BiMultiMap.new}, fn kv, {building_gotten, building_updated} ->
-        if relevant?(kv, lens_arg, descend_which) do
-          {gotten_from_one, updated_from_one} =
-            kv
-            |> choose(descend_which)
-            |> descender.()
-          replacement = replacement_kv(kv, updated_from_one, descend_which)
-          {
-            [gotten_from_one | building_gotten],
-            BiMultiMap.put(building_updated, replacement)
-          }
-        else
-          {building_gotten, BiMultiMap.put(building_updated, kv)}
-        end
-      end)
+    def multimap(lens_arg, container, descender, on_missing, descend_which) do
+      fetched =
+        multi_fetch(container, lens_arg, descend_which)
+        |> multi_adjust_fetched(on_missing)
+      {gotten, to_delete, to_put} = multi_descend(descender, lens_arg, fetched, descend_which)
+      updated =
+        container
+        |> then(& Enum.reduce(to_delete, &1, fn kv, acc -> BiMultiMap.delete(acc, kv) end))
+        |> then(& Enum.reduce(to_put, &1, fn kv, acc -> BiMultiMap.put(acc, kv) end))
+      {gotten, updated}
+    end
+
+    def multi_fetch(container, lens_arg, descend_which) do
+      case descend_which do
+        :descend_value -> BiMultiMap.fetch(container, lens_arg)
+        :descend_key -> BiMultiMap.fetch_keys(container, lens_arg)
+      end
+    end
+
+    def multi_adjust_fetched({:ok, list}, _), do: list
+    def multi_adjust_fetched(:error, :raise_on_missing), do: raise(KeyError, "no match in BiMultiMap")
+    def multi_adjust_fetched(:error, :nil_on_missing), do: [nil]
+    def multi_adjust_fetched(:error, :empty_missing), do: []
+
+    def multi_descend(descender, lens_arg, fetched, descend_which) do
+      reducer = fn one_fetched, {building_gotten, building_delete, building_put} ->
+        {lower_gotten, lower_updated} = descender.(one_fetched)
+        {
+          [lower_gotten | building_gotten],
+          [ordered(lens_arg, one_fetched, descend_which) | building_delete],
+          [ordered(lens_arg, lower_updated, descend_which) | building_put]
+        }
+      end
+
+      Enum.reduce(fetched, {[], [], []}, reducer)
     end
 
     # Note that the multimap cases could be fairly easily extended to
@@ -100,20 +121,6 @@ defmodule Lens2.Lenses.BiMap do
     # bothered.
 
 
-    # Here are the functions that depend on the `descend_which` parameters. They
-    # are primarily about picking either the first or second value of a tuple, or
-    # about flipping them.
-
-    def relevant?({k, _v}, lens_arg,  :descend_value), do: k === lens_arg
-    def relevant?({_k, v}, lens_arg,  :descend_key),   do: v === lens_arg
-
-    def choose(   {_k, v},            :descend_value), do: v
-    def choose(   {k, _v},            :descend_key),   do: k
-
-    def replacement_kv(   {k, _v},  new_value, :descend_value), do: {k, new_value}
-    def replacement_kv(   {_k, v},  new_key,   :descend_key),   do: {new_key, v}
-    def replacement_kv(   lens_arg, new_value, :descend_value), do: {lens_arg, new_value}
-    def replacement_kv(   lens_arg, new_key,   :descend_key),   do: {new_key, lens_arg}
 
 
     # These are intermediate functions. Their purpose is to switch on whether the
@@ -121,11 +128,13 @@ defmodule Lens2.Lenses.BiMap do
 
     def _key(key, %BiMap{} = container, descender, fetcher_name),
         do: bimap(key, container, descender, fetcher_name, :descend_value)
+    def _key(key, %BiMultiMap{} = container, descender),
+        do: multimap(key, container, descender, :nil_on_missing, :descend_value)
 
     def _key?(key, %BiMap{} = container, descender),
         do: bimap_ignore_missing(key, container, descender, :fetch, :descend_value)
     def _key?(key, %BiMultiMap{} = container, descender),
-        do: multimap_ignore_missing(key, container, descender, :descend_value)
+        do: multimap(key, container, descender, :empty_missing, :descend_value)
 
 
     def _to_key(value, %BiMap{} = container, descender, fetcher_name),
@@ -134,9 +143,7 @@ defmodule Lens2.Lenses.BiMap do
     def _to_key?(value, %BiMap{} = container, descender),
         do: bimap_ignore_missing(value, container, descender, :fetch_key, :descend_key)
     def _to_key?(value, %BiMultiMap{} = container, descender),
-        do: multimap_ignore_missing(value, container, descender, :descend_key)
-
-
+        do: multimap(value, container, descender, :empty_missing, :descend_key)
   end
 
 
@@ -179,56 +186,7 @@ defmodule Lens2.Lenses.BiMap do
 
   """
 
-  section "RETURN ALL KEYS OR ALL VALUES" do
-
-    @doc """
-    Return a lens that points at all values of a [`BiMap`](https://hexdocs.pm/bimap/readme.html).
-
-        iex>  bimap = BiMap.new(%{1 => "1111", 2 => "2222"})
-        iex>  Deeply.get_all(bimap, Lens.BiMap.all_values) |> Enum.sort
-        ["1111", "2222"]
-
-    Note that using `put` with `all_values` is profoundly useless, as
-    only one key/value pair can be retained – and you can't even predict
-    which one it will be!
-
-        iex>  bimap = BiMap.new(a: 1, b: 2, c: 3, d: 4, e: 5)
-        iex>  updated = Deeply.put(bimap, Lens.BiMap.all_values, :NEW)
-        iex>  assert [:NEW] == BiMap.values(updated)
-        ...>
-        iex>  [key] = BiMap.keys(updated)
-        iex>  assert key in [:a, :b, :c, :d, :e]
-        ...>  # On my machine, today, it turns out to be `:e`.
-    """
-    @spec all_values :: Lens2.lens
-    defmaker all_values(),
-             do: Lens.update_into(BiMap.new, Lens.all |> Lens.at(1))
-
-    @doc """
-    Return a lens that points at all keys of a [`BiMap`](https://hexdocs.pm/bimap/readme.html).
-
-    This is useful for descending into complex keys. Consider a
-    spatial BiMap that connects `{x, y}` tuples to some values
-    representing physical objects at that position.
-
-        iex>  bimap = BiMap.new(%{{0, 0} => "some data", {1, 1} => "other data"})
-        iex>  Deeply.update(bimap, Lens.BiMap.all_keys,
-        ...>                       fn {x, y} -> {x + 1, y + 1} end)
-        iex>  BiMap.new(%{{1, 1} => "some data", {2, 2} => "other data"})
-
-    Note that all the updates are done before the result BiMap is formed. You needn't fear
-    that updating the `{0, 0}` tuple will wipe out the existing `{1, 1}` tuple.
-
-    """
-    @spec all_keys :: Lens2.lens
-    defmaker all_keys() do
-      Lens.into(Lens.all |> Lens.at(0), BiMap.new)
-    end
-  end
-
-
-  section "SKIPPING OVER MISSING (key? and friends)" do
-
+  section "THE CORE FUNCTIONS" do
     @doc """
     Return a lens that points at the value of a single
     [`BiMap`](https://hexdocs.pm/bimap/readme.html) key, ignoring
@@ -250,67 +208,6 @@ defmodule Lens2.Lenses.BiMap do
     def_raw_maker key?(key),
       do: fn container, descender -> _key?(key, container, descender) end
 
-
-    @doc """
-
-    Return a lens that points at the key associated with a given value,
-    provided there is any such value.
-
-        iex>  bimap = BiMap.new(a: 1)
-        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key?(1))
-        [:a]
-        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key?(11111))
-        []
-
-    You can create a new key-value pair with `key/1`.
-    `Lens2.Deeply.put/3` will not work with this lens:
-
-        iex> Deeply.put(BiMap.new, Lens.BiMap.to_key?("value"), :new_key)
-        BiMap.new
-    """
-    @spec to_key?(any) :: Lens2.lens
-    def_raw_maker to_key?(value),
-      do: fn bimap, descender -> _to_key?(value, bimap, descender) end
-
-    @doc """
-    Like `key?/1` but takes a list of keys.
-
-    Missing keys are ignored.
-
-        iex>  bimap = BiMap.new(a: 2)
-        iex>  lens = Lens.BiMap.keys?([:a, :missing])
-        iex>  Deeply.update(bimap, lens, & &1*1111)
-        BiMap.new(a: 2222)
-        iex>  Deeply.get_only(bimap, lens)
-        2
-
-    """
-    @spec keys?([any]) :: Lens2.lens
-    defmaker keys?(keys) do
-      keys |> Enum.map(&key?/1) |> Lens.multiple
-    end
-
-    @doc """
-    Like `to_key?/1` but takes a list of values.
-
-    Missing keys are ignored.
-
-        iex>  bimap = BiMap.new(%{1 => "value"})
-        iex>  lens = Lens.BiMap.to_keys?(["value", "some missing value"])
-        iex>  Deeply.update(bimap, lens, & &1*1111)
-        BiMap.new(%{1111 => "value"})
-        iex>  Deeply.get_only(bimap, lens)
-        1
-
-    """
-    @spec to_keys?([any]) :: Lens2.lens
-    defmaker to_keys?(keys) do
-      keys |> Enum.map(&to_key?/1) |> Lens.multiple
-    end
-
-  end
-
-  section "MISSING KEYS OR VALUES RAISE ERRORS" do
     @doc """
     Like `key/1` and `key?/1` except that the lens will raise an error for a missing key.
 
@@ -325,58 +222,6 @@ defmodule Lens2.Lenses.BiMap do
     @spec key!(any) :: Lens2.lens
     def_raw_maker key!(key),
       do: fn container, descender -> _key(key, container, descender, :fetch!) end
-
-    @doc """
-
-    Return a lens that points at the key associated with a given value. Raises an
-    error if there is no such value.
-
-        iex>  bimap = BiMap.new(a: 1)
-        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key!(1))
-        [:a]
-        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key!(11111))
-        ** (ArgumentError) value 11111 not found in: BiMap.new([a: 1])
-
-    """
-    @spec to_key!(any) :: Lens2.lens
-    def_raw_maker to_key!(value),
-      do: fn container, descender -> _to_key(value, container, descender, :fetch_key!) end
-
-    @doc """
-    Like `key!/1` but takes a list of keys.
-
-    Any missing key raises an error.
-
-        iex>  bimap = BiMap.new(a: 2)
-        iex>  lens = Lens.BiMap.keys!([:a, :missing])
-        iex>  Deeply.get_only(bimap, lens)
-        ** (ArgumentError) key :missing not found in: BiMap.new([a: 2])
-
-    """
-    @spec keys!([any]) :: Lens2.lens
-    defmaker keys!(keys) do
-      keys |> Enum.map(&key!/1) |> Lens.multiple
-    end
-
-    @doc """
-    Like `to_key!/1` but takes a list of values.
-
-    Any missing value raises an error.
-
-        iex>  bimap = BiMap.new(a: 2)
-        iex>  lens = Lens.BiMap.to_keys!([2, "missing value"])
-        iex>  Deeply.get_all(bimap, lens)
-        ** (ArgumentError) value "missing value" not found in: BiMap.new([a: 2])
-
-    """
-    @spec to_keys!([any]) :: Lens2.lens
-    defmaker to_keys!(keys) do
-      keys |> Enum.map(&to_key!/1) |> Lens.multiple
-    end
-  end
-
-
-  section "MISSING KEYS OR VALUES USE NIL" do
 
     @doc """
     Return a lens that points at the value of a single [`BiMap`](https://hexdocs.pm/bimap/readme.html) key.
@@ -400,6 +245,83 @@ defmodule Lens2.Lenses.BiMap do
 
     # There is no `to_key` because a `nil` key is not worth much.
 
+
+    @doc """
+
+    Return a lens that points at the key associated with a given value,
+    provided there is any such value.
+
+        iex>  bimap = BiMap.new(a: 1)
+        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key?(1))
+        [:a]
+        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key?(11111))
+        []
+
+    You can create a new key-value pair with `key/1`.
+    `Lens2.Deeply.put/3` will not work with this lens:
+
+        iex> Deeply.put(BiMap.new, Lens.BiMap.to_key?("value"), :new_key)
+        BiMap.new
+    """
+    @spec to_key?(any) :: Lens2.lens
+    def_raw_maker to_key?(value),
+                  do: fn bimap, descender -> _to_key?(value, bimap, descender) end
+
+
+    @doc """
+
+    Return a lens that points at the key associated with a given value. Raises an
+    error if there is no such value.
+
+        iex>  bimap = BiMap.new(a: 1)
+        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key!(1))
+        [:a]
+        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key!(11111))
+        ** (ArgumentError) value 11111 not found in: BiMap.new([a: 1])
+
+    """
+    @spec to_key!(any) :: Lens2.lens
+    def_raw_maker to_key!(value),
+      do: fn container, descender -> _to_key(value, container, descender, :fetch_key!) end
+
+
+  end
+
+  section "THE PLURAL FORMS" do
+    @doc """
+    Like `key?/1` but takes a list of keys.
+
+    Missing keys are ignored.
+
+        iex>  bimap = BiMap.new(a: 2)
+        iex>  lens = Lens.BiMap.keys?([:a, :missing])
+        iex>  Deeply.update(bimap, lens, & &1*1111)
+        BiMap.new(a: 2222)
+        iex>  Deeply.get_only(bimap, lens)
+        2
+
+    """
+    @spec keys?([any]) :: Lens2.lens
+    defmaker keys?(keys) do
+      keys |> Enum.map(&key?/1) |> Lens.multiple
+    end
+
+    @doc """
+    Like `key!/1` but takes a list of keys.
+
+    Any missing key raises an error.
+
+        iex>  bimap = BiMap.new(a: 2)
+        iex>  lens = Lens.BiMap.keys!([:a, :missing])
+        iex>  Deeply.get_only(bimap, lens)
+        ** (ArgumentError) key :missing not found in: BiMap.new([a: 2])
+
+    """
+    @spec keys!([any]) :: Lens2.lens
+    defmaker keys!(keys) do
+      keys |> Enum.map(&key!/1) |> Lens.multiple
+    end
+
     @doc """
     Like `key/1` but takes a list of keys.
 
@@ -418,6 +340,130 @@ defmodule Lens2.Lenses.BiMap do
     @spec keys([any]) :: Lens2.lens
     defmaker keys(keys) do
       keys |> Enum.map(&key/1) |> Lens.multiple
+    end
+
+    @doc """
+    Like `to_key?/1` but takes a list of values.
+
+    Missing keys are ignored.
+
+        iex>  bimap = BiMap.new(%{1 => "value"})
+        iex>  lens = Lens.BiMap.to_keys?(["value", "some missing value"])
+        iex>  Deeply.update(bimap, lens, & &1*1111)
+        BiMap.new(%{1111 => "value"})
+        iex>  Deeply.get_only(bimap, lens)
+        1
+
+    """
+    @spec to_keys?([any]) :: Lens2.lens
+    defmaker to_keys?(keys) do
+      keys |> Enum.map(&to_key?/1) |> Lens.multiple
+    end
+
+
+    @doc """
+    Like `to_key!/1` but takes a list of values.
+
+    Any missing value raises an error.
+
+        iex>  bimap = BiMap.new(a: 2)
+        iex>  lens = Lens.BiMap.to_keys!([2, "missing value"])
+        iex>  Deeply.get_all(bimap, lens)
+        ** (ArgumentError) value "missing value" not found in: BiMap.new([a: 2])
+
+    """
+    @spec to_keys!([any]) :: Lens2.lens
+    defmaker to_keys!(keys) do
+      keys |> Enum.map(&to_key!/1) |> Lens.multiple
+    end
+
+  end
+
+  section "MISCELLANEOUS" do
+
+    @doc """
+    Return a lens that points at all values of a [`BiMap`](https://hexdocs.pm/bimap/readme.html).
+
+        iex>  bimap = BiMap.new(%{1 => "1111", 2 => "2222"})
+        iex>  Deeply.get_all(bimap, Lens.BiMap.all_values) |> Enum.sort
+        ["1111", "2222"]
+
+    Note that using `put` with `all_values` is profoundly useless, as
+    only one key/value pair can be retained – and you can't even predict
+    which one it will be!
+
+        iex>  bimap = BiMap.new(a: 1, b: 2, c: 3, d: 4, e: 5)
+        iex>  updated = Deeply.put(bimap, Lens.BiMap.all_values, :NEW)
+        iex>  assert [:NEW] == BiMap.values(updated)
+        ...>
+        iex>  [key] = BiMap.keys(updated)
+        iex>  assert key in [:a, :b, :c, :d, :e]
+        ...>  # On my machine, today, it turns out to be `:e`.
+    """
+    @spec all_values :: Lens2.lens
+    defmaker all_values(),
+             do: update_appropriately(Lens.all |> Lens.at(1))
+
+    @doc """
+    Return a lens that points at all keys of a [`BiMap`](https://hexdocs.pm/bimap/readme.html).
+
+    This is useful for descending into complex keys. Consider a
+    spatial BiMap that connects `{x, y}` tuples to some values
+    representing physical objects at that position.
+
+        iex>  bimap = BiMap.new(%{{0, 0} => "some data", {1, 1} => "other data"})
+        iex>  Deeply.update(bimap, Lens.BiMap.all_keys,
+        ...>                       fn {x, y} -> {x + 1, y + 1} end)
+        iex>  BiMap.new(%{{1, 1} => "some data", {2, 2} => "other data"})
+
+    Note that all the updates are done before the result BiMap is formed. You needn't fear
+    that updating the `{0, 0}` tuple will wipe out the existing `{1, 1}` tuple.
+
+    """
+    @spec all_keys :: Lens2.lens
+    defmaker all_keys() do
+      update_appropriately(Lens.all |> Lens.at(0))
+    end
+
+    @doc """
+    Restore results into whichever the appropriate type is.
+
+    Suppose `values/0` didn't exist, and you were writing it as a
+    pipeline. That involves treating the container as an `Enum`, getting
+    key/value tuples, and then taking the second tuple element. However, that's
+    a problem for update, as you get a list of tuples back:
+
+        iex> lens = Lens.all |> Lens.at(1)
+        iex> Deeply.update(BiMultiMap.new(a: 1, b: 2), lens, & &1 * 1111)
+        [a: 1111, b: 2222]
+
+    That's what `Lens2.Lenses.Enum.update_into/2` is for, except that it requires
+    you to give it an empty container to fill:
+
+        iex> lens = Lens.update_into(BiMap.new, Lens.all |> Lens.at(1))
+        iex> Deeply.update(BiMultiMap.new(a: 1, b: 2), lens, & &1 * 1111)
+        BiMap.new(a: 1111, b: 2222)
+
+    Notice the resulting container is a `BiMap` even though the original
+    container was a `BiMultiMap`. If you only ever use one of the two,
+    that may be OK. But if you want to write a lens that works with
+    both, use this function. It creates the empty container to match
+    the original type:
+
+        iex> lens = Lens.BiMap.update_appropriately(Lens.all |> Lens.at(1))
+        iex> Deeply.update(BiMultiMap.new(a: 1, b: 2), lens, & &1 * 1111)
+        BiMultiMap.new(a: 1111, b: 2222)
+        iex> Deeply.update(BiMap.new(a: 1, b: 2), lens, & &1 * 1111)
+        BiMap.new(a: 1111, b: 2222)
+
+    This is in fact the implementation of `values/0`.
+    """
+    @spec update_appropriately(Lens2.lens) :: Lens2.lens
+    def_raw_maker update_appropriately(lens) do
+      fn %struct{} = container, descender ->
+        {gotten, updated} = Deeply.get_and_update(container, lens, descender)
+        {gotten, Enum.into(updated, struct.new())}
+      end
     end
   end
 end
