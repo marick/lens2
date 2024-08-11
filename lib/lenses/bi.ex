@@ -369,6 +369,12 @@ defmodule Lens2.Lenses.Bi do
       keys |> Enum.map(&to_key!/1) |> Lens.multiple
     end
 
+
+    @spec to_keys([any]) :: Lens2.lens
+    defmaker to_keys(keys) do
+      keys |> Enum.map(&to_key/1) |> Lens.multiple
+    end
+
   end
 
   section "MISCELLANEOUS" do
