@@ -15,7 +15,7 @@ I understand how Elixir uses it.
 - `Lens2.Lenses.Keyword` lens makers
 - Lenses for `BiMap` now also handle `BiMultiMap`.
 - `defmakerp` and `deflensp`
-– Because [TypedStructLens](https://hexdocs.pm/typed_struct_lens/readme.html) has a
+- Because [TypedStructLens](https://hexdocs.pm/typed_struct_lens/readme.html) has a
   hardcoded dependency on Lens 1, I had to make a copy to alias. 
 
 ### Changed
