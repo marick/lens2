@@ -16,7 +16,7 @@ I understand how Elixir uses it.
 - Lenses for `BiMap` now also handle `BiMultiMap`.
 - `defmakerp` and `deflensp`
 - Because [TypedStructLens](https://hexdocs.pm/typed_struct_lens/readme.html) has a
-  hardcoded dependency on Lens 1, I had to make a copy to alias. 
+  hardcoded dependency on Lens 1, I had to make a copy.
 
 ### Changed
 - `Lens.Lenses.BiMap` changed to `Lens.Lenses.Bi` because it now handles both
@@ -24,7 +24,7 @@ I understand how Elixir uses it.
 
 ### Fixed
 
-- Various documentation glitches
+- Various documentation infelicities
 
 
 ## [0.1.0] - 2024-08-07
