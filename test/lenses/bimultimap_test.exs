@@ -136,30 +136,32 @@ defmodule Lens2.Lenses.BiMultiMapTest do
     end
   end
 
-  @tag :skip
   test "key and keys" do
     container =
       BiMultiMap.new(one: %{a: 1, b: 2},
                      two: %{a: 11, b: 22},
                      one: %{a: 111, b: 222})
-    assert Deeply.get_all(container, Bi.key(:one)) == %{a: 1, b: 2}
+    Deeply.get_all(container, Bi.key(:one))
+    |> Enum.sort
+    |> assert_equal([%{a: 1, b: 2}, %{a: 111, b: 222}])
 
+    actual = Deeply.put(container, Bi.to_key(:missing_value), :NEW)
+    expected = BiMultiMap.put(container, :NEW, :missing_value)
+    assert actual == expected
 
-    # lens = Bi.keys([:one, :two, :missing]) |> Lens.key!(:a)
-    # assert Deeply.get_all(container, lens) |> Enum.sort == [1, 11, 111]
+    lens = Bi.keys([:one, :two]) |> Lens.key!(:a)
+    assert Deeply.get_all(container, lens) |> Enum.sort == [1, 11, 111]
 
-    # actual = Deeply.put(container, lens, :NEW)
-    # expected =
-    #   BiMultiMap.new(one: %{a: :NEW, b: 2},
-    #                  two: %{a: :NEW, b: 22},
-    #                  one: %{a: :NEW, b: 222})
-
-    # assert actual == expected
+    actual = Deeply.put(container, lens, :NEW)
+    expected =
+      BiMultiMap.new(one: %{a: :NEW, b: 2},
+                     two: %{a: :NEW, b: 22},
+                     one: %{a: :NEW, b: 222})
+    assert actual == expected
   end
 
 
   describe "copied from BiMap tests, and occasionally modified" do
-
     test "all_values" do
       input = BiMultiMap.new(%{1 => %{a: 1, b: 2}, 2 => %{a: 11, b: 22}})
 
@@ -179,7 +181,7 @@ defmodule Lens2.Lenses.BiMultiMapTest do
 
     end
 
-    @tag :skip
+
     test "keys/1" do
       # This should work akin to operating on maps, so let's start with this oracle
       # lens:
@@ -194,70 +196,67 @@ defmodule Lens2.Lenses.BiMultiMapTest do
                        missing: &is_reference/1)
 
 
-      lens = Bi.keys([:a, :missing]) # |> Lens.filter(& &1 == nil)
-      bimap = BiMultiMap.new(map)
+      lens = Bi.keys([:a, :missing]) |> Lens.filter(& &1 == nil)
+      container = BiMultiMap.new(map)
 
-      assert Deeply.get_all(bimap, lens) == [nil]
-      assert Deeply.put(bimap, lens, :xyzzy) == BiMultiMap.new(a: 323, b: 111, missing: :xyzzy)
-      %BiMultiMap{} = result = Deeply.update(bimap, lens, fn nil -> :erlang.make_ref end)
+      assert Deeply.get_all(container, lens) == [nil]
+      assert Deeply.put(container, lens, :xyzzy) == BiMultiMap.new(a: 323, b: 111, missing: :xyzzy)
+      %BiMultiMap{} = result = Deeply.update(container, lens, fn nil -> :erlang.make_ref end)
 
-      assert BiMultiMap.get(result, :a) == 323
-      assert BiMultiMap.get(result, :b) == 111
-      assert BiMultiMap.get(result, :missing) |> is_reference
+      assert BiMultiMap.get(result, :a) == [323]
+      assert BiMultiMap.get(result, :b) == [111]
+      [ref] = BiMultiMap.get(result, :missing)
+      assert is_reference(ref)
     end
 
-    @tag :skip
     test "key" do
-      bimap = BiMultiMap.new(a: %{aa: 1}, b: %{aa: 2})
+      container = BiMultiMap.new(a: %{aa: 1}, b: %{aa: 2})
       map = %{          a: %{aa: 1}, b: %{aa: 2}}
 
       map_lens = Lens.key(:a) |> Lens.key(:aa)
       lens = Bi.key(:a) |> Lens.key(:aa)
 
-      BiMultiMap.put(bimap, :a, %{aa: 100})
+      BiMultiMap.put(container, :a, %{aa: 100})
 
       assert Deeply.get_all(map, map_lens) == [1]
-      assert Deeply.get_all(bimap, lens) == [1]
+      assert Deeply.get_all(container, lens) == [1]
 
       assert Deeply.put(map, map_lens, 5) == %{a: %{aa: 5}, b: %{aa: 2}}
-      assert Deeply.put(bimap, lens, 5) == BiMultiMap.new(a: %{aa: 5}, b: %{aa: 2})
+      assert Deeply.put(container, lens, 5) == BiMultiMap.new(a: %{aa: 5}, b: %{aa: 2})
 
       assert Deeply.update(map, map_lens, & &1 * 100) == %{a: %{aa: 100}, b: %{aa: 2}}
-      assert Deeply.update(bimap, lens, & &1 * 100) == BiMultiMap.new(a: %{aa: 100}, b: %{aa: 2})
+      assert Deeply.update(container, lens, & &1 * 100) == BiMultiMap.new(a: %{aa: 100}, b: %{aa: 2})
     end
 
-    @tag :skip
     test "the difference between key and key?" do
-      bimap = BiMultiMap.new(a: 1, b: nil)
+      container = BiMultiMap.new(a: 1, b: nil)
       missing_ok =      Bi.keys ([:a, :b, :c])
       missing_omitted = Bi.keys?([:a, :b, :c])
 
-      Deeply.get_all(bimap, missing_ok)
+      Deeply.get_all(container, missing_ok)
       |> assert_good_enough(in_any_order([1, nil, nil]))
 
-      Deeply.get_all(bimap, missing_omitted)
+      Deeply.get_all(container, missing_omitted)
       |> assert_good_enough(in_any_order([1, nil]))
 
-      # Usual issue with multi-put
-      key = Deeply.put(bimap, missing_ok, 5) |> BiMultiMap.get_keys(5)
-      assert key == :c # we happen to know keys are set left to right.
+      actual = Deeply.put(container, missing_ok, 5)
+      assert actual == BiMultiMap.new(a: 5, b: 5, c: 5)
 
-      # Usual issue with multi-put
-      key = Deeply.put(bimap, missing_omitted, 5) |> BiMultiMap.get_keys(5)
-      assert key == :b
+      actual = Deeply.put(container, missing_omitted, 5)
+      assert actual == BiMultiMap.new(a: 5, b: 5)
 
       make_unique = fn value -> {value, :erlang.make_ref()} end
 
-      actual = Deeply.update(bimap, missing_ok, make_unique)
+      actual = Deeply.update(container, missing_ok, make_unique)
       assert BiMultiMap.size(actual) == 3
-      assert {1, _ref} = BiMultiMap.fetch!(actual, :a)
-      assert {nil, _ref} = BiMultiMap.fetch!(actual, :b)
-      assert {nil, _ref} = BiMultiMap.fetch!(actual, :c)
+      assert [{1, _ref}] = BiMultiMap.fetch!(actual, :a)
+      assert [{nil, _ref}] = BiMultiMap.fetch!(actual, :b)
+      assert [{nil, _ref}] = BiMultiMap.fetch!(actual, :c)
 
-      actual = Deeply.update(bimap, missing_omitted, make_unique)
+      actual = Deeply.update(container, missing_omitted, make_unique)
       assert BiMultiMap.size(actual) == 2
-      assert {1, _ref} = BiMultiMap.fetch!(actual, :a)
-      assert {nil, _ref} = BiMultiMap.fetch!(actual, :b)
+      assert [{1, _ref}] = BiMultiMap.fetch!(actual, :a)
+      assert [{nil, _ref}] = BiMultiMap.fetch!(actual, :b)
     end
   end
 end
