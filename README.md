@@ -23,7 +23,7 @@ The package can be installed by adding it to your list of dependencies in mix.ex
 
     def deps do
       [
-        {:lens2, "~> 0.1.0"},
+        {:lens2, "~> 0.2"},
       ]
     end
 

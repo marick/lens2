@@ -8,6 +8,13 @@ project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), insofar as
 I understand how Elixir uses it.
 
+## [0.2.1] – 2024-08-11
+
+### Changed
+
+- forgot to update the version. Sigh.
+
+
 ## [0.2.0] – 2024-08-11
 
 ### Added
