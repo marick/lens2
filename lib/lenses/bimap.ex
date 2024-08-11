@@ -77,7 +77,7 @@ defmodule Lens2.Lenses.BiMap do
     # * `key` and `to_key` have to special case an `:error` return value and fake a
     #   `[nil]` return value.
 
-    def multimap(lens_arg, container, descender, on_missing, descend_which) do
+    def worker(lens_arg, %BiMultiMap{} = container, descender, on_missing, descend_which) do
       fetched =
         multi_fetch(container, lens_arg, descend_which)
         |> multi_adjust_fetched(on_missing)
@@ -99,7 +99,7 @@ defmodule Lens2.Lenses.BiMap do
     def multi_adjust_fetched({:ok, list}, _), do: list
     def multi_adjust_fetched(:error, :raise_on_missing), do: raise(KeyError, "no match in BiMultiMap")
     def multi_adjust_fetched(:error, :nil_on_missing), do: [nil]
-    def multi_adjust_fetched(:error, :empty_missing), do: []
+    def multi_adjust_fetched(:error, :ignore_missing), do: []
 
     def multi_descend(descender, lens_arg, fetched, descend_which) do
       reducer = fn one_fetched, {building_gotten, building_delete, building_put} ->
@@ -129,12 +129,12 @@ defmodule Lens2.Lenses.BiMap do
     def _key(key, %BiMap{} = container, descender, fetcher_name),
         do: bimap(key, container, descender, fetcher_name, :descend_value)
     def _key(key, %BiMultiMap{} = container, descender),
-        do: multimap(key, container, descender, :nil_on_missing, :descend_value)
+        do: worker(key, container, descender, :nil_on_missing, :descend_value)
 
     def _key?(key, %BiMap{} = container, descender),
         do: bimap_ignore_missing(key, container, descender, :fetch, :descend_value)
     def _key?(key, %BiMultiMap{} = container, descender),
-        do: multimap(key, container, descender, :empty_missing, :descend_value)
+        do: worker(key, container, descender, :ignore_missing, :descend_value)
 
 
     def _to_key(value, %BiMap{} = container, descender, fetcher_name),
@@ -143,7 +143,7 @@ defmodule Lens2.Lenses.BiMap do
     def _to_key?(value, %BiMap{} = container, descender),
         do: bimap_ignore_missing(value, container, descender, :fetch_key, :descend_key)
     def _to_key?(value, %BiMultiMap{} = container, descender),
-        do: multimap(value, container, descender, :empty_missing, :descend_key)
+        do: worker(value, container, descender, :ignore_missing, :descend_key)
   end
 
 

@@ -20,7 +20,7 @@ defmodule Lens2.Lenses.BiMultiMapTest do
     test "multi_adjust_fetched" do
       assert Bi.multi_adjust_fetched({:ok, [1]}, :raise_on_missing) == [1]
       assert Bi.multi_adjust_fetched({:ok, [1]}, :nil_on_missing) == [1]
-      assert Bi.multi_adjust_fetched({:ok, [1]}, :empty_missing) == [1]
+      assert Bi.multi_adjust_fetched({:ok, [1]}, :ignore_missing) == [1]
 
 
       assert_raise(KeyError, "no match in BiMultiMap", fn ->
@@ -28,7 +28,7 @@ defmodule Lens2.Lenses.BiMultiMapTest do
       end)
 
       assert Bi.multi_adjust_fetched(:error, :nil_on_missing) == [nil]
-      assert Bi.multi_adjust_fetched(:error, :empty_missing) == []
+      assert Bi.multi_adjust_fetched(:error, :ignore_missing) == []
     end
 
     test "multi_descend" do
@@ -45,14 +45,14 @@ defmodule Lens2.Lenses.BiMultiMapTest do
     test "multimap" do
       container = BiMultiMap.new(a: 1, a: 2, b: 1, b: 2)
       {gotten, updated} =
-        Bi.multimap(:a, container, & {&1, &1*22}, :empty_missing, :descend_value)
+        Bi.worker(:a, container, & {&1, &1*22}, :ignore_missing, :descend_value)
 
       assert Enum.sort(gotten) == [1, 2]
       assert updated == BiMultiMap.new(a: 22, a: 44, b: 1, b: 2)
 
       # reverse direction
       {gotten, updated} =
-        Bi.multimap(2, container, & {&1, inspect(&1)}, :empty_missing, :descend_key)
+        Bi.worker(2, container, & {&1, inspect(&1)}, :ignore_missing, :descend_key)
 
       assert Enum.sort(gotten) == [:a, :b]
       expected = BiMultiMap.new(a: 1, b: 1) |> BiMultiMap.put(":a", 2) |> BiMultiMap.put(":b", 2)

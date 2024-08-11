@@ -3,10 +3,71 @@ defmodule Lens2.Lenses.BiMapTest do
 
   doctest Lens2.Lenses.BiMap
 
+  alias Lens.BiMap, as: Bi
+
+  describe "support for bimap handling" do
+    # test "multi_fetch" do
+    #   container =
+    #     BiMap.new(one: 1, two: 2, one: "one")
+
+    #   {:ok, fetched} = Bi.multi_fetch(container, :one, :descend_value)
+    #   assert Enum.sort(fetched) == [1, "one"]
+
+    #   {:ok, fetched} = Bi.multi_fetch(container, 1, :descend_key)
+    #   assert Enum.sort(fetched) == [:one]
+
+    #   assert :error == Bi.multi_fetch(container, :missing, :descend_key)
+    # end
+
+    # test "multi_adjust_fetched" do
+    #   assert Bi.multi_adjust_fetched({:ok, [1]}, :raise_on_missing) == [1]
+    #   assert Bi.multi_adjust_fetched({:ok, [1]}, :nil_on_missing) == [1]
+    #   assert Bi.multi_adjust_fetched({:ok, [1]}, :ignore_missing) == [1]
+
+
+    #   assert_raise(KeyError, "no match in BiMap", fn ->
+    #     Bi.multi_adjust_fetched(:error, :raise_on_missing) == [1]
+    #   end)
+
+    #   assert Bi.multi_adjust_fetched(:error, :nil_on_missing) == [nil]
+    #   assert Bi.multi_adjust_fetched(:error, :ignore_missing) == []
+    # end
+
+    # test "multi_descend" do
+    #   descender = & {[&1, &1+1], {&1, &1*1000}}
+
+    #   {gotten, to_delete, to_put} =
+    #     Bi.multi_descend(descender, "one", [1, 1.1], :descend_value)
+    #   assert Enum.sort(gotten) == [ [1, 2], [1.1, 2.1]]
+    #   assert Enum.sort(to_delete) == [{"one", 1}, {"one", 1.1}]
+    #   assert Enum.sort(to_put) == [{"one", {1, 1000}}, {"one", {1.1, 1100.0}}]
+    # end
+
+
+    test "bimap" do
+      # container = BiMap.new(a: 1, a: 2, b: 1, b: 2)
+      # {gotten, updated} =
+      #   Bi.worker(:a, container, & {&1, &1*22}, :ignore_missing, :descend_value)
+
+      # assert Enum.sort(gotten) == [1, 2]
+      # assert updated == BiMap.new(a: 22, a: 44, b: 1, b: 2)
+
+      # # reverse direction
+      # {gotten, updated} =
+      #   Bi.worker(2, container, & {&1, inspect(&1)}, :ignore_missing, :descend_key)
+
+      # assert Enum.sort(gotten) == [:a, :b]
+      # expected = BiMap.new(a: 1, b: 1) |> BiMap.put(":a", 2) |> BiMap.put(":b", 2)
+      # assert updated == expected
+    end
+  end
+
+
+
   test "all_values" do
     input = BiMap.new(%{1 => %{a: 1, b: 2}, 2 => %{a: 11, b: 22}})
 
-    lens = Lens.BiMap.all_values |> Lens.key(:a)
+    lens = Bi.all_values |> Lens.key(:a)
 
     assert Deeply.get_all(input, lens) == [1, 11]
 
@@ -16,7 +77,7 @@ defmodule Lens2.Lenses.BiMapTest do
     # Note that `put` is bad when a BiMap is on the end because they can't have
     # duplicate values, so BiMap.new(a: 5, b: 5) is collapsed into a single value.
 
-    assert Deeply.put(BiMap.new(a: 1, b: 2), Lens.BiMap.all_values, 5) |> BiMap.size == 1
+    assert Deeply.put(BiMap.new(a: 1, b: 2), Bi.all_values, 5) |> BiMap.size == 1
 
     actual = Deeply.update(input, lens, & &1 * 1000)
     assert actual == BiMap.new(%{1 => %{a: 1000, b: 2}, 2 => %{a: 11_000, b: 22}})
@@ -36,7 +97,7 @@ defmodule Lens2.Lenses.BiMapTest do
                      missing: &is_reference/1)
 
 
-    lens = Lens.BiMap.keys([:a, :missing]) |> Lens.filter(& &1 == nil)
+    lens = Bi.keys([:a, :missing]) |> Lens.filter(& &1 == nil)
     bimap = BiMap.new(map)
 
     assert Deeply.get_all(bimap, lens) == [nil]
@@ -53,7 +114,7 @@ defmodule Lens2.Lenses.BiMapTest do
     map = %{          a: %{aa: 1}, b: %{aa: 2}}
 
     map_lens = Lens.key(:a) |> Lens.key(:aa)
-    lens = Lens.BiMap.key(:a) |> Lens.key(:aa)
+    lens = Bi.key(:a) |> Lens.key(:aa)
 
     BiMap.put(bimap, :a, %{aa: 100})
 
@@ -69,8 +130,8 @@ defmodule Lens2.Lenses.BiMapTest do
 
   test "the difference between key and key?" do
     bimap = BiMap.new(a: 1, b: nil)
-    missing_ok =      Lens.BiMap.keys ([:a, :b, :c])
-    missing_omitted = Lens.BiMap.keys?([:a, :b, :c])
+    missing_ok =      Bi.keys ([:a, :b, :c])
+    missing_omitted = Bi.keys?([:a, :b, :c])
 
     Deeply.get_all(bimap, missing_ok)
     |> assert_good_enough(in_any_order([1, nil, nil]))
