@@ -1,6 +1,6 @@
 defmodule Lens2.Lenses.BiMultiMapTest do
   use Lens2.Case, async: true
-  alias Lens.BiMap, as: Bi
+  alias Lens.Bi
 
 
   describe "support for multimap handling" do

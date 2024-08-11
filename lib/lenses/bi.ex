@@ -1,4 +1,4 @@
-defmodule Lens2.Lenses.BiMap do
+defmodule Lens2.Lenses.Bi do
   use Lens2
   import Lens2.Helpers.Section
   use Private
@@ -170,13 +170,13 @@ defmodule Lens2.Lenses.BiMap do
     This works the same as `Lens2.Lenses.Keyed.key?/1`.
 
         iex>  bimap = BiMap.new(a: 1, b: 2)
-        ...>  lens = [:a, :MISSING] |> Enum.map(&Lens.BiMap.key?/1) |> Lens.multiple
+        ...>  lens = [:a, :MISSING] |> Enum.map(&Lens.Bi.key?/1) |> Lens.multiple
         iex>  Deeply.get_all(bimap, lens)
         [1]
 
     Unlike `key/1`, the returned lens cannot be used to create a missing key:
 
-        iex> Deeply.put(BiMap.new, Lens.BiMap.key?(:missing), :NEW)
+        iex> Deeply.put(BiMap.new, Lens.Bi.key?(:missing), :NEW)
         BiMap.new
     """
     @spec key?(any) :: Lens2.lens
@@ -192,9 +192,9 @@ defmodule Lens2.Lenses.BiMap do
     This works the same as `Lens2.Lenses.Keyed.key!/1`.
 
         iex>  bimap = BiMap.new(a: 1)
-        iex>  Deeply.put(bimap, Lens.BiMap.key!(:a), :NEW)
+        iex>  Deeply.put(bimap, Lens.Bi.key!(:a), :NEW)
         BiMap.new(a: :NEW)
-        iex>  Deeply.put(bimap, Lens.BiMap.key!(:missing), :NEW)
+        iex>  Deeply.put(bimap, Lens.Bi.key!(:missing), :NEW)
         ** (ArgumentError) key `:missing` not found in: BiMap.new([a: 1])
     """
     @spec key!(any) :: Lens2.lens
@@ -210,13 +210,13 @@ defmodule Lens2.Lenses.BiMap do
     As with `Lens2.Lenses.Keyed.key/1`, a missing key is represented with `nil`:
 
         iex>  bimap = BiMap.new(a: 1, b: 2)
-        ...>  lens = [:a, :MISSING] |> Enum.map(&Lens.BiMap.key/1) |> Lens.multiple
+        ...>  lens = [:a, :MISSING] |> Enum.map(&Lens.Bi.key/1) |> Lens.multiple
         iex>  Deeply.get_all(bimap, lens) |> Enum.sort
         [1, nil]
 
     This lens can introduce a missing key-value pair, unlike `key?/1`.
 
-        iex> Deeply.put(BiMap.new, Lens.BiMap.key(:missing), :NEW)
+        iex> Deeply.put(BiMap.new, Lens.Bi.key(:missing), :NEW)
         BiMap.new(%{missing: :NEW})
     """
 
@@ -234,15 +234,15 @@ defmodule Lens2.Lenses.BiMap do
     provided there is any such value.
 
         iex>  bimap = BiMap.new(a: 1)
-        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key?(1))
+        iex>  Deeply.get_all(bimap, Lens.Bi.to_key?(1))
         [:a]
-        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key?(11111))
+        iex>  Deeply.get_all(bimap, Lens.Bi.to_key?(11111))
         []
 
     You can create a new key-value pair with `key/1`.
     `Lens2.Deeply.put/3` will not work with this lens:
 
-        iex> Deeply.put(BiMap.new, Lens.BiMap.to_key?("value"), :new_key)
+        iex> Deeply.put(BiMap.new, Lens.Bi.to_key?("value"), :new_key)
         BiMap.new
     """
     @spec to_key?(any) :: Lens2.lens
@@ -258,9 +258,9 @@ defmodule Lens2.Lenses.BiMap do
     error if there is no such value.
 
         iex>  bimap = BiMap.new(a: 1)
-        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key!(1))
+        iex>  Deeply.get_all(bimap, Lens.Bi.to_key!(1))
         [:a]
-        iex>  Deeply.get_all(bimap, Lens.BiMap.to_key!(11111))
+        iex>  Deeply.get_all(bimap, Lens.Bi.to_key!(11111))
         ** (ArgumentError) value `11111` not found in: BiMap.new([a: 1])
 
     """
@@ -286,7 +286,7 @@ defmodule Lens2.Lenses.BiMap do
     Missing keys are ignored.
 
         iex>  bimap = BiMap.new(a: 2)
-        iex>  lens = Lens.BiMap.keys?([:a, :missing])
+        iex>  lens = Lens.Bi.keys?([:a, :missing])
         iex>  Deeply.update(bimap, lens, & &1*1111)
         BiMap.new(a: 2222)
         iex>  Deeply.get_only(bimap, lens)
@@ -304,7 +304,7 @@ defmodule Lens2.Lenses.BiMap do
     Any missing key raises an error.
 
         iex>  bimap = BiMap.new(a: 2)
-        iex>  lens = Lens.BiMap.keys!([:a, :missing])
+        iex>  lens = Lens.Bi.keys!([:a, :missing])
         iex>  Deeply.get_only(bimap, lens)
         ** (ArgumentError) key `:missing` not found in: BiMap.new([a: 2])
 
@@ -320,7 +320,7 @@ defmodule Lens2.Lenses.BiMap do
     The value of a missing key is treated as `nil`.
 
         iex>  bimap = BiMap.new(a: 2)
-        iex>  lens = Lens.BiMap.keys([:a, :missing])
+        iex>  lens = Lens.Bi.keys([:a, :missing])
         iex>  updater = fn
         ...>    nil -> "newly added"
         ...>    x   -> x * 1111
@@ -340,7 +340,7 @@ defmodule Lens2.Lenses.BiMap do
     Missing keys are ignored.
 
         iex>  bimap = BiMap.new(%{1 => "value"})
-        iex>  lens = Lens.BiMap.to_keys?(["value", "some missing value"])
+        iex>  lens = Lens.Bi.to_keys?(["value", "some missing value"])
         iex>  Deeply.update(bimap, lens, & &1*1111)
         BiMap.new(%{1111 => "value"})
         iex>  Deeply.get_only(bimap, lens)
@@ -359,7 +359,7 @@ defmodule Lens2.Lenses.BiMap do
     Any missing value raises an error.
 
         iex>  bimap = BiMap.new(a: 2)
-        iex>  lens = Lens.BiMap.to_keys!([2, "missing value"])
+        iex>  lens = Lens.Bi.to_keys!([2, "missing value"])
         iex>  Deeply.get_all(bimap, lens)
         ** (ArgumentError) value `"missing value"` not found in: BiMap.new([a: 2])
 
@@ -377,7 +377,7 @@ defmodule Lens2.Lenses.BiMap do
     Return a lens that points at all values of a [`BiMap`](https://hexdocs.pm/bimap/readme.html).
 
         iex>  bimap = BiMap.new(%{1 => "1111", 2 => "2222"})
-        iex>  Deeply.get_all(bimap, Lens.BiMap.all_values) |> Enum.sort
+        iex>  Deeply.get_all(bimap, Lens.Bi.all_values) |> Enum.sort
         ["1111", "2222"]
 
     Note that using `put` with `all_values` is profoundly useless, as
@@ -385,7 +385,7 @@ defmodule Lens2.Lenses.BiMap do
     which one it will be!
 
         iex>  bimap = BiMap.new(a: 1, b: 2, c: 3, d: 4, e: 5)
-        iex>  updated = Deeply.put(bimap, Lens.BiMap.all_values, :NEW)
+        iex>  updated = Deeply.put(bimap, Lens.Bi.all_values, :NEW)
         iex>  assert [:NEW] == BiMap.values(updated)
         ...>
         iex>  [key] = BiMap.keys(updated)
@@ -404,7 +404,7 @@ defmodule Lens2.Lenses.BiMap do
     representing physical objects at that position.
 
         iex>  bimap = BiMap.new(%{{0, 0} => "some data", {1, 1} => "other data"})
-        iex>  Deeply.update(bimap, Lens.BiMap.all_keys,
+        iex>  Deeply.update(bimap, Lens.Bi.all_keys,
         ...>                       fn {x, y} -> {x + 1, y + 1} end)
         iex>  BiMap.new(%{{1, 1} => "some data", {2, 2} => "other data"})
 
@@ -442,7 +442,7 @@ defmodule Lens2.Lenses.BiMap do
     both, use this function. It creates the empty container to match
     the original type:
 
-        iex> lens = Lens.BiMap.update_appropriately(Lens.all |> Lens.at(1))
+        iex> lens = Lens.Bi.update_appropriately(Lens.all |> Lens.at(1))
         iex> Deeply.update(BiMultiMap.new(a: 1, b: 2), lens, & &1 * 1111)
         BiMultiMap.new(a: 1111, b: 2222)
         iex> Deeply.update(BiMap.new(a: 1, b: 2), lens, & &1 * 1111)

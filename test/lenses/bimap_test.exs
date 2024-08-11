@@ -1,9 +1,9 @@
 defmodule Lens2.Lenses.BiMapTest do
   use Lens2.Case, async: true
 
-  doctest Lens2.Lenses.BiMap
+  doctest Lens2.Lenses.Bi
 
-  alias Lens.BiMap, as: Bi
+  alias Lens.Bi
 
   describe "support for bimap handling" do
     test "bimap_fetch" do

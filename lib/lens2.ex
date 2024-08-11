@@ -9,8 +9,8 @@ defmodule Lens2 do
      `Lens2.Lenses` for the complete list.
 
   2. ... make lenses for `MapSet` containers with `Lens.MapSet` and
-     lenses for `BiMap` with `Lens.BiMap`. Those are aliases for
-     `Lens2.Lenses.MapSet` and `Lens2.Lenses.BiMap`.
+     lenses for `BiMap` and `BiMultiMap` with `Lens.Bi`. Those are aliases for
+     `Lens2.Lenses.MapSet` and `Lens2.Lenses.Bi`.
 
   3. ... traverse containers with lens-using functions like
      `Deeply.update`. (See `Lens2.Deeply`.)
