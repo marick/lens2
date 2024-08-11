@@ -83,7 +83,7 @@ defmodule Lens2.Lenses.BiMapTest do
     assert actual == BiMap.new(%{1 => %{a: 1000, b: 2}, 2 => %{a: 11_000, b: 22}})
   end
 
-  test "bimap_keys/1" do
+  test "from_keys/1" do
     # This should work akin to operating on maps, so let's start with this oracle
     # lens:
     oracle = Lens.keys([:a, :missing]) |> Lens.filter(& &1 == nil)
@@ -97,7 +97,7 @@ defmodule Lens2.Lenses.BiMapTest do
                      missing: &is_reference/1)
 
 
-    lens = Bi.keys([:a, :missing]) |> Lens.filter(& &1 == nil)
+    lens = Bi.from_keys([:a, :missing]) |> Lens.filter(& &1 == nil)
     bimap = BiMap.new(map)
 
     assert Deeply.get_all(bimap, lens) == [nil]
@@ -109,12 +109,12 @@ defmodule Lens2.Lenses.BiMapTest do
     assert BiMap.get(result, :missing) |> is_reference
   end
 
-  test "key" do
+  test "from_key" do
     bimap = BiMap.new(a: %{aa: 1}, b: %{aa: 2})
     map = %{          a: %{aa: 1}, b: %{aa: 2}}
 
     map_lens = Lens.key(:a) |> Lens.key(:aa)
-    lens = Bi.key(:a) |> Lens.key(:aa)
+    lens = Bi.from_key(:a) |> Lens.key(:aa)
 
     BiMap.put(bimap, :a, %{aa: 100})
 
@@ -130,8 +130,8 @@ defmodule Lens2.Lenses.BiMapTest do
 
   test "the difference between key and key?" do
     bimap = BiMap.new(a: 1, b: nil)
-    missing_ok =      Bi.keys ([:a, :b, :c])
-    missing_omitted = Bi.keys?([:a, :b, :c])
+    missing_ok =      Bi.from_keys ([:a, :b, :c])
+    missing_omitted = Bi.from_keys?([:a, :b, :c])
 
     Deeply.get_all(bimap, missing_ok)
     |> assert_good_enough(in_any_order([1, nil, nil]))

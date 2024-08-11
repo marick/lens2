@@ -48,10 +48,10 @@ defmodule Lens2.Lenses.BiMultiMapTest do
   end
 
 
-  describe "key?" do
+  describe "from_key?" do
     test "no such key" do
       container = BiMultiMap.new(%{1 => %{a: 1, b: 2}, 2 => %{a: 11, b: 22}})
-      lens = Bi.key?(:a)
+      lens = Bi.from_key?(:a)
       assert Deeply.get_all(container, lens) == []
     end
 
@@ -60,7 +60,7 @@ defmodule Lens2.Lenses.BiMultiMapTest do
         BiMultiMap.new(one: %{a: 1, b: 2},
                        two: %{a: 11, b: 22},
                        one: %{a: 111, b: 222})
-      lens = Bi.key?(:one)
+      lens = Bi.from_key?(:one)
       {gotten, updated} = Deeply.get_and_update(container, lens,
                                                 & {&1, Map.put(&1, :c, &1[:a] + &1[:b])})
 
@@ -70,7 +70,7 @@ defmodule Lens2.Lenses.BiMultiMapTest do
                                        one: %{a: 111, b: 222, c: 333})
 
       # two levels
-      lens = Bi.key?(:one) |> Lens.key!(:a)
+      lens = Bi.from_key?(:one) |> Lens.key!(:a)
       {gotten, updated} = Deeply.get_and_update(container, lens, & {&1, &1+1})
       assert Enum.sort(gotten) == [1, 111]
       assert updated == BiMultiMap.new(one: %{a: 2, b: 2},
@@ -78,12 +78,12 @@ defmodule Lens2.Lenses.BiMultiMapTest do
                                        one: %{a: 112, b: 222})
     end
 
-    test "as wrapped in `keys?`" do
+    test "as wrapped in `from_keys?`" do
       container =
         BiMultiMap.new(one: %{a: 1, b: 2},
                        two: %{a: 11, b: 22},
                        one: %{a: 111, b: 222})
-      lens = Bi.keys?([:one, :two, :missing]) |> Lens.key!(:a)
+      lens = Bi.from_keys?([:one, :two, :missing]) |> Lens.key!(:a)
       assert Deeply.get_all(container, lens) |> Enum.sort == [1, 11, 111]
 
       actual = Deeply.put(container, lens, :NEW)
@@ -141,7 +141,7 @@ defmodule Lens2.Lenses.BiMultiMapTest do
       BiMultiMap.new(one: %{a: 1, b: 2},
                      two: %{a: 11, b: 22},
                      one: %{a: 111, b: 222})
-    Deeply.get_all(container, Bi.key(:one))
+    Deeply.get_all(container, Bi.from_key(:one))
     |> Enum.sort
     |> assert_equal([%{a: 1, b: 2}, %{a: 111, b: 222}])
 
@@ -149,7 +149,7 @@ defmodule Lens2.Lenses.BiMultiMapTest do
     expected = BiMultiMap.put(container, :NEW, :missing_value)
     assert actual == expected
 
-    lens = Bi.keys([:one, :two]) |> Lens.key!(:a)
+    lens = Bi.from_keys([:one, :two]) |> Lens.key!(:a)
     assert Deeply.get_all(container, lens) |> Enum.sort == [1, 11, 111]
 
     actual = Deeply.put(container, lens, :NEW)
@@ -196,7 +196,7 @@ defmodule Lens2.Lenses.BiMultiMapTest do
                        missing: &is_reference/1)
 
 
-      lens = Bi.keys([:a, :missing]) |> Lens.filter(& &1 == nil)
+      lens = Bi.from_keys([:a, :missing]) |> Lens.filter(& &1 == nil)
       container = BiMultiMap.new(map)
 
       assert Deeply.get_all(container, lens) == [nil]
@@ -209,12 +209,12 @@ defmodule Lens2.Lenses.BiMultiMapTest do
       assert is_reference(ref)
     end
 
-    test "key" do
+    test "from_key" do
       container = BiMultiMap.new(a: %{aa: 1}, b: %{aa: 2})
       map = %{          a: %{aa: 1}, b: %{aa: 2}}
 
       map_lens = Lens.key(:a) |> Lens.key(:aa)
-      lens = Bi.key(:a) |> Lens.key(:aa)
+      lens = Bi.from_key(:a) |> Lens.key(:aa)
 
       BiMultiMap.put(container, :a, %{aa: 100})
 
@@ -228,10 +228,10 @@ defmodule Lens2.Lenses.BiMultiMapTest do
       assert Deeply.update(container, lens, & &1 * 100) == BiMultiMap.new(a: %{aa: 100}, b: %{aa: 2})
     end
 
-    test "the difference between key and key?" do
+    test "the difference between from_key and from_key?" do
       container = BiMultiMap.new(a: 1, b: nil)
-      missing_ok =      Bi.keys ([:a, :b, :c])
-      missing_omitted = Bi.keys?([:a, :b, :c])
+      missing_ok =      Bi.from_keys ([:a, :b, :c])
+      missing_omitted = Bi.from_keys?([:a, :b, :c])
 
       Deeply.get_all(container, missing_ok)
       |> assert_good_enough(in_any_order([1, nil, nil]))
