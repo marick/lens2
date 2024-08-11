@@ -53,8 +53,30 @@ defmodule Lens2.Lenses.BiMap do
       end
     end
 
+
     def ordered(lens_arg, new_value, :descend_value), do: {lens_arg, new_value}
     def ordered(lens_arg, new_key,   :descend_key),   do: {new_key, lens_arg}
+
+    def worker(lens_arg, %BiMap{} = container, descender, on_missing, descend_which) do
+      handle_one = fn fetched ->
+        {gotten, updated} = descender.(fetched)
+        replacement = ordered(lens_arg, updated, descend_which)
+        {[gotten], BiMap.put(container, replacement)}
+      end
+
+      fetch_tuple = bimap_fetch(container, lens_arg, descend_which)
+
+      case {on_missing, fetch_tuple} do
+        {_, {:ok, fetched}} ->
+          handle_one.(fetched)
+        {:nil_on_missing, _} ->
+          handle_one.(nil)
+        {:raise_on_missing, _} ->
+          do_raise()
+        {:ignore_missing, _} ->
+          {[], container}
+      end
+    end
 
     # Now for the `BiMultiMap` cases. The tricky thing with `BiMultiMap` is that you
     # can't do, for example:
@@ -89,6 +111,13 @@ defmodule Lens2.Lenses.BiMap do
       {gotten, updated}
     end
 
+    def bimap_fetch(container, lens_arg, descend_which) do
+      case descend_which do
+        :descend_value -> BiMap.fetch(container, lens_arg)
+        :descend_key -> BiMap.fetch_key(container, lens_arg)
+      end
+    end
+
     def multi_fetch(container, lens_arg, descend_which) do
       case descend_which do
         :descend_value -> BiMultiMap.fetch(container, lens_arg)
@@ -96,8 +125,10 @@ defmodule Lens2.Lenses.BiMap do
       end
     end
 
+    def do_raise, do: raise(KeyError, "no match (improve this message)")
+
     def multi_adjust_fetched({:ok, list}, _), do: list
-    def multi_adjust_fetched(:error, :raise_on_missing), do: raise(KeyError, "no match in BiMultiMap")
+    def multi_adjust_fetched(:error, :raise_on_missing), do: do_raise()
     def multi_adjust_fetched(:error, :nil_on_missing), do: [nil]
     def multi_adjust_fetched(:error, :ignore_missing), do: []
 

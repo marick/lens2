@@ -23,7 +23,7 @@ defmodule Lens2.Lenses.BiMultiMapTest do
       assert Bi.multi_adjust_fetched({:ok, [1]}, :ignore_missing) == [1]
 
 
-      assert_raise(KeyError, "no match in BiMultiMap", fn ->
+      assert_raise(KeyError, "no match (improve this message)", fn ->
         Bi.multi_adjust_fetched(:error, :raise_on_missing) == [1]
       end)
 

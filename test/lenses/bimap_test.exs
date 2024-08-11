@@ -6,60 +6,53 @@ defmodule Lens2.Lenses.BiMapTest do
   alias Lens.BiMap, as: Bi
 
   describe "support for bimap handling" do
-    # test "multi_fetch" do
-    #   container =
-    #     BiMap.new(one: 1, two: 2, one: "one")
+    test "bimap_fetch" do
+      container =
+        BiMap.new(one: 1, two: 2)
 
-    #   {:ok, fetched} = Bi.multi_fetch(container, :one, :descend_value)
-    #   assert Enum.sort(fetched) == [1, "one"]
+      {:ok, fetched} = Bi.bimap_fetch(container, :one, :descend_value)
+      assert fetched == 1
 
-    #   {:ok, fetched} = Bi.multi_fetch(container, 1, :descend_key)
-    #   assert Enum.sort(fetched) == [:one]
+      {:ok, fetched} = Bi.bimap_fetch(container, 1, :descend_key)
+      assert fetched == :one
 
-    #   assert :error == Bi.multi_fetch(container, :missing, :descend_key)
-    # end
-
-    # test "multi_adjust_fetched" do
-    #   assert Bi.multi_adjust_fetched({:ok, [1]}, :raise_on_missing) == [1]
-    #   assert Bi.multi_adjust_fetched({:ok, [1]}, :nil_on_missing) == [1]
-    #   assert Bi.multi_adjust_fetched({:ok, [1]}, :ignore_missing) == [1]
-
-
-    #   assert_raise(KeyError, "no match in BiMap", fn ->
-    #     Bi.multi_adjust_fetched(:error, :raise_on_missing) == [1]
-    #   end)
-
-    #   assert Bi.multi_adjust_fetched(:error, :nil_on_missing) == [nil]
-    #   assert Bi.multi_adjust_fetched(:error, :ignore_missing) == []
-    # end
-
-    # test "multi_descend" do
-    #   descender = & {[&1, &1+1], {&1, &1*1000}}
-
-    #   {gotten, to_delete, to_put} =
-    #     Bi.multi_descend(descender, "one", [1, 1.1], :descend_value)
-    #   assert Enum.sort(gotten) == [ [1, 2], [1.1, 2.1]]
-    #   assert Enum.sort(to_delete) == [{"one", 1}, {"one", 1.1}]
-    #   assert Enum.sort(to_put) == [{"one", {1, 1000}}, {"one", {1.1, 1100.0}}]
-    # end
-
-
-    test "bimap" do
-      # container = BiMap.new(a: 1, a: 2, b: 1, b: 2)
-      # {gotten, updated} =
-      #   Bi.worker(:a, container, & {&1, &1*22}, :ignore_missing, :descend_value)
-
-      # assert Enum.sort(gotten) == [1, 2]
-      # assert updated == BiMap.new(a: 22, a: 44, b: 1, b: 2)
-
-      # # reverse direction
-      # {gotten, updated} =
-      #   Bi.worker(2, container, & {&1, inspect(&1)}, :ignore_missing, :descend_key)
-
-      # assert Enum.sort(gotten) == [:a, :b]
-      # expected = BiMap.new(a: 1, b: 1) |> BiMap.put(":a", 2) |> BiMap.put(":b", 2)
-      # assert updated == expected
+      assert :error == Bi.bimap_fetch(container, :missing, :descend_key)
     end
+
+    test "worker - element is found" do
+      container = BiMap.new(a: 1, b: 2)
+      {gotten, updated} =
+        Bi.worker(:a, container, & {&1, &1*22}, :IRRELEVANT, :descend_value)
+
+      assert gotten == [1]
+      assert updated == BiMap.new(a: 22, b: 2)
+
+      # reverse direction
+      {gotten, updated} =
+        Bi.worker(2, container, & {&1, inspect(&1)}, :IRRELEVANT, :descend_key)
+
+      assert gotten == [:b]
+      assert updated == BiMap.new(%{:a => 1, ":b" => 2})
+    end
+
+    test "worker - :ignore missing parameter" do
+      container = BiMap.new(a: 1, b: 2)
+      {gotten, updated} =
+        Bi.worker(:missing, container, & {&1, inspect(&1)}, :ignore_missing, :descend_value)
+
+      assert gotten == []
+      assert updated == container
+    end
+
+    test "worker - :nil_on_missing" do
+      container = BiMap.new(a: 1, b: 2)
+      {gotten, updated} =
+        Bi.worker(:missing, container, & {&1, inspect(&1)}, :nil_on_missing, :descend_value)
+
+      assert gotten == [nil]
+      assert updated == BiMap.new(a: 1, b: 2, missing: "nil")
+    end
+
   end
 
 
