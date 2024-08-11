@@ -17,19 +17,6 @@ defmodule Lens2.Lenses.BiMultiMapTest do
       assert :error == Bi.multi_fetch(container, :missing, :descend_key)
     end
 
-    test "multi_adjust_fetched" do
-      assert Bi.multi_adjust_fetched({:ok, [1]}, :raise_on_missing) == [1]
-      assert Bi.multi_adjust_fetched({:ok, [1]}, :nil_on_missing) == [1]
-      assert Bi.multi_adjust_fetched({:ok, [1]}, :ignore_missing) == [1]
-
-
-      assert_raise(KeyError, "no match (improve this message)", fn ->
-        Bi.multi_adjust_fetched(:error, :raise_on_missing) == [1]
-      end)
-
-      assert Bi.multi_adjust_fetched(:error, :nil_on_missing) == [nil]
-      assert Bi.multi_adjust_fetched(:error, :ignore_missing) == []
-    end
 
     test "multi_descend" do
       descender = & {[&1, &1+1], {&1, &1*1000}}

@@ -28,37 +28,13 @@ defmodule Lens2.Lenses.BiMap do
     # Note that `descend_which` could be derived from `fetcher_name`, but I prefer
     # to deal with supplied constants than calculated values.
 
-    def bimap(
-          lens_arg, container, descender, fetcher_name, descend_which) do
-      fetched = apply(BiMap, fetcher_name, [container, lens_arg])
-      {gotten, updated} =  descender.(fetched)
-
-      replacement = ordered(lens_arg, updated, descend_which)
-      {[gotten], BiMap.put(container, replacement)}
-    end
-
-    # `bimap_ignore_missing` is used for `key?` and `to_key?`. The difference is that
-    # it has to handle a return value of type `:error | {:ok, any}`.
-
-    def bimap_ignore_missing(
-          lens_arg, container, descender, fetcher_name, descend_which) do
-      fetched = apply(BiMap, fetcher_name, [container, lens_arg])
-      case fetched do
-        :error ->
-          {[], container}
-        {:ok, fetched} ->
-          {gotten, updated} = descender.(fetched)
-          replacement = ordered(lens_arg, updated, descend_which)
-          {[gotten], BiMap.put(container, replacement)}
-      end
-    end
 
 
     def ordered(lens_arg, new_value, :descend_value), do: {lens_arg, new_value}
     def ordered(lens_arg, new_key,   :descend_key),   do: {new_key, lens_arg}
 
     def worker(lens_arg, %BiMap{} = container, descender, on_missing, descend_which) do
-      handle_one = fn fetched ->
+      handle_valid_result = fn fetched ->
         {gotten, updated} = descender.(fetched)
         replacement = ordered(lens_arg, updated, descend_which)
         {[gotten], BiMap.put(container, replacement)}
@@ -68,11 +44,11 @@ defmodule Lens2.Lenses.BiMap do
 
       case {on_missing, fetch_tuple} do
         {_, {:ok, fetched}} ->
-          handle_one.(fetched)
+          handle_valid_result.(fetched)
         {:nil_on_missing, _} ->
-          handle_one.(nil)
+          handle_valid_result.(nil)
         {:raise_on_missing, _} ->
-          do_raise()
+          raise_error(container, lens_arg, descend_which)
         {:ignore_missing, _} ->
           {[], container}
       end
@@ -100,15 +76,28 @@ defmodule Lens2.Lenses.BiMap do
     #   `[nil]` return value.
 
     def worker(lens_arg, %BiMultiMap{} = container, descender, on_missing, descend_which) do
-      fetched =
+      handle_valid_result = fn fetched ->
+        {gotten, to_delete, to_put} = multi_descend(descender, lens_arg, fetched, descend_which)
+        updated =
+          container
+          |> then(& Enum.reduce(to_delete, &1, fn kv, acc -> BiMultiMap.delete(acc, kv) end))
+          |> then(& Enum.reduce(to_put, &1, fn kv, acc -> BiMultiMap.put(acc, kv) end))
+        {gotten, updated}
+      end
+
+      fetch_tuple =
         multi_fetch(container, lens_arg, descend_which)
-        |> multi_adjust_fetched(on_missing)
-      {gotten, to_delete, to_put} = multi_descend(descender, lens_arg, fetched, descend_which)
-      updated =
-        container
-        |> then(& Enum.reduce(to_delete, &1, fn kv, acc -> BiMultiMap.delete(acc, kv) end))
-        |> then(& Enum.reduce(to_put, &1, fn kv, acc -> BiMultiMap.put(acc, kv) end))
-      {gotten, updated}
+
+      case {on_missing, fetch_tuple} do
+        {_, {:ok, fetched}} ->
+          handle_valid_result.(fetched)
+        {:nil_on_missing, _} ->
+          handle_valid_result.([nil])
+        {:raise_on_missing, _} ->
+          raise_error(container, lens_arg, descend_which)
+        {:ignore_missing, _} ->
+          {[], container}
+      end
     end
 
     def bimap_fetch(container, lens_arg, descend_which) do
@@ -125,12 +114,15 @@ defmodule Lens2.Lenses.BiMap do
       end
     end
 
-    def do_raise, do: raise(KeyError, "no match (improve this message)")
+    def raise_error(container, lens_arg, descend_which) do
+      tag =
+        case descend_which do
+          :descend_key -> "value"
+          :descend_value -> "key"
+        end
+      raise(ArgumentError, "#{tag} `#{inspect lens_arg}` not found in: #{inspect container}")
+    end
 
-    def multi_adjust_fetched({:ok, list}, _), do: list
-    def multi_adjust_fetched(:error, :raise_on_missing), do: do_raise()
-    def multi_adjust_fetched(:error, :nil_on_missing), do: [nil]
-    def multi_adjust_fetched(:error, :ignore_missing), do: []
 
     def multi_descend(descender, lens_arg, fetched, descend_which) do
       reducer = fn one_fetched, {building_gotten, building_delete, building_put} ->
@@ -150,31 +142,6 @@ defmodule Lens2.Lenses.BiMap do
     # is relevant would be `x in lens_arg` instead of `x ===
     # lens_arg`. That would be more O(n) than O(n^2), but I haven't
     # bothered.
-
-
-
-
-    # These are intermediate functions. Their purpose is to switch on whether the
-    # container is a BiMap or a BiMultiMap.
-
-    def _key(key, %BiMap{} = container, descender, fetcher_name),
-        do: bimap(key, container, descender, fetcher_name, :descend_value)
-    def _key(key, %BiMultiMap{} = container, descender),
-        do: worker(key, container, descender, :nil_on_missing, :descend_value)
-
-    def _key?(key, %BiMap{} = container, descender),
-        do: bimap_ignore_missing(key, container, descender, :fetch, :descend_value)
-    def _key?(key, %BiMultiMap{} = container, descender),
-        do: worker(key, container, descender, :ignore_missing, :descend_value)
-
-
-    def _to_key(value, %BiMap{} = container, descender, fetcher_name),
-        do: bimap(value, container, descender, fetcher_name, :descend_key)
-
-    def _to_key?(value, %BiMap{} = container, descender),
-        do: bimap_ignore_missing(value, container, descender, :fetch_key, :descend_key)
-    def _to_key?(value, %BiMultiMap{} = container, descender),
-        do: worker(value, container, descender, :ignore_missing, :descend_key)
   end
 
 
@@ -236,8 +203,11 @@ defmodule Lens2.Lenses.BiMap do
         BiMap.new
     """
     @spec key?(any) :: Lens2.lens
-    def_raw_maker key?(key),
-      do: fn container, descender -> _key?(key, container, descender) end
+    def_raw_maker key?(key) do
+      fn container, descender ->
+        worker(key, container, descender, :ignore_missing, :descend_value)
+      end
+    end
 
     @doc """
     Like `key/1` and `key?/1` except that the lens will raise an error for a missing key.
@@ -248,11 +218,14 @@ defmodule Lens2.Lenses.BiMap do
         iex>  Deeply.put(bimap, Lens.BiMap.key!(:a), :NEW)
         BiMap.new(a: :NEW)
         iex>  Deeply.put(bimap, Lens.BiMap.key!(:missing), :NEW)
-        ** (ArgumentError) key :missing not found in: BiMap.new([a: 1])
+        ** (ArgumentError) key `:missing` not found in: BiMap.new([a: 1])
     """
     @spec key!(any) :: Lens2.lens
-    def_raw_maker key!(key),
-      do: fn container, descender -> _key(key, container, descender, :fetch!) end
+    def_raw_maker key!(key) do
+      fn container, descender ->
+        worker(key, container, descender, :raise_on_missing, :descend_value)
+      end
+    end
 
     @doc """
     Return a lens that points at the value of a single [`BiMap`](https://hexdocs.pm/bimap/readme.html) key.
@@ -271,10 +244,11 @@ defmodule Lens2.Lenses.BiMap do
     """
 
     @spec key(any) :: Lens2.lens
-    def_raw_maker key(key),
-      do: fn container, descender -> _key(key, container, descender, :get) end
-
-    # There is no `to_key` because a `nil` key is not worth much.
+    def_raw_maker key(key) do
+      fn container, descender ->
+        worker(key, container, descender, :nil_on_missing, :descend_value)
+      end
+    end
 
 
     @doc """
@@ -295,12 +269,14 @@ defmodule Lens2.Lenses.BiMap do
         BiMap.new
     """
     @spec to_key?(any) :: Lens2.lens
-    def_raw_maker to_key?(value),
-                  do: fn bimap, descender -> _to_key?(value, bimap, descender) end
+    def_raw_maker to_key?(value) do
+      fn container, descender ->
+        worker(value, container, descender, :ignore_missing, :descend_key)
+      end
+    end
 
 
     @doc """
-
     Return a lens that points at the key associated with a given value. Raises an
     error if there is no such value.
 
@@ -308,14 +284,22 @@ defmodule Lens2.Lenses.BiMap do
         iex>  Deeply.get_all(bimap, Lens.BiMap.to_key!(1))
         [:a]
         iex>  Deeply.get_all(bimap, Lens.BiMap.to_key!(11111))
-        ** (ArgumentError) value 11111 not found in: BiMap.new([a: 1])
+        ** (ArgumentError) value `11111` not found in: BiMap.new([a: 1])
 
     """
     @spec to_key!(any) :: Lens2.lens
-    def_raw_maker to_key!(value),
-      do: fn container, descender -> _to_key(value, container, descender, :fetch_key!) end
+    def_raw_maker to_key!(value) do
+      fn container, descender ->
+        worker(value, container, descender, :raise_on_missing, :descend_key)
+      end
+    end
 
-
+    @spec to_key(any) :: Lens2.lens
+    def_raw_maker to_key(key) do
+      fn container, descender ->
+        worker(key, container, descender, :nil_on_missing, :descend_key)
+      end
+    end
   end
 
   section "THE PLURAL FORMS" do
@@ -345,7 +329,7 @@ defmodule Lens2.Lenses.BiMap do
         iex>  bimap = BiMap.new(a: 2)
         iex>  lens = Lens.BiMap.keys!([:a, :missing])
         iex>  Deeply.get_only(bimap, lens)
-        ** (ArgumentError) key :missing not found in: BiMap.new([a: 2])
+        ** (ArgumentError) key `:missing` not found in: BiMap.new([a: 2])
 
     """
     @spec keys!([any]) :: Lens2.lens
@@ -400,7 +384,7 @@ defmodule Lens2.Lenses.BiMap do
         iex>  bimap = BiMap.new(a: 2)
         iex>  lens = Lens.BiMap.to_keys!([2, "missing value"])
         iex>  Deeply.get_all(bimap, lens)
-        ** (ArgumentError) value "missing value" not found in: BiMap.new([a: 2])
+        ** (ArgumentError) value `"missing value"` not found in: BiMap.new([a: 2])
 
     """
     @spec to_keys!([any]) :: Lens2.lens

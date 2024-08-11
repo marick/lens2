@@ -44,6 +44,13 @@ defmodule Lens2.Lenses.BiMapTest do
       assert updated == container
     end
 
+    test "worker - :raise_on_missing" do
+      container = BiMap.new(a: 1)
+      assert_raise(ArgumentError, "value `:missing` not found in: BiMap.new([a: 1])", fn ->
+        Bi.worker(:missing, container, & {&1, inspect(&1)}, :raise_on_missing, :descend_key)
+      end)
+    end
+
     test "worker - :nil_on_missing" do
       container = BiMap.new(a: 1, b: 2)
       {gotten, updated} =
