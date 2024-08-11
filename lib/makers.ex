@@ -82,12 +82,30 @@ defmodule Lens2.Makers do
       unquote(allow_pipeline(name, args))
     end
   end
+  # Yeah, it's dumb that a one character change requires this duplication,
+  # but I can't offhand get passing `:def` or `:defp` working, and don't 
+  # care to invest the time now.
+  defp _defmakerp({name, metadata, args}, plain_code) do
+    args = force_arglist(args)
+    quote do
+      defp unquote({name, metadata, args}), do: unquote(plain_code)
+      unquote(allow_pipeline_p(name, args))
+    end
+  end
 
 
   defp allow_pipeline(name, args) do
     quote do
       @doc false
       def unquote(name)(previous_lens, unquote_splicing(args)) do
+        Combine.seq(previous_lens, unquote(name)(unquote_splicing(args)))
+      end
+    end
+  end
+  defp allow_pipeline_p(name, args) do
+    quote do
+      @doc false
+      defp unquote(name)(previous_lens, unquote_splicing(args)) do
         Combine.seq(previous_lens, unquote(name)(unquote_splicing(args)))
       end
     end
@@ -195,6 +213,15 @@ defmodule Lens2.Makers do
 
 
   @doc ~S"""
+  Like `defmaker`, but creates private functions.
+  """
+  defmacro defmakerp(header, do: plain_code),
+           do: _defmakerp(header, plain_code)
+
+
+  
+
+  @doc ~S"""
   Alternate spelling of `def_raw_maker/2`.
 
   This is the equivalent macro from [Lens 1](https://hexdocs.pm/lens/readme.html).
@@ -223,4 +250,11 @@ defmodule Lens2.Makers do
   """
   defmacro deflens(header, do: plain_code),
            do: _defmaker(header, plain_code)
+
+  @doc """
+  Like `deflens`, but creates private functions.
+  """
+  defmacro deflensp(header, do: plain_code),
+           do: _defmakerp(header, plain_code)
+
 end
