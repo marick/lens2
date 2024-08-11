@@ -4,7 +4,7 @@ Migration is supposed to be easy.
 
 Note that you can migrate one module at a time.
 
-*There are probably gotchas yet to be discovered.*
+*There are perhaps gotchas yet to be discovered.*
 
 1. Put `use Lens2` at the top of any module that defines or uses
    lenses. 
@@ -35,5 +35,5 @@ Note that you can migrate one module at a time.
 3. If you use
    [`TypedStruct`](https://hexdocs.pm/typedstruct/readme.html) and
    [`TypedStructLens`](https://hexdocs.pm/typed_struct_lens/readme.html),
-   you have to
-   [I don't know what yet. Probably just adding `alias Lens2.TypedStructLens` to the head of the module].
+   you have to add an `alias Lens2.TypedStructLens` to your existing modules. 
+   See the [module documentation](Lens2.TypedStructLens.html).
