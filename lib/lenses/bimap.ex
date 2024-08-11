@@ -15,24 +15,6 @@ defmodule Lens2.Lenses.BiMap do
 
     # Let's start with the case where we're dealing with a `Bimap`.
 
-    # `bimap` deals with error-raising lenses (`key!` and `fetch_key!`) and
-    # nil-returning lenses (`key` and `fetch_key`).
-    #
-    # 1. The `descend_which` argument is either `:descend_value` or `descend_key`.
-    #    BiMap uses this to construct a replacement key/value pair to use with
-    #    BiMap.put. (If the lookup was by key, you want the pair to be key/new-value.
-    #    If it was by value, you want it to be new-key/value.)
-    # 2. The `fetcher_name` could be one of `fetch!` (for `key!`),
-    #    `get` (for `key`), or their inverse functions (`fetch_key!` and `get_key`)
-    #
-    # Note that `descend_which` could be derived from `fetcher_name`, but I prefer
-    # to deal with supplied constants than calculated values.
-
-
-
-    def ordered(lens_arg, new_value, :descend_value), do: {lens_arg, new_value}
-    def ordered(lens_arg, new_key,   :descend_key),   do: {new_key, lens_arg}
-
     def worker(lens_arg, %BiMap{} = container, descender, on_missing, descend_which) do
       handle_valid_result = fn fetched ->
         {gotten, updated} = descender.(fetched)
@@ -64,16 +46,8 @@ defmodule Lens2.Lenses.BiMap do
     # That will *add* `{:a, 6}` to the bimultimap that *still contains* `{:a, 5}`.
     # You have to explicitly delete the old pair.
     #
-    # Because a BiMultiMap `fetch` operation returns a *list* of values, instead of
-    # a single value, the division between the `?`, `!`, and unadorned makers is
-    # different.
-    #
-    # * `key!` and `to_key!` should use `fetch!` or `fetch_keys!`, which will raise
-    #   rather than return a empty list.
-    # * `key?` and `to_key?` can use `fetch` and `fetch_keys` and simply iterate over
-    #   all the return values. If there are none, no big deal.
-    # * `key` and `to_key` have to special case an `:error` return value and fake a
-    #   `[nil]` return value.
+    # Note that all the deletions should be done before all the puts, else
+    # a newly-put value might be erased by a later put.
 
     def worker(lens_arg, %BiMultiMap{} = container, descender, on_missing, descend_which) do
       handle_valid_result = fn fetched ->
@@ -85,8 +59,7 @@ defmodule Lens2.Lenses.BiMap do
         {gotten, updated}
       end
 
-      fetch_tuple =
-        multi_fetch(container, lens_arg, descend_which)
+      fetch_tuple = multi_fetch(container, lens_arg, descend_which)
 
       case {on_missing, fetch_tuple} do
         {_, {:ok, fetched}} ->
@@ -98,6 +71,19 @@ defmodule Lens2.Lenses.BiMap do
         {:ignore_missing, _} ->
           {[], container}
       end
+    end
+
+    def multi_descend(descender, lens_arg, fetched, descend_which) do
+      reducer = fn one_fetched, {building_gotten, building_delete, building_put} ->
+        {lower_gotten, lower_updated} = descender.(one_fetched)
+        {
+          [lower_gotten | building_gotten],
+          [ordered(lens_arg, one_fetched, descend_which) | building_delete],
+          [ordered(lens_arg, lower_updated, descend_which) | building_put]
+        }
+      end
+
+      Enum.reduce(fetched, {[], [], []}, reducer)
     end
 
     def bimap_fetch(container, lens_arg, descend_which) do
@@ -114,6 +100,9 @@ defmodule Lens2.Lenses.BiMap do
       end
     end
 
+    def ordered(lens_arg, new_value, :descend_value), do: {lens_arg, new_value}
+    def ordered(lens_arg, new_key,   :descend_key),   do: {new_key, lens_arg}
+
     def raise_error(container, lens_arg, descend_which) do
       tag =
         case descend_which do
@@ -124,18 +113,6 @@ defmodule Lens2.Lenses.BiMap do
     end
 
 
-    def multi_descend(descender, lens_arg, fetched, descend_which) do
-      reducer = fn one_fetched, {building_gotten, building_delete, building_put} ->
-        {lower_gotten, lower_updated} = descender.(one_fetched)
-        {
-          [lower_gotten | building_gotten],
-          [ordered(lens_arg, one_fetched, descend_which) | building_delete],
-          [ordered(lens_arg, lower_updated, descend_which) | building_put]
-        }
-      end
-
-      Enum.reduce(fetched, {[], [], []}, reducer)
-    end
 
     # Note that the multimap cases could be fairly easily extended to
     # handle `keys?([:a, :b])`, in that the test if a key (or value)
